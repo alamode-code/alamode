@@ -101,195 +101,20 @@ auto build_phi4_skeleton(const int *const *evec_index, const long int ngroup, co
     skeleton.val.resize(skeleton.row.size());
     return skeleton;
 }
-} // namespace
-void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
-    std::complex<double> ***v3_out, const std::complex<double> *const *const *evec_in, const bool self_offdiag,
-    const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
-    const PhaseFactorCache *phase_cache_in, std::complex<double> *phi3_reciprocal_inout)
-{
-    // Calculate the matrix elements of quartic terms in reciprocal space.
-    // This is the most expensive part of the SCPH calculation.
 
-    auto ns = dynamical->neval;
-    auto ns2 = ns * ns;
-    auto ns3 = ns * ns * ns;
-    unsigned int is, js, ks;
-    NDArray<unsigned int, 2> ind;
-    unsigned int i, j;
-
-    std::complex<double> ret;
-    long int ii;
-
-    const auto nk_scph = kmesh_dense_in->nk;
-    const auto ngroup_v3 = anharmonic_core->get_ngroup_fcs(3);
-    const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
-    constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
-    NDArray<std::complex<double>, 1> v3_array_at_kpair;
-
-    NDArray<std::complex<double>, 2> v3_tmp0;
-    NDArray<std::complex<double>, 2> v3_tmp1;
-    NDArray<std::complex<double>, 2> v3_tmp2;
-    std::vector<std::complex<double>> evec_conj_ik(ns2);
-
-    if (run.my_rank == 0 && run.verbosity > 0) {
-        if (self_offdiag) {
-            std::cout << " SELF_OFFDIAG = 1: Calculating all components of v3_array ... ";
-        } else {
-            std::cout << " SELF_OFFDIAG = 0: Calculating diagonal components of v3_array ... ";
-        }
-    }
-
-    v3_array_at_kpair.resize(ngroup_v3);
-    ind.resize(ngroup_v3, 3);
-
-    v3_tmp0.resize(ns, ns2);
-    v3_tmp1.resize(ns, ns2);
-    v3_tmp2.resize(ns, ns2);
-
-    // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
-    // to be contiguous across the k-point dimension, so the MPI reduction cannot happen
-    // in v3_out itself. Each rank writes its disjoint (strided) ik slices into this
-    // zero-initialized contiguous buffer, which is then summed in place over MPI.
-    std::vector<std::complex<double>> v3_allreduce_buffer(static_cast<std::size_t>(nk_scph) * ns3);
-
-    for (unsigned int ik = run.my_rank; ik < nk_scph; ik += run.nprocs) {
-
-        anharmonic_core->calc_phi3_reciprocal(kmesh_dense_in->xk[ik],
-                                              kmesh_dense_in->xk[kmesh_dense_in->kindex_minus_xk[ik]],
-                                              anharmonic_core->get_ngroup_fcs(3),
-                                              anharmonic_core->get_fcs_group(3),
-                                              anharmonic_core->get_relvec(3),
-                                              phase_cache_in,
-                                              phi3_reciprocal_inout);
-
-#pragma omp parallel for private(j)
-        for (ii = 0; ii < ngroup_v3; ++ii) {
-            v3_array_at_kpair[ii] = phi3_reciprocal_inout[ii] * anharmonic_core->get_invmass_factor(3)[ii];
-            for (j = 0; j < 3; ++j) ind[ii][j] = anharmonic_core->get_evec_index(3)[ii][j];
-        }
-
-        if (self_offdiag) {
-
-            // All matrix elements will be calculated when considering the off-diagonal
-            // elements of the phonon self-energy (i.e., when considering polarization mixing).
-
-            // v3_tmp0 holds the (alpha,mu)-representation Phi(a,b,c), row-major [a][b*ns+c].
-#pragma omp parallel for private(js)
-            for (is = 0; is < ns; ++is) {
-                for (js = 0; js < ns2; ++js) {
-                    v3_tmp0[is][js] = complex_zero;
-                }
-            }
-
-#pragma omp parallel for private(is, js)
-            for (ii = 0; ii < ngroup_v3; ++ii) {
-
-                is = ind[ii][0];
-                js = ind[ii][1] * ns + ind[ii][2];
-                v3_tmp0[is][js] = v3_array_at_kpair[ii];
-            }
-
-            // Three rotating index-transform GEMMs (v4_index_transform.h), each contracting
-            // the outermost index: [a b c] -> [b c i] -> [c i j] -> [i j k], with
-            // evec[0][i][a], evec[ik][j][b] and conj(evec[ik][k][c]). The last one writes
-            // the ik slice of the reduction buffer directly, scaled by the prefactor.
-            // evec_in[ik] must be a contiguous ns x ns row-major block (NDArray storage).
-#pragma omp parallel for private(js)
-            for (is = 0; is < ns; ++is) {
-                for (js = 0; js < ns; ++js) {
-                    evec_conj_ik[is * ns + js] = std::conj(evec_in[ik][is][js]);
-                }
-            }
-            constexpr auto complex_one = std::complex<double>(1.0, 0.0);
-            transform_index_gemm(&evec_in[0][0][0], &v3_tmp0[0][0], &v3_tmp1[0][0], ns, ns2, complex_one);
-            transform_index_gemm(&evec_in[ik][0][0], &v3_tmp1[0][0], &v3_tmp2[0][0], ns, ns2, complex_one);
-            transform_index_gemm(evec_conj_ik.data(),
-                                 &v3_tmp2[0][0],
-                                 v3_allreduce_buffer.data() + static_cast<std::size_t>(ik) * ns3,
-                                 ns,
-                                 ns2,
-                                 std::complex<double>(factor, 0.0));
-
-        } else {
-
-            // Only diagonal elements will be computed when neglecting the polarization mixing.
-
-            if (ik == 0) {
-#pragma omp parallel for private(is, js, ks, ret, i)
-                for (ii = 0; ii < ns3; ++ii) {
-                    is = ii / ns2;
-                    js = (ii - ns2 * is) / ns;
-                    ks = ii % ns;
-
-                    ret = std::complex<double>(0.0, 0.0);
-
-                    for (i = 0; i < ngroup_v3; ++i) {
-
-                        ret += v3_array_at_kpair[i] * evec_in[0][is][ind[i][0]] * evec_in[ik][js][ind[i][1]] *
-                               std::conj(evec_in[ik][ks][ind[i][2]]);
-                    }
-
-                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + ns * js + ks] = factor * ret;
-                }
-            } else {
-
-#pragma omp parallel for private(is, js, ret, i)
-                for (ii = 0; ii < ns2; ++ii) {
-                    is = ii / ns;
-                    js = ii % ns;
-
-                    ret = std::complex<double>(0.0, 0.0);
-
-                    for (i = 0; i < ngroup_v3; ++i) {
-
-                        ret += v3_array_at_kpair[i] * evec_in[0][is][ind[i][0]] * evec_in[ik][js][ind[i][1]] *
-                               std::conj(evec_in[ik][js][ind[i][2]]);
-                    }
-
-                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + (ns + 1) * js] = factor * ret;
-                }
-            }
-        }
-    }
-
-    v3_array_at_kpair.clear();
-    ind.clear();
-    allreduce_sum_chunked(v3_allreduce_buffer.data(), v3_allreduce_buffer.size());
-
-#pragma omp parallel for collapse(3) schedule(static)
-    for (unsigned int ik = 0; ik < nk_scph; ++ik) {
-        for (unsigned int is_local = 0; is_local < ns; ++is_local) {
-            for (unsigned int js_local = 0; js_local < ns2; ++js_local) {
-                const auto idx = (static_cast<std::size_t>(ik) * ns + is_local) * ns2 + js_local;
-                v3_out[ik][is_local][js_local] = v3_allreduce_buffer[idx];
-            }
-        }
-    }
-
-    v3_tmp0.clear();
-    v3_tmp1.clear();
-    v3_tmp2.clear();
-
-
-    zerofill_elements_acoustic_at_gamma(v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
-
-    if (run.my_rank == 0 && run.verbosity > 0) {
-        std::cout << " done !\n";
-        timer->print_elapsed();
-    }
-}
-
-// A free function (all inputs explicit) so that DerivativeIFC can compute
-// V3 elements of strain-derivative IFCs without a live Scph instance.
-// The implementation shares its structure with
-// ScphQhaCommon::compute_V3_elements_mpi_over_kpoint; merging the two is a
-// possible future cleanup.
-void PHON_NS::compute_V3_elements_for_given_IFCs(
-    std::complex<double> ***v3_out, const std::vector<bool> &is_acoustic_gamma_in, const int ngroup_v3_in,
-    std::vector<double> *fcs_group_v3_in, std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
-    int **evec_index_v3_in, const std::complex<double> *const *const *evec_in, const bool self_offdiag,
-    const unsigned int ns_in, const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
-    const PhaseFactorCache *phase_storage_in, const int my_rank, const int nprocs)
+// Transform a set of real-space cubic IFCs into normal-mode V3 elements on the
+// dense k mesh (MPI over the k points). Shared by
+// ScphQhaCommon::compute_V3_elements_mpi_over_kpoint and
+// PHON_NS::compute_V3_elements_for_given_IFCs. shortcut_without_ifcs: return
+// zeros without the MPI reduction when there is no cubic group.
+void compute_V3_elements_impl(std::complex<double> ***v3_out, const std::vector<bool> &is_acoustic_gamma_in,
+                              const int ngroup_v3_in, const std::vector<double> *fcs_group_v3_in,
+                              const std::vector<RelativeVector> *relvec_v3_in, const double *invmass_v3_in,
+                              const int *const *evec_index_v3_in, const std::complex<double> *const *const *evec_in,
+                              const bool self_offdiag, const unsigned int ns_in,
+                              const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+                              const PhaseFactorCache *phase_storage_in, const int my_rank, const int nprocs,
+                              const bool shortcut_without_ifcs)
 {
     const auto ns = ns_in;
     auto ns2 = ns * ns;
@@ -302,7 +127,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
 
     const auto nk_scph = kmesh_dense_in->nk;
     const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
-    static auto complex_zero = std::complex<double>(0.0, 0.0);
+    constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
     NDArray<std::complex<double>, 1> v3_array_at_kpair;
     NDArray<std::complex<double>, 1> phi3_reciprocal_tmp;
 
@@ -311,7 +136,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
     NDArray<std::complex<double>, 2> v3_tmp2;
     std::vector<std::complex<double>> evec_conj_ik(ns2);
 
-    if (ngroup_v3_in == 0) {
+    if (shortcut_without_ifcs && ngroup_v3_in == 0) {
 #pragma omp parallel for collapse(3) schedule(static)
         for (unsigned int ik = 0; ik < nk_scph; ++ik) {
             for (unsigned int is_local = 0; is_local < ns; ++is_local) {
@@ -353,9 +178,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
                                              phase_storage_in,
                                              phi3_reciprocal_tmp);
 
-#ifdef _OPENMP
 #pragma omp parallel for private(j)
-#endif
         for (ii = 0; ii < ngroup_v3_in; ++ii) {
             v3_array_at_kpair[ii] = phi3_reciprocal_tmp[ii] * invmass_v3_in[ii];
             for (j = 0; j < 3; ++j) ind[ii][j] = evec_index_v3_in[ii][j];
@@ -469,6 +292,72 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
                                         ns,
                                         kmesh_dense_in->nk,
                                         kmesh_coarse_in->nk_irred);
+}
+} // namespace
+
+void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
+    std::complex<double> ***v3_out, const std::complex<double> *const *const *evec_in, const bool self_offdiag,
+    const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+    const PhaseFactorCache *phase_cache_in, std::complex<double> * /*phi3_reciprocal_inout*/)
+{
+    // Calculate the matrix elements of cubic terms in reciprocal space.
+
+    if (run.my_rank == 0 && run.verbosity > 0) {
+        if (self_offdiag) {
+            std::cout << " SELF_OFFDIAG = 1: Calculating all components of v3_array ... ";
+        } else {
+            std::cout << " SELF_OFFDIAG = 0: Calculating diagonal components of v3_array ... ";
+        }
+    }
+
+    compute_V3_elements_impl(v3_out,
+                             is_acoustic_gamma_harm,
+                             anharmonic_core->get_ngroup_fcs(3),
+                             anharmonic_core->get_fcs_group(3),
+                             anharmonic_core->get_relvec(3),
+                             anharmonic_core->get_invmass_factor(3),
+                             anharmonic_core->get_evec_index(3),
+                             evec_in,
+                             self_offdiag,
+                             dynamical->neval,
+                             kmesh_coarse_in,
+                             kmesh_dense_in,
+                             phase_cache_in,
+                             run.my_rank,
+                             run.nprocs,
+                             false);
+
+    if (run.my_rank == 0 && run.verbosity > 0) {
+        std::cout << " done !\n";
+        timer->print_elapsed();
+    }
+}
+
+// A free function (all inputs explicit) so that DerivativeIFC can compute
+// V3 elements of strain-derivative IFCs without a live Scph instance.
+void PHON_NS::compute_V3_elements_for_given_IFCs(
+    std::complex<double> ***v3_out, const std::vector<bool> &is_acoustic_gamma_in, const int ngroup_v3_in,
+    std::vector<double> *fcs_group_v3_in, std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
+    int **evec_index_v3_in, const std::complex<double> *const *const *evec_in, const bool self_offdiag,
+    const unsigned int ns_in, const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+    const PhaseFactorCache *phase_storage_in, const int my_rank, const int nprocs)
+{
+    compute_V3_elements_impl(v3_out,
+                             is_acoustic_gamma_in,
+                             ngroup_v3_in,
+                             fcs_group_v3_in,
+                             relvec_v3_in,
+                             invmass_v3_in,
+                             evec_index_v3_in,
+                             evec_in,
+                             self_offdiag,
+                             ns_in,
+                             kmesh_coarse_in,
+                             kmesh_dense_in,
+                             phase_storage_in,
+                             my_rank,
+                             nprocs,
+                             true);
 }
 
 

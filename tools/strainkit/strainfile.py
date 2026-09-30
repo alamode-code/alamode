@@ -32,7 +32,7 @@ import sys
 import numpy as np
 
 from . import __version__ as STRAINKIT_VERSION
-from .strain import MODE_NAMES, mode_tensor
+from .strain import MODE_NAMES, accumulate_weights, mode_tensor
 from .units import BOHR_IN_ANGSTROM, EV_PER_ANG3_TO_GPA, legacy_ry_per_cell_to_gpa
 from .writers import ReferenceCell
 
@@ -342,15 +342,7 @@ def _read_mode_table(g):
 
 def weight_sum_matrix(modes, weights):
     """anphon's 3x3 weight-sum matrix of a mode list."""
-    from .strain import mode_pair
-
-    w = np.zeros((3, 3))
-    for m, wt in zip(modes, weights):
-        i, j = mode_pair(m)
-        w[i, j] += wt
-        if i != j:
-            w[j, i] += wt
-    return w
+    return accumulate_weights(zip(modes, weights))
 
 
 # ---------------------------------------------------------------- elastic
@@ -546,9 +538,14 @@ def _copy_fc_h5(src_path, eg):
             raise ValueError(
                 f"{src_path}: no harmonic force constants (/ForceConstants/Order2)"
             )
-        for name in ("PrimitiveCell", "SuperCell", "ForceConstants"):
+        for name in ("PrimitiveCell", "SuperCell"):
             if name in src:
                 src.copy(src[name], eg, name=name)
+        # anphon reads only the harmonic force constants of an entry (as the .xml
+        # route writes); higher orders of the source file are not copied.
+        g = eg.create_group("ForceConstants")
+        g.attrs.update(src["ForceConstants"].attrs)
+        src.copy(src["ForceConstants/Order2"], g, name="Order2")
 
 
 def write_strain_harmonic(f, rows, fc_paths, attrs=None):

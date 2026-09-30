@@ -231,19 +231,25 @@ def ifc_strain_set(modes, smag=None, central=False):
     return points
 
 
-def weight_sum_matrix(points):
-    """3x3 matrix of the accumulated weights, exactly as anphon computes it.
+def accumulate_weights(pairs):
+    """3x3 matrix of the accumulated weights of (mode, weight) pairs, exactly as
+    anphon computes it.
 
     (anphon/ifc_derivative.cpp: diagonal modes add to (i,i); off-diagonal
     modes add to both (i,j) and (j,i).)
     """
     wsum = np.zeros((3, 3))
-    for p in points:
-        i, j = mode_pair(p.mode)
-        wsum[i, j] += p.weight
+    for mode, weight in pairs:
+        i, j = mode_pair(mode)
+        wsum[i, j] += weight
         if i != j:
-            wsum[j, i] += p.weight
+            wsum[j, i] += weight
     return wsum
+
+
+def weight_sum_matrix(points):
+    """3x3 weight-sum matrix of a list of StrainPoint (see accumulate_weights)."""
+    return accumulate_weights((p.mode, p.weight) for p in points)
 
 
 def check_weight_sums(points, require_all=True, tol=1.0e-6):

@@ -51,6 +51,38 @@ Eigen::Vector3d snap_to_lattice_vector(const Eigen::Vector3d &xf, const char *ca
     }
     return rounded;
 }
+
+// Refuse data from unconverged SCPH/structural iterations at temperature
+// row itemp unless the user opted in (absent /convergence data, e.g. a
+// legacy import, cannot be checked and is accepted). data_name and
+// source_name complete the messages of the caller.
+void check_iteration_converged(const HighFive::File &file, const int itemp, const bool allow_unconverged,
+                               const char *caller, const std::string &data_name, const std::string &source_name)
+{
+    const auto iteration_converged = [&file, itemp](const std::string &name) {
+        if (!file.exist("/convergence/" + name)) return true;
+        std::vector<unsigned char> flags;
+        file.getDataSet("/convergence/" + name).read(flags);
+        return static_cast<size_t>(itemp) >= flags.size() || flags[itemp] != 0;
+    };
+    if (!iteration_converged("scph") || !iteration_converged("structure")) {
+        if (allow_unconverged) {
+            warn(caller,
+                 ("The iterations at FC2_TEMPERATURE did not converge;\n"
+                  " using the " +
+                  data_name + " anyway because ALLOW_UNCONVERGED = 1.")
+                     .c_str());
+        } else {
+            exit(caller,
+                 ("The SCPH iteration or structural optimization at FC2_TEMPERATURE did not converge\n"
+                  " in the run that produced " +
+                  source_name +
+                  ". Reconverge it (MAXITER, MAX_STR_ITER, ...)\n"
+                  " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.")
+                     .c_str());
+        }
+    }
+}
 } // namespace
 
 Fcs_phonon::Fcs_phonon(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
@@ -626,27 +658,12 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
         }
         temperature_index = h5_resolve_temperature_index(file, fc2_temperature, eps6, "/settings/temperatures");
 
-        // Refuse renormalized FC2 from unconverged SCPH/structural
-        // iterations unless the user opted in (absent /convergence data,
-        // e.g. a legacy import, cannot be checked and is accepted).
-        const auto iteration_converged = [&file, temperature_index](const std::string &name) {
-            if (!file.exist("/convergence/" + name)) return true;
-            std::vector<unsigned char> flags;
-            file.getDataSet("/convergence/" + name).read(flags);
-            return static_cast<size_t>(temperature_index) >= flags.size() || flags[temperature_index] != 0;
-        };
-        if (!iteration_converged("scph") || !iteration_converged("structure")) {
-            if (run.allow_unconverged) {
-                warn("parse_fcs_from_h5",
-                     "The iterations at FC2_TEMPERATURE did not converge;\n"
-                     " using the renormalized FC2 anyway because ALLOW_UNCONVERGED = 1.");
-            } else {
-                exit("parse_fcs_from_h5",
-                     "The SCPH iteration or structural optimization at FC2_TEMPERATURE did not converge\n"
-                     " in the run that produced this state file. Reconverge it (MAXITER, MAX_STR_ITER, ...)\n"
-                     " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.");
-            }
-        }
+        check_iteration_converged(file,
+                                  temperature_index,
+                                  run.allow_unconverged,
+                                  "parse_fcs_from_h5",
+                                  "renormalized FC2",
+                                  "this state file");
     }
 
     parse_fcs_from_h5(file, "", order, fcs_out, temperature_index);
@@ -758,24 +775,12 @@ void Fcs_phonon::read_delta_fc2_from_scph(const std::string &fname_dfc2)
     const auto itemp = h5_resolve_temperature_index(file, fc2_temperature, eps6, "/settings/temperatures");
 
     // Same convergence guard as the direct FC2_TEMPERATURE read.
-    const auto iteration_converged = [&file, itemp](const std::string &name) {
-        if (!file.exist("/convergence/" + name)) return true;
-        std::vector<unsigned char> flags;
-        file.getDataSet("/convergence/" + name).read(flags);
-        return static_cast<size_t>(itemp) >= flags.size() || flags[itemp] != 0;
-    };
-    if (!iteration_converged("scph") || !iteration_converged("structure")) {
-        if (run.allow_unconverged) {
-            warn("read_delta_fc2_from_scph",
-                 "The iterations at FC2_TEMPERATURE did not converge;\n"
-                 " using the FC2 correction anyway because ALLOW_UNCONVERGED = 1.");
-        } else {
-            exit("read_delta_fc2_from_scph",
-                 "The SCPH iteration or structural optimization at FC2_TEMPERATURE did not converge\n"
-                 " in the run that produced DFC2FILE. Reconverge it (MAXITER, MAX_STR_ITER, ...)\n"
-                 " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.");
-        }
-    }
+    check_iteration_converged(file,
+                              itemp,
+                              run.allow_unconverged,
+                              "read_delta_fc2_from_scph",
+                              "FC2 correction",
+                              "DFC2FILE");
 
     // Fold SCPH correction atoms onto the current primitive cell and count
     // translationally equivalent rows once. The SCPH cell may be an integer

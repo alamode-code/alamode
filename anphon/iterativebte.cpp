@@ -525,46 +525,48 @@ void Iterativebte::iterative_solver()
                 // equivalent points carry no new information because
                 // dF(Rk) = R dF(k).
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) reduction(+ : local_difference, local_norm2)
+#pragma omp parallel
 #endif
-            for (int ikl = 0; ikl < nklocal; ++ikl) {
+            {
+                // per-thread buffer; calc_W_at overwrites every entry
+                NDArray<double, 2> Wks_loc(ns, 3);
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic) reduction(+ : local_difference, local_norm2)
+#endif
+                for (int ikl = 0; ikl < nklocal; ++ikl) {
 
-                const auto tmpk = nk_l[ikl];
-                const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
-                const auto num_equivalent = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[tmpk].size());
+                    const auto tmpk = nk_l[ikl];
+                    const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+                    const auto num_equivalent = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[tmpk].size());
 
-                NDArray<double, 2> Wks_loc;
-                Wks_loc.resize(ns, 3);
+                    collision_op->calc_W_at(ikl, gb, dFold, Wks_loc);
 
-                collision_op->calc_W_at(ikl, gb, dFold, Wks_loc);
+                    // Wks_loc is a contiguous [ns][3] block from allocate().
+                    average_over_degenerate_modes(ns, dos->dymat_dos->get_eigenvalues()[k1], 3, Wks_loc[0]);
 
-                // Wks_loc is a contiguous [ns][3] block from allocate().
-                average_over_degenerate_modes(ns, dos->dymat_dos->get_eigenvalues()[k1], 3, Wks_loc[0]);
+                    for (int s1 = 0; s1 < ns; ++s1) {
 
-                for (int s1 = 0; s1 < ns; ++s1) {
+                        const double Q_final = Qfin[ikl][s1];
 
-                    const double Q_final = Qfin[ikl][s1];
-
-                    for (int ix = 0; ix < 3; ix++) {
-                        double fnew;
-                        if (Q_final < 1.0e-50 || dos->dymat_dos->get_eigenvalues()[k1][s1] < eps8) {
-                            fnew = 0.0;
-                        } else {
-                            fnew = (-vel[k1][s1][ix] * dndt[ikl][s1] / beta - Wks_loc[s1][ix]) / Q_final;
+                        for (int ix = 0; ix < 3; ix++) {
+                            double fnew;
+                            if (Q_final < 1.0e-50 || dos->dymat_dos->get_eigenvalues()[k1][s1] < eps8) {
+                                fnew = 0.0;
+                            } else {
+                                fnew = (-vel[k1][s1][ix] * dndt[ikl][s1] / beta - Wks_loc[s1][ix]) / Q_final;
+                            }
+                            if (itr > 0) {
+                                fnew = fnew * mixing_factor + dFold[k1][s1][ix] * (1.0 - mixing_factor);
+                                // weight by the star multiplicity so the residual
+                                // norm matches the previous full-mesh definition
+                                local_difference += num_equivalent * pow2(fnew - dFold[k1][s1][ix]);
+                            }
+                            local_norm2 += num_equivalent * pow2(fnew);
+                            dF_ir_loc[(tmpk * ns + s1) * 3 + ix] = fnew;
                         }
-                        if (itr > 0) {
-                            fnew = fnew * mixing_factor + dFold[k1][s1][ix] * (1.0 - mixing_factor);
-                            // weight by the star multiplicity so the residual
-                            // norm matches the previous full-mesh definition
-                            local_difference += num_equivalent * pow2(fnew - dFold[k1][s1][ix]);
-                        }
-                        local_norm2 += num_equivalent * pow2(fnew);
-                        dF_ir_loc[(tmpk * ns + s1) * 3 + ix] = fnew;
                     }
-                }
-
-                Wks_loc.clear();
-            } // ikl
+                } // ikl
+            }
 
             local_reduce[0] = local_difference;
             local_reduce[1] = local_norm2;
@@ -1293,25 +1295,29 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         collision_op->reconstruct_full_from_wedge(x.data(), dFold);
         std::fill(yloc.begin(), yloc.end(), 0.0);
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel
 #endif
-        for (int ikl = 0; ikl < nklocal; ++ikl) {
-            const auto tmpk = nk_l[ikl];
-            const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+        {
+            // per-thread buffer; calc_W_at overwrites every entry
+            NDArray<double, 2> Wks_loc(ns, 3);
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic)
+#endif
+            for (int ikl = 0; ikl < nklocal; ++ikl) {
+                const auto tmpk = nk_l[ikl];
+                const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
 
-            NDArray<double, 2> Wks_loc;
-            Wks_loc.resize(ns, 3);
-            collision_op->calc_W_at(ikl, sqrt_occ, dFold, Wks_loc);
-            average_over_degenerate_modes(ns, eval[k1], 3, Wks_loc[0]);
+                collision_op->calc_W_at(ikl, sqrt_occ, dFold, Wks_loc);
+                average_over_degenerate_modes(ns, eval[k1], 3, Wks_loc[0]);
 
-            for (int s = 0; s < ns; ++s) {
-                const auto row = static_cast<size_t>(tmpk) * ns + s;
-                if (mask[row]) continue;
-                for (auto j = 0; j < 3; ++j) {
-                    yloc[row * 3 + j] = qdiag[row] * x[row * 3 + j] + Wks_loc[s][j];
+                for (int s = 0; s < ns; ++s) {
+                    const auto row = static_cast<size_t>(tmpk) * ns + s;
+                    if (mask[row]) continue;
+                    for (auto j = 0; j < 3; ++j) {
+                        yloc[row * 3 + j] = qdiag[row] * x[row * 3 + j] + Wks_loc[s][j];
+                    }
                 }
             }
-            Wks_loc.clear();
         }
         MPI_Allreduce(yloc.data(), y.data(), static_cast<int>(nrows3), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     };

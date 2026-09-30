@@ -104,7 +104,11 @@ private:
     T_to my_cast(T_from const &x);
 
     template <typename T>
-    void assign_val(T &val, const std::string &key, std::map<std::string, std::string> dict);
+    void assign_val(T &val, const std::string &key, const std::map<std::string, std::string> &dict);
+
+    // Parse a mesh tag value (exactly three positive integers); func and tag
+    // name the caller and the tag in the error messages.
+    std::vector<unsigned int> parse_positive_mesh(const std::string &str, const char *func, const std::string &tag);
 
     std::vector<std::string> my_split(const std::string &str, char delim) const
     {

@@ -2248,6 +2248,21 @@ void Writes::writeGruneisen()
     }
 }
 
+namespace
+{
+// True when the trailing legs of an IFC entry are in ascending order of the
+// key 3*atom_super + coord (the canonical row kept by the XML/HDF5 writers).
+bool legs_ascending(const FcsArrayWithCell &it, const int norder)
+{
+    for (auto k = 1; k < norder - 1; ++k) {
+        if (3 * it.atoms_s[k] + it.pairs[k].index % 3 > 3 * it.atoms_s[k + 1] + it.pairs[k + 1].index % 3) {
+            return false;
+        }
+    }
+    return true;
+}
+} // namespace
+
 void Writes::writeNewFcsXml(const std::string &filename_xml, const std::vector<FcsArrayWithCell> &delta_fc2,
                             const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
                             const double fc_scale, const Eigen::MatrixXd &sublattice_disp) const
@@ -2300,15 +2315,6 @@ void Writes::writeNewFcsXml(const std::string &filename_xml, const std::vector<F
     // Store base IFCs plus fc_scale times strain corrections; the loader sums
     // identical entries and regenerates trailing-leg permutations. Store only
     // entries sorted by the trailing-leg key 3*atom_super + coord.
-    auto legs_ascending = [&](const FcsArrayWithCell &it, const int norder) {
-        for (auto k = 1; k < norder - 1; ++k) {
-            if (3 * it.atoms_s[k] + it.pairs[k].index % 3 > 3 * it.atoms_s[k + 1] + it.pairs[k + 1].index % 3) {
-                return false;
-            }
-        }
-        return true;
-    };
-
     auto build_rows = [&](const std::vector<FcsArrayWithCell> &fcs_base,
                           const std::vector<FcsArrayWithCell> &fcs_delta,
                           const int norder) {
@@ -2445,23 +2451,14 @@ void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<Fcs
         // trailing legs and regenerates the permutations on read (compared by
         // 3*atom_super + coord), so keep only rows whose trailing legs are in
         // ascending order of that key.
-        auto legs_ascending = [&](const FcsArrayWithCell &it) {
-            for (auto k = 1; k < norder - 1; ++k) {
-                if (3 * it.atoms_s[k] + it.pairs[k].index % 3 > 3 * it.atoms_s[k + 1] + it.pairs[k + 1].index % 3) {
-                    return false;
-                }
-            }
-            return true;
-        };
-
         std::vector<std::pair<const FcsArrayWithCell *, double>> selected;
         for (const auto &it: fcs_base) {
-            if (!legs_ascending(it)) continue;
+            if (!legs_ascending(it, norder)) continue;
             selected.emplace_back(&it, it.fcs_val);
         }
         for (const auto &it: fcs_delta) {
             if (std::abs(it.fcs_val) < eps12) continue;
-            if (!legs_ascending(it)) continue;
+            if (!legs_ascending(it, norder)) continue;
             selected.emplace_back(&it, fc_scale * it.fcs_val);
         }
 

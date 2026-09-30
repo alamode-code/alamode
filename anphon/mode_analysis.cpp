@@ -1304,6 +1304,10 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
     AnharmonicCore::ShiftedGrid sg;
     const int ngroup = anharmonic_core->get_ngroup_fcs(quartic ? 4 : 3);
 
+    const int npair = quartic ? nk * nk : nk;
+    const size_t nb = quartic ? static_cast<size_t>(ns) * ns * ns : static_cast<size_t>(ns) * ns;
+    NDArray<std::complex<double>, 2> val_loc(npair, nb), val(npair, nb);
+
     for (size_t i = 0; i < kslist_offmesh.size(); ++i) {
         const auto &target = kslist_offmesh[i];
         const auto snum = target.snum;
@@ -1321,9 +1325,6 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
         std::vector<std::complex<double>> e0(ns);
         for (auto a = 0; a < ns; ++a) e0[a] = squared ? std::conj(evec_q[0][snum][a]) : evec_q[0][snum][a];
 
-        const int npair = quartic ? nk * nk : nk;
-        const size_t nb = quartic ? static_cast<size_t>(ns) * ns * ns : static_cast<size_t>(ns) * ns;
-        NDArray<std::complex<double>, 2> val_loc(npair, nb), val(npair, nb);
         for (int ip = 0; ip < npair; ++ip)
             for (size_t ib = 0; ib < nb; ++ib) val_loc[ip][ib] = std::complex<double>(0.0, 0.0);
 

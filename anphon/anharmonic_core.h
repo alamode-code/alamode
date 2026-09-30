@@ -329,6 +329,13 @@ private:
 
     void deallocate_variables();
 
+    // |V3(-q; k is; q-k js)|^2 at mesh point ik against the shifted grid, [ns * ns] row-major;
+    // zero when any frequency is below eps8. e0 = e(q)^*, phi3 is caller-owned work[ngroup_v3].
+    void v3sq_shifted_at(const int ik, const double omega_q, const std::complex<double> *e0,
+                         const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                         const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
+                         std::complex<double> *phi3, double *v3sq);
+
     NDArray<double, 1> invmass_v3;
     NDArray<double, 1> invmass_v4;
     NDArray<int, 2> evec_index_v3;

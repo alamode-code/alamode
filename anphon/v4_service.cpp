@@ -66,12 +66,19 @@ void V4Service::setup(const std::size_t ns, const std::size_t nk_dense, const st
         std::fill(&block_.rows[0][0], &block_.rows[0][0] + block_.nrows_local() * ns2_, std::complex<double>(0.0, 0.0));
     }
 
-    // pointer table over the local rows
+    // pointer table over the local rows; the q0 sweep (its only consumer) reads
+    // the Gamma-row slices (g, jk) and the Gamma-column slices (ik, jg) only,
+    // so the other slices keep a null entry and take no storage
     const std::size_t nslices = nk_irred * nk_dense;
-    rowtab_storage_.assign(nslices * ns2_, nullptr);
+    rowtab_storage_.assign((nk_dense + nk_irred - 1) * ns2_, nullptr);
     rowtab_.assign(nslices, nullptr);
+    std::size_t nslices_stored = 0;
     for (std::size_t ik_prod = 0; ik_prod < nslices; ++ik_prod) {
-        rowtab_[ik_prod] = rowtab_storage_.data() + ik_prod * ns2_;
+        if (ik_prod / nk_dense != ik_gamma_irred && ik_prod % nk_dense != jk_gamma_dense) {
+            continue;
+        }
+        rowtab_[ik_prod] = rowtab_storage_.data() + nslices_stored * ns2_;
+        ++nslices_stored;
         std::size_t a0, a1;
         block_.owned_a_range(ik_prod, a0, a1);
         for (std::size_t a = a0; a < a1; ++a) {

@@ -123,6 +123,61 @@ inline auto solve_ols_for_adalasso(const Eigen::MatrixXd &A, const Eigen::Vector
     rank_out = qr.rank();
     return qr.solve(b);
 }
+
+// Adaptive-LASSO weights |x_ols| from the OLS fit of (A, b): fast normal-equations
+// path with a rank-revealing QR fallback for rank-deficient systems. Stops through
+// exit(func_name, ...) when the problem is rank-deficient and warns about near-zero
+// weights. The message details differ between the callers: `headline` starts the
+// error message, `extra_info` (a full line or empty) follows the rank line, and the
+// two flags select the optional lines of the warning.
+inline auto compute_adalasso_weights(const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const size_t N_new,
+                                     const char *func_name, const std::string &headline, const std::string &extra_info,
+                                     const int verbosity, const bool print_max_weight,
+                                     const bool print_advice) -> Eigen::VectorXd
+{
+    Eigen::Index rank = 0;
+    const Eigen::VectorXd x_ols = solve_ols_for_adalasso(A, b, rank);
+
+    if (rank < static_cast<Eigen::Index>(N_new)) {
+        std::string error_msg = headline +
+                                ": The least squares problem is rank-deficient.\n"
+                                "  Matrix rank = " +
+                                std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) + "\n" +
+                                extra_info +
+                                "  This typically occurs when there are too few training data\n"
+                                "  or when some parameters cannot be uniquely determined.\n"
+                                "  Please try one of the following:\n"
+                                "  - Increase the amount of training data (DFSET)\n"
+                                "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
+                                "  - Reduce the interaction cutoff distance\n";
+        ALM_NS::exit(func_name, error_msg.c_str());
+    }
+
+    Eigen::VectorXd weight_adalasso = x_ols.cwiseAbs();
+
+    // Check if any weights are too small (could cause numerical issues)
+    const double min_weight_threshold = 1.0e-10;
+    int n_zero_weights = 0;
+    for (int i = 0; i < weight_adalasso.size(); ++i) {
+        if (weight_adalasso[i] < min_weight_threshold) {
+            n_zero_weights++;
+        }
+    }
+
+    if (n_zero_weights > 0 && verbosity > 0) {
+        std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights << " near-zero weights (< "
+                  << min_weight_threshold << ").\n";
+        if (print_max_weight) std::cout << "  Maximum weight = " << weight_adalasso.maxCoeff() << "\n";
+        if (print_advice) {
+            std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n";
+            std::cout << "  The optimization will continue but results may be unreliable.\n";
+            std::cout << "  Consider using LMODEL = 2 (elastic-net) instead.\n\n";
+        } else {
+            std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n\n";
+        }
+    }
+    return weight_adalasso;
+}
 } // namespace
 
 Optimize::Optimize()
@@ -795,45 +850,16 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         A_merged << A, A_validation;
         b_merged << b, b_validation;
 
-        // Adaptive-LASSO weights from the OLS fit: fast normal-equations path with a
-        // rank-revealing QR fallback for rank-deficient systems.
-        Eigen::Index rank = 0;
-        const Eigen::VectorXd x_ols = solve_ols_for_adalasso(A_merged, b_merged, rank);
-
-        if (rank < static_cast<Eigen::Index>(N_new)) {
-            std::string error_msg = "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
-                                    "  Matrix rank = " +
-                                    std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
-                                    "\n"
-                                    "  This typically occurs when there are too few training data\n"
-                                    "  or when some parameters cannot be uniquely determined.\n"
-                                    "  Please try one of the following:\n"
-                                    "  - Increase the amount of training data (DFSET)\n"
-                                    "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
-                                    "  - Reduce the interaction cutoff distance\n";
-            ALM_NS::exit("optimize_main", error_msg.c_str());
-        }
-
-        Eigen::VectorXd weight_adalasso = x_ols.cwiseAbs();
-
-        // Check if any weights are too small (could cause numerical issues)
-        const double min_weight_threshold = 1.0e-10;
-        int n_zero_weights = 0;
-        for (int i = 0; i < weight_adalasso.size(); ++i) {
-            if (weight_adalasso[i] < min_weight_threshold) {
-                n_zero_weights++;
-            }
-        }
-
-        if (n_zero_weights > 0) {
-            if (verbosity > 0) {
-                std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights << " near-zero weights (< "
-                          << min_weight_threshold << ").\n";
-                std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n";
-                std::cout << "  The optimization will continue but results may be unreliable.\n";
-                std::cout << "  Consider using LMODEL = 2 (elastic-net) instead.\n\n";
-            }
-        }
+        // Adaptive-LASSO weights from the OLS fit (stops if it is rank-deficient).
+        Eigen::VectorXd weight_adalasso = compute_adalasso_weights(A_merged,
+                                                                   b_merged,
+                                                                   N_new,
+                                                                   "optimize_main",
+                                                                   "Adaptive lasso failed",
+                                                                   "",
+                                                                   verbosity,
+                                                                   false,
+                                                                   true);
 
         A = A * weight_adalasso.asDiagonal();
         A_validation = A_validation * weight_adalasso.asDiagonal();
@@ -1014,41 +1040,16 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
             append_energy_block(A_full, b_full, amat_e, evec_e, N_new);
         }
 
-        // Adaptive-LASSO weights from the OLS fit: fast normal-equations path with a
-        // rank-revealing QR fallback for rank-deficient systems.
-        Eigen::Index rank = 0;
-        const Eigen::VectorXd x_ols = solve_ols_for_adalasso(A_full, b_full, rank);
-
-        if (rank < static_cast<Eigen::Index>(N_new)) {
-            std::string error_msg = "Adaptive lasso failed in CV: The least squares problem is rank-deficient.\n"
-                                    "  Matrix rank = " +
-                                    std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
-                                    "\n"
-                                    "  This typically occurs when there are too few training data\n"
-                                    "  or when some parameters cannot be uniquely determined.\n"
-                                    "  Please try one of the following:\n"
-                                    "  - Increase the amount of training data (DFSET)\n"
-                                    "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
-                                    "  - Reduce the interaction cutoff distance\n";
-            ALM_NS::exit("optimize_main", error_msg.c_str());
-        }
-
-        weight_adalasso = x_ols.cwiseAbs();
-
-        // Check if any weights are too small (could cause numerical issues)
-        const double min_weight_threshold = 1.0e-10;
-        int n_zero_weights = 0;
-        for (int i = 0; i < weight_adalasso.size(); ++i) {
-            if (weight_adalasso[i] < min_weight_threshold) {
-                n_zero_weights++;
-            }
-        }
-
-        if (n_zero_weights > 0 && verbosity > 0) {
-            std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights << " near-zero weights (< "
-                      << min_weight_threshold << ").\n";
-            std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n\n";
-        }
+        // Adaptive-LASSO weights from the OLS fit (stops if it is rank-deficient).
+        weight_adalasso = compute_adalasso_weights(A_full,
+                                                   b_full,
+                                                   N_new,
+                                                   "optimize_main",
+                                                   "Adaptive lasso failed in CV",
+                                                   "",
+                                                   verbosity,
+                                                   false,
+                                                   false);
     }
 
     if (optcontrol.l1_alpha_max <= 0) {
@@ -1860,51 +1861,16 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
     }
 
     if (optcontrol.linear_model == 3) {
-        // Adaptive-LASSO weights from the OLS fit: fast normal-equations path with a
-        // rank-revealing QR fallback for rank-deficient systems.
-        Eigen::Index rank = 0;
-        const Eigen::VectorXd x_ols = solve_ols_for_adalasso(A, b, rank);
-
-        if (rank < static_cast<Eigen::Index>(N_new)) {
-            std::string error_msg = "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
-                                    "  Matrix rank = " +
-                                    std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
-                                    "\n"
-                                    "  Number of data points = " +
-                                    std::to_string(M_eff) +
-                                    "\n"
-                                    "  This typically occurs when there are too few training data\n"
-                                    "  or when some parameters cannot be uniquely determined.\n"
-                                    "  Please try one of the following:\n"
-                                    "  - Increase the amount of training data (DFSET)\n"
-                                    "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
-                                    "  - Reduce the interaction cutoff distance\n";
-            ALM_NS::exit("optimize_elasticnet", error_msg.c_str());
-        }
-
-        weight_adalasso = x_ols.cwiseAbs();
-
-        // Check if any weights are too small (could cause numerical issues)
-        const double min_weight_threshold = 1.0e-10;
-        int n_zero_weights = 0;
-        double max_weight = weight_adalasso.maxCoeff();
-
-        for (int i = 0; i < weight_adalasso.size(); ++i) {
-            if (weight_adalasso[i] < min_weight_threshold) {
-                n_zero_weights++;
-            }
-        }
-
-        if (n_zero_weights > 0) {
-            if (verbosity > 0) {
-                std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights << " near-zero weights (< "
-                          << min_weight_threshold << ").\n";
-                std::cout << "  Maximum weight = " << max_weight << "\n";
-                std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n";
-                std::cout << "  The optimization will continue but results may be unreliable.\n";
-                std::cout << "  Consider using LMODEL = 2 (elastic-net) instead.\n\n";
-            }
-        }
+        // Adaptive-LASSO weights from the OLS fit (stops if it is rank-deficient).
+        weight_adalasso = compute_adalasso_weights(A,
+                                                   b,
+                                                   N_new,
+                                                   "optimize_elasticnet",
+                                                   "Adaptive lasso failed",
+                                                   "  Number of data points = " + std::to_string(M_eff) + "\n",
+                                                   verbosity,
+                                                   true,
+                                                   true);
 
         A = A * weight_adalasso.asDiagonal();
     }

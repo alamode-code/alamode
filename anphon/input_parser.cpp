@@ -856,79 +856,27 @@ void InputParser::parse_scph_vars(PHON *phon)
 
     assign_val(scph_vars.restart_scph, "RESTART_SCPH", scph_var_dict);
 
-    auto str_tmp = scph_var_dict["KMESH_SCPH"];
-
-    kmesh_v.clear();
-    if (!str_tmp.empty()) {
-
-        std::istringstream is(str_tmp);
-
-        while (true) {
-            str_tmp.clear();
-            is >> str_tmp;
-            if (str_tmp.empty()) {
-                break;
-            }
-            kmesh_v.push_back(my_cast<unsigned int>(str_tmp));
-        }
-
-        if (kmesh_v.size() != 3) {
-            exit("parse_scph_vars", "The number of entries for KMESH_SCPH has to be 3.");
-        }
-    } else {
+    if (scph_var_dict["KMESH_SCPH"].empty()) {
         exit("parse_scph_vars", "Please specify KMESH_SCPH for mode = SCPH");
     }
-
-    str_tmp = scph_var_dict["KMESH_INTERPOLATE"];
-    if (!str_tmp.empty()) {
-
-        std::istringstream is(str_tmp);
-
-        while (true) {
-            str_tmp.clear();
-            is >> str_tmp;
-            if (str_tmp.empty()) {
-                break;
-            }
-            kmesh_interpolate_v.push_back(my_cast<unsigned int>(str_tmp));
-        }
-
-        if (kmesh_interpolate_v.size() != 3) {
-            exit("parse_scph_vars", "The number of entries for KMESH_INTERPOLATE has to be 3.");
-        }
-    } else {
+    if (scph_var_dict["KMESH_INTERPOLATE"].empty()) {
         exit("parse_scph_vars", "Please specify KMESH_INTERPOLATE for mode = SCPH");
     }
+    kmesh_v = parse_positive_mesh(scph_var_dict["KMESH_SCPH"], "parse_scph_vars", "KMESH_SCPH");
+    kmesh_interpolate_v =
+        parse_positive_mesh(scph_var_dict["KMESH_INTERPOLATE"], "parse_scph_vars", "KMESH_INTERPOLATE");
 
-    // a negative entry wraps to a value above INT_MAX in my_cast<unsigned int>
     for (auto i = 0; i < 3; ++i) {
-        if (kmesh_v[i] == 0 || kmesh_v[i] > static_cast<unsigned int>(INT_MAX))
-            exit("parse_scph_vars", "KMESH_SCPH must be positive integers.");
-        if (kmesh_interpolate_v[i] == 0 || kmesh_interpolate_v[i] > static_cast<unsigned int>(INT_MAX))
-            exit("parse_scph_vars", "KMESH_INTERPOLATE must be positive integers.");
         scph_vars.kmesh_scph[i] = kmesh_v[i];
         scph_vars.kmesh_interpolate[i] = kmesh_interpolate_v[i];
         scph_vars.kmesh_bubble[i] = kmesh_v[i];
     }
 
     // KMESH_BUBBLE: q mesh of the bubble self-energy (BUBBLE > 0), default KMESH_SCPH.
-    str_tmp = scph_var_dict["KMESH_BUBBLE"];
-    if (!str_tmp.empty()) {
-        std::vector<unsigned int> kmesh_bubble_v;
-        std::istringstream is(str_tmp);
-        while (true) {
-            str_tmp.clear();
-            is >> str_tmp;
-            if (str_tmp.empty()) break;
-            kmesh_bubble_v.push_back(my_cast<unsigned int>(str_tmp));
-        }
-        if (kmesh_bubble_v.size() != 3) {
-            exit("parse_scph_vars", "The number of entries for KMESH_BUBBLE has to be 3.");
-        }
-        for (auto i = 0; i < 3; ++i) {
-            if (kmesh_bubble_v[i] == 0) exit("parse_scph_vars", "KMESH_BUBBLE must be positive integers.");
-            scph_vars.kmesh_bubble[i] = kmesh_bubble_v[i];
-        }
+    if (!scph_var_dict["KMESH_BUBBLE"].empty()) {
+        const auto kmesh_bubble_v =
+            parse_positive_mesh(scph_var_dict["KMESH_BUBBLE"], "parse_scph_vars", "KMESH_BUBBLE");
+        for (auto i = 0; i < 3; ++i) scph_vars.kmesh_bubble[i] = kmesh_bubble_v[i];
     }
 
     // Keep the values the later blocks depend on.
@@ -996,54 +944,16 @@ void InputParser::parse_qha_vars(PHON *phon)
         exit("parse_qha_vars", "SELF_OFFDIAG = 0 cannot be used when RELAX_STR != 0.");
     }
 
-    auto str_tmp = qha_var_dict["KMESH_QHA"];
-
-    if (!str_tmp.empty()) {
-
-        std::istringstream is(str_tmp);
-
-        while (true) {
-            str_tmp.clear();
-            is >> str_tmp;
-            if (str_tmp.empty()) {
-                break;
-            }
-            kmesh_v.push_back(my_cast<unsigned int>(str_tmp));
-        }
-
-        if (kmesh_v.size() != 3) {
-            exit("parse_qha_vars", "The number of entries for KMESH_QHA has to be 3.");
-        }
-    } else {
+    if (qha_var_dict["KMESH_QHA"].empty()) {
         exit("parse_qha_vars", "Please specify KMESH_QHA for mode = QHA");
     }
-
-    str_tmp = qha_var_dict["KMESH_INTERPOLATE"];
-    if (!str_tmp.empty()) {
-
-        std::istringstream is(str_tmp);
-
-        while (true) {
-            str_tmp.clear();
-            is >> str_tmp;
-            if (str_tmp.empty()) {
-                break;
-            }
-            kmesh_interpolate_v.push_back(my_cast<unsigned int>(str_tmp));
-        }
-
-        if (kmesh_interpolate_v.size() != 3) {
-            exit("parse_qha_vars", "The number of entries for KMESH_INTERPOLATE has to be 3.");
-        }
-    } else {
+    if (qha_var_dict["KMESH_INTERPOLATE"].empty()) {
         exit("parse_qha_vars", "Please specify KMESH_INTERPOLATE for mode = QHA");
     }
+    kmesh_v = parse_positive_mesh(qha_var_dict["KMESH_QHA"], "parse_qha_vars", "KMESH_QHA");
+    kmesh_interpolate_v = parse_positive_mesh(qha_var_dict["KMESH_INTERPOLATE"], "parse_qha_vars", "KMESH_INTERPOLATE");
 
     for (auto i = 0; i < 3; ++i) {
-        if (kmesh_v[i] == 0 || kmesh_v[i] > static_cast<unsigned int>(INT_MAX))
-            exit("parse_qha_vars", "KMESH_QHA must be positive integers.");
-        if (kmesh_interpolate_v[i] == 0 || kmesh_interpolate_v[i] > static_cast<unsigned int>(INT_MAX))
-            exit("parse_qha_vars", "KMESH_INTERPOLATE must be positive integers.");
         qha_vars.kmesh_qha[i] = kmesh_v[i];
         qha_vars.kmesh_interpolate[i] = kmesh_interpolate_v[i];
     }
@@ -1922,14 +1832,37 @@ void InputParser::split_str_by_space(const std::string &str, std::vector<std::st
     str_tmp.clear();
 }
 
+std::vector<unsigned int> InputParser::parse_positive_mesh(const std::string &str, const char *func,
+                                                           const std::string &tag)
+{
+    // Parse the value of a mesh tag: exactly three positive integers.
+
+    std::vector<std::string> str_vec;
+    split_str_by_space(str, str_vec);
+    if (str_vec.size() != 3) {
+        exit(func, ("The number of entries for " + tag + " has to be 3.").c_str());
+    }
+
+    std::vector<unsigned int> mesh(3);
+    for (auto i = 0; i < 3; ++i) {
+        mesh[i] = my_cast<unsigned int>(str_vec[i]);
+        // a negative entry wraps to a value above INT_MAX in my_cast<unsigned int>
+        if (mesh[i] == 0 || mesh[i] > static_cast<unsigned int>(INT_MAX)) {
+            exit(func, (tag + " must be positive integers.").c_str());
+        }
+    }
+    return mesh;
+}
+
 template <typename T>
-void InputParser::assign_val(T &val, const std::string &key, std::map<std::string, std::string> dict)
+void InputParser::assign_val(T &val, const std::string &key, const std::map<std::string, std::string> &dict)
 {
     // Assign a value to the variable "key" using the boost::lexica_cast.
 
-    if (!dict[key].empty()) {
+    const auto it = dict.find(key);
+    if (it != dict.end() && !it->second.empty()) {
         try {
-            val = boost::lexical_cast<T>(dict[key]);
+            val = boost::lexical_cast<T>(it->second);
         } catch (std::exception &e) {
             std::cout << e.what() << '\n';
             std::string str_tmp = "Invalid entry for the " + key + " tag.\n";

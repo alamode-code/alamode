@@ -26,6 +26,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
+#include "grid_phase.h"
 #include "integration.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
@@ -118,23 +119,6 @@ struct Profile
 inline double wall_seconds()
 {
     return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
-}
-
-inline int positive_modulo(const int a, const int b)
-{
-    const int m = a % b;
-    return m < 0 ? m + b : m;
-}
-
-// exp(i k.R) for integer R and k = q / N on the uniform grid.
-inline std::complex<double> phase_factor(const int *q, const int *R, const int *ngrid,
-                                         const std::vector<std::complex<double>> *table)
-{
-    std::complex<double> e(1.0, 0.0);
-    for (auto icrd = 0; icrd < 3; ++icrd) {
-        e *= table[icrd][positive_modulo(q[icrd] * R[icrd], ngrid[icrd])];
-    }
-    return e;
 }
 
 // Fourier sum for NQ quartets sharing k1:
@@ -815,10 +799,10 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
             int qkk1[3];
             for (auto icrd = 0; icrd < 3; ++icrd) qkk1[icrd] = qint[3 * knum + icrd] - qint[3 * k1 + icrd];
             for (auto ir = 0; ir < cfc.nr1; ++ir) {
-                exp_r1[ir] = phase_factor(&qint[3 * k1], &cfc.rvec1[3 * ir], nkgrid, exp_table);
+                exp_r1[ir] = phase_factor(&qint[3 * k1], &cfc.rvec1[3 * ir], 1, nkgrid, exp_table);
             }
             for (auto ir = 0; ir < cfc.nr3; ++ir) {
-                exp_r3[ir] = phase_factor(qkk1, &cfc.rvec3[3 * ir], nkgrid, exp_table);
+                exp_r3[ir] = phase_factor(qkk1, &cfc.rvec3[3 * ir], 1, nkgrid, exp_table);
             }
             for (auto iq = 0; iq < nq; ++iq) {
                 double sre = 0.0, sim = 0.0;
@@ -852,7 +836,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
                     }
                     if (nkept == 0) continue;
                     for (auto ir = 0; ir < cfc.ndiff; ++ir) {
-                        exp_diff[q][ir] = phase_factor(&qint[3 * k2], &cfc.dvec[3 * ir], nkgrid, exp_table);
+                        exp_diff[q][ir] = phase_factor(&qint[3 * k2], &cfc.dvec[3 * ir], 1, nkgrid, exp_table);
                     }
                     q_act[nact] = q;
                     exp_diff_act[nact] = exp_diff[q].data();

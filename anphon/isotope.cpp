@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 #include "constants.h"
+#include "degeneracy_utils.h"
 #include "dynamical.h"
 #include "error.h"
 #include "integration.h"
@@ -395,30 +396,7 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
 
             for (i = 0; i < kmesh_dos_in.nk_irred; ++i) {
                 const auto knum = kmesh_dos_in.kpoint_irred_all[i][0].knum;
-                auto begin = 0;
-                auto omega_ref = eval_dos[knum][0];
-
-                for (auto is = 1; is <= ns; ++is) {
-                    if (is < ns && std::abs(eval_dos[knum][is] - omega_ref) < tol_degenerate) {
-                        continue;
-                    }
-
-                    if (is - begin > 1) {
-                        auto gamma_sum = 0.0;
-                        for (auto js = begin; js < is; ++js) {
-                            gamma_sum += gamma_isotope[i][js];
-                        }
-                        const auto gamma_avg = gamma_sum / static_cast<double>(is - begin);
-                        for (auto js = begin; js < is; ++js) {
-                            gamma_isotope[i][js] = gamma_avg;
-                        }
-                    }
-
-                    if (is < ns) {
-                        begin = is;
-                        omega_ref = eval_dos[knum][is];
-                    }
-                }
+                average_over_degenerate_modes(ns, eval_dos[knum], 1, gamma_isotope[i], tol_degenerate);
             }
         }
 

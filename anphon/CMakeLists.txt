@@ -230,6 +230,7 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/ewald.h
             ${PROJECT_SOURCE_DIR}/fcs_phonon.h
             ${PROJECT_SOURCE_DIR}/ifc_derivative.h
+            ${PROJECT_SOURCE_DIR}/grid_phase.h
             ${PROJECT_SOURCE_DIR}/gruneisen.h
             ${PROJECT_SOURCE_DIR}/input_parser.h
             ${PROJECT_SOURCE_DIR}/input_setter.h

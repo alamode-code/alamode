@@ -26,6 +26,21 @@
 
 using namespace PHON_NS;
 
+namespace
+{
+double primcell_volume_m3(const System &system)
+{
+    return system.get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
+}
+
+// Ry per primitive cell -> GPa
+double ry_per_cell_to_gpa(const System &system)
+{
+    const auto volume = primcell_volume_m3(system);
+    return 1.0e-9 * Ryd / volume;
+}
+} // namespace
+
 ElasticTensor::ElasticTensor(const System &system_in) : system_(system_in)
 {}
 
@@ -33,7 +48,7 @@ double ElasticTensor::gpa_to_ry_per_cell() const
 {
     // V0(u) stores V0 * C in Ry per primitive cell (the cell of the run,
     // i.e. the &cell field when it is given).
-    const auto volume = system_.get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
+    const auto volume = primcell_volume_m3(system_);
     return 1.0e9 * volume / Ryd;
 }
 
@@ -273,8 +288,7 @@ void ElasticTensor::calc_longwave_brackets(const std::vector<FcsArrayWithCell> &
 void ElasticTensor::brackets_to_elastic(const NDArray<double, 4> &A, NDArray<double, 4> &C_gpa,
                                         const bool symmetrize) const
 {
-    const auto volume = system_.get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
-    const auto factor = 1.0e-9 * Ryd / volume;
+    const auto factor = ry_per_cell_to_gpa(system_);
 
     C_gpa.resize(3, 3, 3, 3);
 
@@ -458,8 +472,7 @@ void ElasticTensor::calc_elastic_tensor_relaxed(const std::vector<FcsArrayWithCe
     Eigen::MatrixXd Lambda, X;
     calc_force_strain_coupling(fcs_harmonic, Lambda, X);
 
-    const auto volume = system_.get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
-    const auto factor = 1.0e-9 * Ryd / volume;
+    const auto factor = ry_per_cell_to_gpa(system_);
 
     for (auto i = 0; i < 3; ++i) {
         for (auto j = 0; j < 3; ++j) {
@@ -712,8 +725,7 @@ void ElasticTensor::calc_elastic_tensor3(const std::vector<FcsArrayWithCell> &fc
         calc_elastic_tensor(fcs_harmonic, C2);
     }
 
-    const auto volume = system_.get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
-    const auto factor = 1.0e-9 * Ryd / volume;
+    const auto factor = ry_per_cell_to_gpa(system_);
 
     // Wallace Eq. (8.14): C3_{ij kl mn} from the restricted brackets and the
     // second-order tensor of the same path.

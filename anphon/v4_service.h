@@ -64,7 +64,9 @@ public:
     }
 
     // Pointer table v4[ik_prod][a*ns+b] over the local block (nullptr for rows
-    // this rank does not own), for the q0 sweep kernel.
+    // this rank does not own), for the q0 sweep kernel. Only the slices that
+    // kernel reads are filled: (ik_gamma_irred, all jk) and (all ik,
+    // jk_gamma_dense); v4[ik_prod] is nullptr for every other slice.
     std::complex<double> ***row_table();
 
     // After the builders: the on-site diagonal v4[(ik_irred, knum)][(ns+1)a][(ns+1)a]

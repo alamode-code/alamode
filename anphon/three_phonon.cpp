@@ -24,6 +24,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "constants.h"
 #include "error.h"
 #include "fcs_phonon.h"
+#include "grid_phase.h"
 #include "integration.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
@@ -80,22 +81,6 @@ struct FC3Term
     int rc;
     double val;
 };
-
-inline int positive_modulo(const int a, const int b)
-{
-    const int m = a % b;
-    return m < 0 ? m + b : m;
-}
-
-// exp(i sign k.R) for integer R and k = q / N on the uniform grid.
-inline Cplx phase_factor(const int *q, const int *R, const int sign, const int *ngrid, const std::vector<Cplx> *table)
-{
-    Cplx e(1.0, 0.0);
-    for (auto icrd = 0; icrd < 3; ++icrd) {
-        e *= table[icrd][positive_modulo(sign * q[icrd] * R[icrd], ngrid[icrd])];
-    }
-    return e;
-}
 
 inline void integer_kpoint(const KpointMeshUniform *kmesh, const int ik, const int *ngrid, int q[3])
 {
@@ -556,6 +541,28 @@ double AnharmonicCore::bubble_accumulate(const int ns, const double *occ1, const
     return sum;
 }
 
+void AnharmonicCore::v3sq_shifted_at(const int ik, const double omega_q, const std::complex<double> *e0,
+                                     const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                     const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
+                                     std::complex<double> *phi3, double *v3sq)
+{
+    const int ns = system->get_num_modes();
+
+    phi3_reciprocal_at(kmesh_in->xk[ik], sg.xk[ik], phi3);
+    for (auto is = 0; is < ns; ++is) {
+        const double w1 = eval_in[ik][is];
+        for (auto js = 0; js < ns; ++js) {
+            const double w2 = sg.eval[ik][js];
+            const size_t ib = static_cast<size_t>(is) * ns + js;
+            if (omega_q < eps8 || w1 < eps8 || w2 < eps8) {
+                v3sq[ib] = 0.0;
+            } else {
+                v3sq[ib] = std::norm(contract_phi3(e0, evec_in[ik][is], sg.evec[ik][js], phi3)) / (omega_q * w1 * w2);
+            }
+        }
+    }
+}
+
 void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                               const double *xq, const double omega_q,
                                               const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
@@ -595,20 +602,7 @@ void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const do
 #pragma omp for schedule(dynamic, 4)
 #endif
         for (int ik = 0; ik < nk; ++ik) {
-            phi3_reciprocal_at(kmesh_in->xk[ik], sg.xk[ik], phi3.data());
-            for (auto is = 0; is < ns; ++is) {
-                const double w1 = eval_in[ik][is];
-                for (auto js = 0; js < ns; ++js) {
-                    const double w2 = sg.eval[ik][js];
-                    const size_t ib = static_cast<size_t>(is) * ns + js;
-                    if (omega_q < eps8 || w1 < eps8 || w2 < eps8) {
-                        v3sq[ib] = 0.0;
-                    } else {
-                        v3sq[ib] = std::norm(contract_phi3(e0.data(), evec_in[ik][is], sg.evec[ik][js], phi3.data())) /
-                                   (omega_q * w1 * w2);
-                    }
-                }
-            }
+            v3sq_shifted_at(ik, omega_q, e0.data(), kmesh_in, eval_in, evec_in, sg, phi3.data(), v3sq.data());
             bubble_delta_smearing(ns,
                                   omega_in,
                                   eval_in[ik],
@@ -751,20 +745,7 @@ void AnharmonicCore::calc_damping_tetrahedron_at(const unsigned int ntemp, const
 #pragma omp for schedule(dynamic, 4)
 #endif
         for (int ik = 0; ik < nk; ++ik) {
-            phi3_reciprocal_at(kmesh_in->xk[ik], sg.xk[ik], phi3.data());
-            for (auto is = 0; is < ns; ++is) {
-                const double w1 = eval_in[ik][is];
-                for (auto js = 0; js < ns; ++js) {
-                    const double w2 = sg.eval[ik][js];
-                    const size_t ib = static_cast<size_t>(is) * ns + js;
-                    if (omega_q < eps8 || w1 < eps8 || w2 < eps8) {
-                        v3sq[ib] = 0.0;
-                    } else {
-                        v3sq[ib] = std::norm(contract_phi3(e0.data(), evec_in[ik][is], sg.evec[ik][js], phi3.data())) /
-                                   (omega_q * w1 * w2);
-                    }
-                }
-            }
+            v3sq_shifted_at(ik, omega_q, e0.data(), kmesh_in, eval_in, evec_in, sg, phi3.data(), v3sq.data());
             for (unsigned int it = 0; it < ntemp; ++it) {
                 ret_loc[it] += bubble_accumulate(ns,
                                                  &occ[it * nks + ik * ns],
@@ -812,21 +793,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron_at(const double Temp, const dou
 #pragma omp for schedule(dynamic, 4)
 #endif
         for (int ik = 0; ik < nk; ++ik) {
-            phi3_reciprocal_at(kmesh_in->xk[ik], sg.xk[ik], phi3.data());
-            for (auto is = 0; is < ns; ++is) {
-                const double w1 = eval_in[ik][is];
-                for (auto js = 0; js < ns; ++js) {
-                    const double w2 = sg.eval[ik][js];
-                    const size_t ib = static_cast<size_t>(is) * ns + js;
-                    if (omega_q < eps8 || w1 < eps8 || w2 < eps8) {
-                        v3_arr[ik][ib] = 0.0;
-                    } else {
-                        v3_arr[ik][ib] =
-                            std::norm(contract_phi3(e0.data(), evec_in[ik][is], sg.evec[ik][js], phi3.data())) /
-                            (omega_q * w1 * w2);
-                    }
-                }
-            }
+            v3sq_shifted_at(ik, omega_q, e0.data(), kmesh_in, eval_in, evec_in, sg, phi3.data(), v3_arr[ik]);
         }
     }
 

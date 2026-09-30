@@ -35,6 +35,15 @@ auto channel_path(const std::string &tag) -> std::string
 {
     return str_scattering + tag;
 }
+
+// Index of the first entry of temps within eps6 of t; temps.size() when absent.
+auto find_temperature(const std::vector<double> &temps, const double t) -> size_t
+{
+    for (size_t i = 0; i < temps.size(); ++i) {
+        if (std::abs(temps[i] - t) < eps6) return i;
+    }
+    return temps.size();
+}
 } // namespace
 
 struct KappaResultIOH5::Impl
@@ -64,17 +73,11 @@ struct KappaResultIOH5::Impl
     {
         run_cols.clear();
         for (const auto t: fmeta.temperatures) {
-            auto found = false;
-            for (size_t i = 0; i < file_temps.size(); ++i) {
-                if (std::abs(file_temps[i] - t) < eps6) {
-                    run_cols.push_back(i);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
+            const auto pos = find_temperature(file_temps, t);
+            if (pos == file_temps.size()) {
                 exit("kappa_result_io", "Internal error: run temperature missing from the file grid");
             }
+            run_cols.push_back(pos);
         }
     }
 
@@ -615,14 +618,7 @@ struct KappaResultIOH5::Impl
         // old column -> new column
         std::vector<size_t> col_map(old_temps.size());
         for (size_t j = 0; j < old_temps.size(); ++j) {
-            size_t pos = file_temps.size();
-            for (size_t i = 0; i < file_temps.size(); ++i) {
-                if (std::abs(file_temps[i] - old_temps[j]) < eps6) {
-                    pos = i;
-                    break;
-                }
-            }
-            col_map[j] = pos;
+            col_map[j] = find_temperature(file_temps, old_temps[j]);
         }
         const auto nt_old = old_temps.size();
         const auto nt_new = file_temps.size();
@@ -920,14 +916,7 @@ void KappaResultIOH5::open_or_create(const KappaFileMetaH5 &fmeta, const KappaCh
             auto merged = old_temps;
             auto merged_fc2 = old_fc2temps;
             for (size_t i = 0; i < fmeta.temperatures.size(); ++i) {
-                auto found = false;
-                for (const auto t: merged) {
-                    if (std::abs(t - fmeta.temperatures[i]) < eps6) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
+                if (find_temperature(merged, fmeta.temperatures[i]) == merged.size()) {
                     merged.push_back(fmeta.temperatures[i]);
                     merged_fc2.push_back(fmeta.fc2_temperature);
                     need_rebuild = true;
@@ -990,14 +979,7 @@ void KappaResultIOH5::open_or_create(const KappaFileMetaH5 &fmeta, const KappaCh
         if (impl->tdep) {
             for (size_t j = 0; j < old_temps.size(); ++j) {
                 if (j < old_valid.size() && !old_valid[j]) continue; // never assembled: nothing to mix
-                auto covered = false;
-                for (const auto t: fmeta.temperatures) {
-                    if (std::abs(t - old_temps[j]) < eps6) {
-                        covered = true;
-                        break;
-                    }
-                }
-                if (!covered) {
+                if (find_temperature(fmeta.temperatures, old_temps[j]) == fmeta.temperatures.size()) {
                     retains_foreign_kappa = true;
                     break;
                 }
