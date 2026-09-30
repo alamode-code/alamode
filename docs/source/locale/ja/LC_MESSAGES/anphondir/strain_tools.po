@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 23:49+0900\n"
+"POT-Creation-Date: 2026-09-30 21:14+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -86,7 +86,7 @@ msgid "Needed by"
 msgstr "必要とする設定"
 
 #: ../../source/anphondir/strain_tools.rst:36
-#: ../../source/anphondir/strain_tools.rst:115
+#: ../../source/anphondir/strain_tools.rst:150
 msgid "Content"
 msgstr "内容"
 
@@ -95,7 +95,7 @@ msgid "``/ReferenceCell``"
 msgstr "``/ReferenceCell``"
 
 #: ../../source/anphondir/strain_tools.rst:38
-#: ../../source/anphondir/strain_tools.rst:128
+#: ../../source/anphondir/strain_tools.rst:163
 msgid "always"
 msgstr "常に"
 
@@ -136,7 +136,7 @@ msgid "``/StrainForce``"
 msgstr "``/StrainForce``"
 
 #: ../../source/anphondir/strain_tools.rst:50
-#: ../../source/anphondir/strain_tools.rst:133
+#: ../../source/anphondir/strain_tools.rst:168
 msgid "``STRAIN_COUPLING`` bit 2"
 msgstr "``STRAIN_COUPLING`` のビット 2"
 
@@ -154,7 +154,7 @@ msgid "``/StrainHarmonic``"
 msgstr "``/StrainHarmonic``"
 
 #: ../../source/anphondir/strain_tools.rst:55
-#: ../../source/anphondir/strain_tools.rst:139
+#: ../../source/anphondir/strain_tools.rst:174
 msgid "``STRAIN_COUPLING`` bit 4"
 msgstr "``STRAIN_COUPLING`` のビット 4"
 
@@ -171,14 +171,33 @@ msgstr ""
 "で保持します。anphon は各エントリを、``FC2FILE``/``FCSFILE`` "
 "のスーパーセルにそのエントリ自身のひずみを加えたものと原子ごとに照合します。"
 
+#: ../../source/anphondir/strain_tools.rst:61
+#, fuzzy
+msgid "``/Piezoelectric``"
+msgstr "``/Elastic``"
+
 #: ../../source/anphondir/strain_tools.rst:62
+msgid "``EFIELD`` with a strained cell (``RELAX_STR = 2, 4``); optional"
+msgstr ""
+
+#: ../../source/anphondir/strain_tools.rst:63
+#, python-brace-format
+msgid ""
+"``clamped_ion`` (3×3×3): the proper **clamped-ion** piezoelectric tensor "
+":math:`e^{(0)}_{ijk}` in C/m² (symmetric in :math:`jk`, Cartesian axes of"
+" ``/ReferenceCell``), with the attributes ``unit = \"C/m^2\"``, "
+"``convention = \"proper, clamped-ion\"``, ``method``, ``source`` and "
+"``code_version``. Absent means :math:`e^{(0)} = 0`."
+msgstr ""
+
+#: ../../source/anphondir/strain_tools.rst:69
 msgid ""
 "The producing commands write into the container directly; the same file "
 "can be updated by each, replacing only its own groups and refusing a "
 "reference structure that is not the crystal already stored::"
 msgstr "生成コマンドはコンテナに直接書き込みます。同じファイルを各コマンドで更新することができ、その際には自身のグループのみが置き換えられ、既に保存されている結晶と異なる参照構造は拒否されます::"
 
-#: ../../source/anphondir/strain_tools.rst:69
+#: ../../source/anphondir/strain_tools.rst:76
 msgid ""
 "``elastic.py fit`` writes ``/Elastic`` **and** ``/StrainForce``: its "
 "single-mode runs at :math:`\\pm s` are exactly the strained primitive "
@@ -192,15 +211,16 @@ msgstr ""
 "``strainifc.py --coupling force`` の計算を行う必要はありません。この経路は、弾性定数を IFC から計算する実行"
 " (``STRAIN_COUPLING = 6``。``elastic.py`` を使わない場合) のために残されています::"
 
-#: ../../source/anphondir/strain_tools.rst:76
+#: ../../source/anphondir/strain_tools.rst:83
 msgid "and the anphon input needs a single line::"
 msgstr "そして、anphon の入力には 1 行だけが必要です::"
 
-#: ../../source/anphondir/strain_tools.rst:83
+#: ../../source/anphondir/strain_tools.rst:90
 msgid "``strainfile.py`` inspects, checks, and converts containers::"
 msgstr "``strainfile.py`` はコンテナの内容の表示、検査、変換を行います::"
 
-#: ../../source/anphondir/strain_tools.rst:90
+#: ../../source/anphondir/strain_tools.rst:99
+#, fuzzy
 msgid ""
 "``show`` prints the contents (cells, units, the elastic constants in GPa,"
 " the strain modes and their weight sums) and which anphon settings the "
@@ -208,10 +228,11 @@ msgid ""
 "planned run before it is submitted; ``pack`` converts an existing "
 "``STRAIN_IFC_DIR`` (any subset of the text files; legacy ``Ry`` files are"
 " converted to GPa with the volume of ``--legacy-cell``, the ``&cell`` of "
-"the run they were made for, and that assumption is recorded in the file)."
-" Every write records its command line in the ``provenance`` attribute. "
-"The container is read on every MPI rank and must not be modified while "
-"anphon runs. Non-magnetic reference structures only."
+"the run they were made for, and that assumption is recorded in the file);"
+" ``piezo`` adds the clamped-ion piezoelectric tensor used by ``EFIELD`` "
+"(below). Every write records its command line in the ``provenance`` "
+"attribute. The container is read on every MPI rank and must not be "
+"modified while anphon runs. Non-magnetic reference structures only."
 msgstr ""
 "``show`` は内容 (セル、単位、GPa 単位の弾性定数、ひずみモードとその重みの和) と、このファイルがサポートする anphon "
 "の設定を出力します。``check`` は、計画している実行に対する anphon の整合性チェックをジョブ投入前に再現します。``pack`` "
@@ -221,11 +242,53 @@ msgstr ""
 "属性に記録します。コンテナはすべての MPI ランクで読み込まれ、anphon "
 "の実行中に変更してはいけません。非磁性の参照構造のみに対応しています。"
 
-#: ../../source/anphondir/strain_tools.rst:104
+#: ../../source/anphondir/strain_tools.rst:111
+msgid ""
+"**The clamped-ion piezoelectric tensor** (``/Piezoelectric``). "
+"``strainfile.py piezo`` writes it into an existing container and replaces"
+" only that group (``--overwrite`` when it exists; the other groups are "
+"kept byte for byte)."
+msgstr ""
+
+#: ../../source/anphondir/strain_tools.rst:115
+#, python-brace-format
+msgid ""
+"``--outcar``: a VASP ``LEPSILON = .TRUE.`` OUTCAR. The **last** complete "
+"block ``PIEZOELECTRIC TENSOR (including local field effects) for field in"
+" x, y, z (C/m^2)`` is used. Its rows are the field direction, its columns"
+" ``XX YY ZZ XY YZ ZX``, and a shear column is the tensor component itself"
+" (:math:`e_{x,ZX} = e_{xxz} = e_{xzx}`: no factor 2, no sign change). The"
+" block of the same name in ``e Angst`` is the derivative of the dipole of"
+" the simulation cell (extensive) and is not used; the ``IONIC CONTR`` "
+"blocks (``IBRION = 7, 8``) hold the relaxed-ion part, which anphon "
+"already obtains from the Born charges, and are ignored. An OUTCAR with "
+"only those blocks is refused."
+msgstr ""
+
+#: ../../source/anphondir/strain_tools.rst:124
+msgid ""
+"``--voigt``: a 3×6 text table in C/m² (rows :math:`x, y, z`, columns ``xx"
+" yy zz yz xz xy``, shear columns equal to the tensor component) from any "
+"code, e.g. ABINIT's proper clamped-ion tensor. It requires "
+"``--structure``."
+msgstr ""
+
+#: ../../source/anphondir/strain_tools.rst:128
+msgid ""
+"The lattice, species and fractional coordinates of the calculation (read "
+"from the OUTCAR, or from ``--structure``, a POSCAR or ``vasprun.xml``) "
+"must describe the crystal of ``/ReferenceCell`` in the same Cartesian "
+"frame (a nested cell is accepted), because the tensor is Cartesian. The "
+"file records the method, the VASP version and the source path. The tensor"
+" must be the clamped-ion one: a relaxed-ion total counts the ionic "
+"response twice. (VASP 5.4.4 and older have a sign bug in ``LCALCEPS``.)"
+msgstr ""
+
+#: ../../source/anphondir/strain_tools.rst:139
 msgid "Legacy text layout (``STRAIN_IFC_DIR``)"
 msgstr "従来のテキストレイアウト (``STRAIN_IFC_DIR``)"
 
-#: ../../source/anphondir/strain_tools.rst:106
+#: ../../source/anphondir/strain_tools.rst:141
 msgid ""
 "The text files are read from the directory given by ``STRAIN_IFC_DIR`` "
 "(except ``C1_array.in``, which is read from the working directory of "
@@ -234,23 +297,23 @@ msgstr ""
 "テキストファイルは ``STRAIN_IFC_DIR`` で与えるディレクトリから読み込まれます (ただし ``C1_array.in`` は "
 "anphon の作業ディレクトリから読み込まれます)。"
 
-#: ../../source/anphondir/strain_tools.rst:113
+#: ../../source/anphondir/strain_tools.rst:148
 msgid "File"
 msgstr "ファイル"
 
-#: ../../source/anphondir/strain_tools.rst:114
+#: ../../source/anphondir/strain_tools.rst:149
 msgid "Tag"
 msgstr "タグ"
 
-#: ../../source/anphondir/strain_tools.rst:116
+#: ../../source/anphondir/strain_tools.rst:151
 msgid "``elastic_constants.in``"
 msgstr "``elastic_constants.in``"
 
-#: ../../source/anphondir/strain_tools.rst:117
+#: ../../source/anphondir/strain_tools.rst:152
 msgid "``STRAIN_COUPLING`` bit 1"
 msgstr "``STRAIN_COUPLING`` のビット 1"
 
-#: ../../source/anphondir/strain_tools.rst:118
+#: ../../source/anphondir/strain_tools.rst:153
 #, python-brace-format
 msgid ""
 "Second- and third-order elastic constants in GPa: a label with the unit "
@@ -273,11 +336,11 @@ msgstr ""
 "C^{(2)}`、:math:`V C^{(3)}` を Ry 単位で保持しています。anphon "
 "はそのセルを検証できないため、このようなファイルをユーザー定義の ``&cell`` とともに使用した場合には警告が出力されます。"
 
-#: ../../source/anphondir/strain_tools.rst:127
+#: ../../source/anphondir/strain_tools.rst:162
 msgid "``C1_array.in`` (working directory)"
 msgstr "``C1_array.in`` (作業ディレクトリ)"
 
-#: ../../source/anphondir/strain_tools.rst:129
+#: ../../source/anphondir/strain_tools.rst:164
 #, python-brace-format
 msgid ""
 "Reference stress :math:`\\sigma_{\\mu\\nu}` in GPa: ``C1 GPa`` followed "
@@ -289,11 +352,11 @@ msgstr ""
 "が続きます。単位トークンのないファイル (または ``Ry`` トークンを持つファイル) は、ある特定のセルに対する "
 ":math:`V\\sigma` を Ry 単位で保持しています。ファイルがない場合はゼロになります。"
 
-#: ../../source/anphondir/strain_tools.rst:132
+#: ../../source/anphondir/strain_tools.rst:167
 msgid "``strain_force.in``"
 msgstr "``strain_force.in``"
 
-#: ../../source/anphondir/strain_tools.rst:134
+#: ../../source/anphondir/strain_tools.rst:169
 msgid ""
 "Forces (eV/Å) in strained cells, one block per strain mode: a header "
 "``mode smag weight`` followed by one line ``fx fy fz`` per atom. An "
@@ -305,11 +368,11 @@ msgstr ""
 "1 行 ``fx fy fz`` が続きます。省略可能な ``&reference_cell ... /`` ヘッダー (後述) "
 "は、行が対応するセルを記録します。ヘッダーがない場合、行は anphon の基本セルの原子順序に従わなければなりません。"
 
-#: ../../source/anphondir/strain_tools.rst:138
+#: ../../source/anphondir/strain_tools.rst:173
 msgid "``strain_harmonic.in`` + force-constant files"
 msgstr "``strain_harmonic.in`` + 力定数ファイル"
 
-#: ../../source/anphondir/strain_tools.rst:140
+#: ../../source/anphondir/strain_tools.rst:175
 msgid ""
 "One line ``mode smag weight filename`` per strained supercell; "
 "``filename`` (relative to ``STRAIN_IFC_DIR``, ``.xml`` or ``.h5``) holds "
@@ -320,7 +383,7 @@ msgstr ""
 "(``STRAIN_IFC_DIR`` からの相対パス、``.xml`` または ``.h5``) は、ひずませたスーパーセルの調和力定数を "
 "Ry/bohr\\ :sup:`2` 単位で保持します。"
 
-#: ../../source/anphondir/strain_tools.rst:144
+#: ../../source/anphondir/strain_tools.rst:179
 #, python-brace-format
 msgid ""
 "The elastic constants are the Brugger constants, i.e. derivatives of the "
@@ -342,7 +405,7 @@ msgstr ""
 "を意味します。各モードの重みの和は 1 でなければなりません (片側差分: 重み 1 の行を 1 つ。中心差分: ``+smag`` と "
 "``-smag`` をそれぞれ重み 0.5 で)。"
 
-#: ../../source/anphondir/strain_tools.rst:153
+#: ../../source/anphondir/strain_tools.rst:188
 msgid ""
 "Two Python scripts in the ``tools/`` directory prepare these files from "
 "DFT calculations (they need ``numpy``, ``ase`` and ``spglib``; "
@@ -353,7 +416,7 @@ msgstr ""
 "(``numpy``、``ase``、``spglib`` が必要です。``strainifc.py --coupling harmonic`` "
 "にはさらに、``python/`` ディレクトリからビルドした ``alm`` Python パッケージが必要です)。"
 
-#: ../../source/anphondir/strain_tools.rst:157
+#: ../../source/anphondir/strain_tools.rst:192
 #, python-brace-format
 msgid ""
 "``elastic.py`` — finite-strain workflow for :math:`\\sigma`, "
@@ -365,7 +428,7 @@ msgstr ""
 "を求める有限ひずみワークフロー (``elastic_constants.in``、``C1_array.in``)。同じ計算からひずみ-力結合 "
 "(``strain_force.in``) も得られます。"
 
-#: ../../source/anphondir/strain_tools.rst:160
+#: ../../source/anphondir/strain_tools.rst:195
 msgid ""
 "``strainifc.py`` — strain–harmonic-IFC coupling (``strain_harmonic.in``) "
 "and, for runs without ``elastic.py``, the strain–force coupling "
@@ -379,7 +442,7 @@ msgstr ""
 "<https://github.com/r-masuki/strainIFCcoupling>`_ スクリプト [Masuki2022]_ "
 "[Masuki2023]_ を、ソースツリー内の ``alm`` パッケージ上に移植したものです。"
 
-#: ../../source/anphondir/strain_tools.rst:165
+#: ../../source/anphondir/strain_tools.rst:200
 msgid ""
 "Both follow the same pattern: ``generate`` writes the strained input "
 "structures (VASP ``POSCAR`` or Quantum-ESPRESSO ``pw.in``, taken from a "
@@ -400,11 +463,11 @@ msgstr ""
 " JSON マニフェストにすべてのパラメータが記録されるため、再入力の必要はありません。すべての DFT 出力は生成された構造と照合されます "
 "(セル、元素種、同じインデックスの分数座標)。緩和された構造は拒否されます。"
 
-#: ../../source/anphondir/strain_tools.rst:175
+#: ../../source/anphondir/strain_tools.rst:210
 msgid "Atom ordering"
 msgstr "原子の順序"
 
-#: ../../source/anphondir/strain_tools.rst:177
+#: ../../source/anphondir/strain_tools.rst:212
 msgid ""
 "The generated inputs and the force-constant files keep the order of the "
 "template structure. For ``--coupling harmonic`` the template must be the "
@@ -441,11 +504,11 @@ msgstr ""
 " セルのスーパーセルである場合、原子ごとに 1 つの並進イメージが使用されます)。``strainifc.py check`` は、DFT "
 "計算を実行する前に全体像を出力します。"
 
-#: ../../source/anphondir/strain_tools.rst:195
+#: ../../source/anphondir/strain_tools.rst:230
 msgid "The ``&reference_cell`` header of strain_force.in"
 msgstr "strain_force.in の ``&reference_cell`` ヘッダー"
 
-#: ../../source/anphondir/strain_tools.rst:197
+#: ../../source/anphondir/strain_tools.rst:232
 msgid ""
 "``strain_force.in`` holds one force row per atom, so by itself it is tied"
 " to the atom list of the cell the strained calculations were done for. "
@@ -456,7 +519,7 @@ msgstr ""
 "行の力を保持するため、それ自体はひずみ計算を行ったセルの原子リストに結び付いています。そのため ``strainifc.py collect "
 "--fcs ...`` はそのセルをファイルの先頭に記録します::"
 
-#: ../../source/anphondir/strain_tools.rst:215
+#: ../../source/anphondir/strain_tools.rst:250
 msgid ""
 "i.e. a scale factor and three lattice vectors (one per line) as in the "
 "``&cell`` field (here Å converted to bohr), the number of atoms, one line"
@@ -468,7 +531,7 @@ msgstr ""
 "に変換したもの)、原子数、原子ごとに 1 行の ``symbol x y z`` (分数座標)、そして閉じる ``/`` "
 "です。ファイル内のどこにもコメントを書くことはできません。anphon はこのファイルを単純なトークンの並びとして読み込みます。"
 
-#: ../../source/anphondir/strain_tools.rst:220
+#: ../../source/anphondir/strain_tools.rst:255
 msgid ""
 "With the header, anphon compares this cell with its own primitive cell "
 "(the ``&cell`` field) and matches the atoms by position, so the row order"
@@ -494,7 +557,7 @@ msgstr ""
 " は適用した対応付けの原子数と体積比をログに出力します。ヘッダーがない場合、行は従来どおり anphon "
 "の基本セルの原子順序に従わなければなりません。"
 
-#: ../../source/anphondir/strain_tools.rst:232
+#: ../../source/anphondir/strain_tools.rst:267
 msgid ""
 "``elastic_constants.in`` and ``C1_array.in`` need no such header: written"
 " in GPa they do not depend on the cell size (the reference structure and "
@@ -505,11 +568,11 @@ msgstr ""
 "単位で書かれていればセルサイズに依存せず (もちろん参照構造とデカルト座標系は同じでなければなりません)、anphon "
 "はそれらに自身の基本セルの体積を乗じます。"
 
-#: ../../source/anphondir/strain_tools.rst:237
+#: ../../source/anphondir/strain_tools.rst:272
 msgid "elastic.py"
 msgstr "elastic.py"
 
-#: ../../source/anphondir/strain_tools.rst:249
+#: ../../source/anphondir/strain_tools.rst:284
 #, python-brace-format
 msgid ""
 "``generate`` creates the unstrained reference ``strain_000`` and strained"
@@ -573,11 +636,11 @@ msgstr ""
 "単位で出力します。``--structure``/``--volume`` は、:math:`V C` を Ry "
 "単位で保持する従来のファイルに対してのみ必要です。"
 
-#: ../../source/anphondir/strain_tools.rst:278
+#: ../../source/anphondir/strain_tools.rst:313
 msgid "strainifc.py"
 msgstr "strainifc.py"
 
-#: ../../source/anphondir/strain_tools.rst:291
+#: ../../source/anphondir/strain_tools.rst:326
 msgid ""
 "``--fcs`` is mandatory for ``--coupling harmonic`` (unless "
 "``--unchecked``); for ``--coupling force`` it is optional but "
@@ -592,7 +655,7 @@ msgstr ""
 "の順序でなければなりません。XML 形式の ``--fcs`` を用いる場合は ``--anphon-cell`` が必要です (anphon は"
 " XML 力定数ファイルに対して ``&cell`` を必要とします)。"
 
-#: ../../source/anphondir/strain_tools.rst:297
+#: ../../source/anphondir/strain_tools.rst:332
 msgid ""
 "``--coupling force`` (only needed when ``elastic.py fit`` is not run, "
 "e.g. with ``STRAIN_COUPLING = 6``): the template is the primitive cell. "
@@ -617,7 +680,7 @@ msgstr ""
 "(欠けている成分は anphon が対称性によって補完します)。片側差分では熱膨張に無視できない偏りが生じることがあるため (1000 K の "
 "ZnO の c 軸で約 10 パーセント)、``--central`` を用いてください。"
 
-#: ../../source/anphondir/strain_tools.rst:306
+#: ../../source/anphondir/strain_tools.rst:341
 msgid ""
 "``--coupling harmonic``: the template is the **same supercell** as the "
 "one used to fit the harmonic force constants given to anphon. For every "
@@ -649,7 +712,7 @@ msgstr ""
 "(``strain_harmonic.in`` には記載されません)、``--fcs`` との差を出力します。これは、DFT のセットアップが "
 "anphon に与える調和力定数を再現しているかどうかの直接的な確認になります。"
 
-#: ../../source/anphondir/strain_tools.rst:318
+#: ../../source/anphondir/strain_tools.rst:353
 msgid ""
 "A job-script template containing the line ``RUN_DFT_CALCULATION`` "
 "(``--job-template``) and a file with the shell lines that run the DFT "
@@ -664,7 +727,7 @@ msgstr ""
 "``run_all.sh`` ループが書き出されます。ウルツ鉱型 ZnO のテンプレート入力は "
 "``example/ZnO/strain_IFC_workflow`` にあります。"
 
-#: ../../source/anphondir/strain_tools.rst:324
+#: ../../source/anphondir/strain_tools.rst:359
 msgid ""
 "Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 "
 "(2022)."
@@ -672,7 +735,7 @@ msgstr ""
 "Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 "
 "(2022)."
 
-#: ../../source/anphondir/strain_tools.rst:325
+#: ../../source/anphondir/strain_tools.rst:360
 msgid ""
 "Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**, 134119 "
 "(2023)."
