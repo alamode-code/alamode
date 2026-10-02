@@ -15,6 +15,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <cmath>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -57,6 +59,20 @@ Eigen::Vector3d snap_to_lattice_vector(const Eigen::Vector3d &xf, const char *ca
 // row itemp unless the user opted in (absent /convergence data, e.g. a
 // legacy import, cannot be checked and is accepted). data_name and
 // source_name complete the messages of the caller.
+// 64-bit mixer (splitmix64) and its map to [-1, 1), for the fc5 fingerprint.
+std::uint64_t splitmix64(std::uint64_t x)
+{
+    x += 0x9e3779b97f4a7c15ULL;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+    return x ^ (x >> 31);
+}
+
+double unit_interval(const std::uint64_t h)
+{
+    return static_cast<double>(h >> 11) * 0x1.0p-52 - 1.0;
+}
+
 void check_iteration_converged(const HighFive::File &file, const int itemp, const bool allow_unconverged,
                                const char *caller, const std::string &data_name, const std::string &source_name)
 {
@@ -266,10 +282,23 @@ void Fcs_phonon::load_fc5_from_file()
     }
     fc5.clear();
     parse_fcs_from_h5(fname, 3, fc5);
-    fc5_fingerprint = {static_cast<double>(fc5.size()), 0.0, 0.0};
+    fc5_fingerprint = {static_cast<double>(fc5.size()), 0.0, 0.0, 0.0, 0.0};
     for (const auto &it: fc5) {
         fc5_fingerprint[1] += std::abs(it.fcs_val);
         fc5_fingerprint[2] += it.fcs_val;
+        std::uint64_t h = 0x9e3779b97f4a7c15ULL;
+        for (const auto &p: it.pairs) {
+            h = splitmix64(h ^ p.index);
+            h = splitmix64(h ^ p.tran);
+            h = splitmix64(h ^ p.cell_s);
+        }
+        for (const auto a: it.atoms_s) h = splitmix64(h ^ a);
+        // the FC5 loader leaves tran/cell_s at zero: the image shifts live here
+        for (const auto &v: it.relvecs_velocity) {
+            for (auto k = 0; k < 3; ++k) h = splitmix64(h ^ static_cast<std::uint64_t>(std::llround(v[k] * 1.0e6)));
+        }
+        fc5_fingerprint[3] += it.fcs_val * unit_interval(h);
+        fc5_fingerprint[4] += it.fcs_val * unit_interval(splitmix64(h));
     }
     if (fc5.empty()) {
         warn("load_fc5_from_file", "STRAIN_FC5 = 1: all quintic IFCs are zero; the correction vanishes.");

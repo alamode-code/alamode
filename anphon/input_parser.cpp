@@ -1217,10 +1217,11 @@ void InputParser::parse_relax_vars(PHON *phon)
         {
             exit("parse_relax_vars", "STRAIN_FC5 = 1 needs a strained cell: RELAX_STR = 2 or 4.");
         }
-        if (scph_bubble == 4 || relax_vars.bubble_hess) {
+        if (scph_bubble != 0 || relax_vars.bubble_hess) {
             exit("parse_relax_vars",
-                 "STRAIN_FC5 = 1 cannot be combined with BUBBLE = 4 or BUBBLE_HESS = 1 (the free-energy\n"
-                 " curvature and its quartic ladder do not include dPhi4/du yet).");
+                 "STRAIN_FC5 = 1 cannot be combined with BUBBLE > 0 or BUBBLE_HESS = 1 (the bubble\n"
+                 " self-energy, the free-energy curvature and its quartic ladder do not include\n"
+                 " dPhi4/du yet).");
         }
     } else if (stropt_var_dict.find("STRAIN_FC5_CHANNELS") != stropt_var_dict.end()) {
         warn("parse_relax_vars", "STRAIN_FC5_CHANNELS is ignored without STRAIN_FC5 = 1.");

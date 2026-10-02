@@ -188,10 +188,17 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
         if (diag_file != settings.strain_fc5_diag) {
             exit("scph_result_io", "The STRAIN_FC5_CHANNELS tag is not consistent with the restart file");
         }
-        if (!same_values("/settings/fc5_fingerprint", settings.fc5_fingerprint.data(), 3)) {
+        if (!same_values("/settings/fc5_fingerprint", settings.fc5_fingerprint.data(), settings.fc5_fingerprint.size()))
+        {
             exit("scph_result_io", "The quintic IFCs (STRAIN_FC5) are not consistent with the restart file");
         }
     }
+}
+
+bool ScphResultIOH5::used_strain_fc5() const
+{
+    const HighFive::File fh(impl->filename, HighFive::File::ReadOnly);
+    return fh.exist("/settings/strain_fc5") && H5Easy::load<int>(fh, "/settings/strain_fc5") != 0;
 }
 
 void ScphResultIOH5::load_dymat(const std::string &name, const std::vector<double> &temps_requested,

@@ -237,8 +237,10 @@ public:
     // nothing new. Empty on the other ranks and when load_fc5 is false.
     bool load_fc5 = false;
     std::vector<FcsArrayWithCell> fc5;
-    // Fingerprint of fc5 as read (entries, sum |Phi5|, sum Phi5), stored in the state file.
-    std::array<double, 3> fc5_fingerprint{};
+    // Fingerprint of fc5 as read, stored in the state file: entries, sum |Phi5|, sum Phi5,
+    // and two sums of Phi5 weighted by pseudo-random numbers in [-1, 1) hashed from the
+    // indices of each entry (sensitive to signs and to which entry carries which value).
+    std::array<double, 5> fc5_fingerprint{};
 
     // Fingerprint of the IFCs this run loaded, one entry per order, taken
     // after the MPI broadcast but before replication and sorting. An

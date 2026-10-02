@@ -1695,7 +1695,8 @@ Description of input variables
   The quintic IFCs are read from ``/ForceConstants/Order5`` of the HDF5 file of the quartic
   ones (``FC4FILE``, else ``FCSFILE``), which must therefore contain both orders from the same fit
   (same supercell). Available for ``MODE = SCPH`` with ``RELAX_STR = 2`` or ``4``, not with
-  ``BUBBLE = 4`` or ``BUBBLE_HESS = 1``. The correction is evaluated on MPI rank 0. The setting and
+  ``BUBBLE > 0`` or ``BUBBLE_HESS = 1``, and a structure relaxed with it cannot yet be used
+  with ``RELAXED_STRUCTURE = 1``. The correction is evaluated on MPI rank 0. The setting and
   a fingerprint of the quintic IFCs are stored in ``PREFIX.scph.h5``; ``RESTART_SCPH`` refuses a
   state file written with a different ``STRAIN_FC5``, ``STRAIN_FC5_CHANNELS`` or quintic IFCs
   (files without the record count as ``STRAIN_FC5 = 0``).

@@ -229,6 +229,11 @@ void PHON::apply_relaxed_structure() const
                  " nothing and stores no structure.");
         }
         io.check_convergence({fcs_phonon->fc2_temperature}, run_info.allow_unconverged);
+        if (io.used_strain_fc5()) {
+            exit("apply_relaxed_structure",
+                 "The structure was relaxed with STRAIN_FC5 = 1, but RELAXED_STRUCTURE = 1 deforms\n"
+                 " the cubic IFCs with FC4 only (Phi3 + Phi4 : d) and would miss the FC5 part.");
+        }
 
         // u0 is indexed by the producer's primitive-cell atoms. The atom
         // order need not match this run's -- a state file whose FC2

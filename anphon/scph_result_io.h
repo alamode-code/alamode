@@ -54,7 +54,7 @@ struct ScphSettingsH5
     // 0. Exit on mismatch.
     int strain_fc5 = 0;
     int strain_fc5_diag = 0;
-    std::array<double, 3> fc5_fingerprint{};
+    std::array<double, 5> fc5_fingerprint{};
 };
 
 // Primitive cell of the SCPH run; the virtual supercell (primitive cell
@@ -182,6 +182,9 @@ public:
     // Refuse (or, with allow_unconverged, only warn about) temperatures
     // whose SCPH iteration or structural optimization did not converge.
     void check_convergence(const std::vector<double> &temps_requested, bool allow_unconverged) const;
+
+    // Whether the run that wrote the file relaxed with STRAIN_FC5 = 1.
+    bool used_strain_fc5() const;
 
     // The stored convergence flags of the requested temperatures (1 where the
     // file carries none, as check_convergence treats them).
