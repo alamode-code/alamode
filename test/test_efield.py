@@ -32,9 +32,9 @@ tools/strainfile.py: STRAINKIT_PYTHON, ~/miniforge3/envs/qmpy2, or the running
 one; skipped otherwise). The BaTiO3 runs read the container bto.h5 packed from
 strain_phonon (STRAINFILE, STRAIN_COUPLING = 25); bto_piezo.h5 adds a fake
 generic clamped-ion e0 with strainfile.py piezo --voigt.
-  V1 identity : RELAX_STR = 4, sheared strain, one step, generic E: the V0 and
-                9-gradient differences between the containers with and without
-                e0 are -Omega_ref E0 . e0:u and -Omega_ref E0_i e0_imn.
+  V1 averaged : RELAX_STR = 4, sheared strain, one step, generic E: the generic
+                e0 is averaged over Pm-3m (zero) with a warning; V0, the
+                gradients and the field energy equal those without e0.
   V2 E = 0    : e0 + POL_REF leave the steps and V0 bit-identical; P equals
                 F (d_ref + A + B) / (Omega_ref det F).
   V3 Maxwell  : d(dt_z)/du_mn |_E = -dG_mn/dE_z |_u for zz and xy (G_xy + G_yx)
@@ -54,6 +54,12 @@ a1 and its atoms reversed).
                 shear energy finite difference; the nested/permuted reference
                 cell is bit-identical; the Lambda-only container against bto.h5;
                 mpirun -np 4 against serial.
+  S symmetry  : anphon averages e0, B and Lambda over the reference space group
+                (production path everywhere): an unsymmetrized Lambda reproduces
+                W1's symmetric Lambda-only run, e0 and B vanish (Pm-3m) with a
+                warning. The fake Lambda is built Pm-3m symmetric; the BaTiO3
+                references use the averaged e0 and B (zero) under a field and
+                the raw ones at E = 0.
   W2 Maxwell  : V3 with bto_nl.h5 (matched meshes, 5e-5).
   W3 BUBBLE=4 : BUBBLE_FD_CHECK = 2 on matched meshes at the first structure: the
                 stress-displacement block equals the transposed force-strain
@@ -67,6 +73,13 @@ a1 and its atoms reversed).
   ZSISA       : QHA, QHA_SCHEME = 2, one step: the renormalized elastic constants
                 gain -Omega E.B, dv1/du gains -L (invariants), and dv1/du is the
                 central difference of the static force over u_zz and u_yz.
+
+ZnO (Z; P6_3mc, symmetry-allowed nonzero e0, B and Lambda, production path):
+  RELAX_STR = 4 (STRAIN_COUPLING = 0), one step, sheared strain, generic E: dt,
+  V0 and the 9 strain gradients against Python, the symmetric shear finite
+  difference of the field energy, raw data == their space-group average, a
+  nested/permuted /ReferenceCell bit-identical, mpirun -np 4 == serial, and a
+  restart without B rejected / with the raw container accepted.
 
 Run from the build directory: python ../test/test_efield.py (numpy required)
 """
@@ -651,11 +664,14 @@ DISPLACE_1B = """&displace
 /"""
 
 
-def piezo_e_bohr2():
+def piezo_e_bohr2(field=False):
+    """The fake e0 [e/Bohr^2]; with ``field`` as anphon uses it under EFIELD (its
+    Pm-3m average, zero)."""
     e = np.zeros((3, 3, 3))
     for c, (j, k) in enumerate(VOIGT_PAIRS):
         e[:, j, k] = e[:, k, j] = PIEZO_FAKE[:, c]
-    return e / C_M2_PER_E_BOHR2
+    e /= C_M2_PER_E_BOHR2
+    return symmetrize_bto(e, per_atom=False) if field else e
 
 
 def find_h5py_python():
@@ -666,7 +682,9 @@ def find_h5py_python():
         sys.executable,
     ):
         if py and os.path.exists(py):
-            rc = subprocess.run([py, "-c", "import h5py, ase"], capture_output=True)
+            rc = subprocess.run(
+                [py, "-c", "import h5py, ase, spglib"], capture_output=True
+            )
             if rc.returncode == 0:
                 return py
     return None
@@ -723,8 +741,10 @@ LBL_V0 = "V0 at this structure [Ry] ="
 
 
 def test_v1(anphonbin):
-    # Fixed sheared strain, one step, generic E: the containers with and without
-    # e0 differ by -Omega_ref E0 . e0:u in V0 and -Omega_ref E0_i e0_imn in G.
+    # Fixed sheared strain, one step, generic E and generic e0: under the field
+    # anphon averages e0 over Pm-3m of the reference, which makes it zero (odd
+    # rank, centrosymmetric), with a warning; V0, the gradients and the field
+    # energy equal those without e0.
     efield = np.array([0.004, -0.003, 0.01])
     common = dict(
         relax_str=4,
@@ -747,51 +767,22 @@ def test_v1(anphonbin):
         "may be missing" not in log0,
         "V1: no missing-e0 warning for the centrosymmetric BaTiO3 reference",
     )
-    omega = OMEGA_REF[0]
-    umn = np.array(STRAIN_SHEAR.split(), float).reshape(3, 3)
-    e_ry = efield * EV_A_TO_RY
-    e0 = piezo_e_bohr2()
-    dv_ref = -omega * np.einsum("i,ikl,kl->", e_ry, e0, umn)
-    dg_ref = -omega * np.einsum("i,imn->mn", e_ry, e0).ravel()
+    info += check(
+        np.abs(piezo_e_bohr2(field=True)).max() < 1.0e-15
+        and re.search(r"^ e0 changes by 100.0% of its maximum", log1, re.M),
+        "V1: the generic e0 is averaged to zero over Pm-3m, with the warning",
+    )
     dv = last_values(log1, LBL_V0)[0] - last_values(log0, LBL_V0)[0]
-    dg = last_values(log1, LBL_G) - last_values(log0, LBL_G)
-    info += check(
-        close(dv, dv_ref, 1.0e-9),
-        "V1: V0(e0) - V0(0) = %.10e == -Omega E0.e0:u = %.10e" % (dv, dv_ref),
-    )
-    info += check(
-        np.allclose(dg, dg_ref, rtol=1.0e-9, atol=1.0e-12 * np.abs(dg_ref).max()),
-        "V1: G(e0) - G(0) == -Omega E0_i e0_imn (max dev %.1e of %.1e)"
-        % (np.abs(dg - dg_ref).max(), np.abs(dg_ref).max()),
-    )
+    g0 = last_values(log0, LBL_G)
+    dg = last_values(log1, LBL_G) - g0
     r0 = np.loadtxt("v1_0.polarization", ndmin=2)[-1]
     r1 = np.loadtxt("v1_p.polarization", ndmin=2)[-1]
     info += check(
-        close(r1[7] - r0[7], dv_ref, 1.0e-8),
-        "V1: E_field column difference %.10e == -E0.A" % (r1[7] - r0[7]),
-    )
-    # symmetric shear u_xy = u_yx += +-h: the finite difference of the field
-    # energy (same q0, so only -E0.A changes) against G_xy + G_yx of the e0 term
-    h = 1.0e-4
-    ef = {}
-    for sign in (1, -1):
-        umn_s = umn.copy()
-        umn_s[0, 1] += sign * h
-        umn_s[1, 0] += sign * h
-        name = "v1_s%+d" % sign
-        common["strain"] = "\n".join(" %.12e %.12e %.12e" % tuple(r) for r in umn_s)
-        rc, _ = run_anphon(
-            anphonbin, name, bto_input(name, strainfile="bto_piezo.h5", **common)
-        )
-        if rc:
-            return info + check(False, "V1: shear finite-difference run failed")
-        ef[sign] = np.loadtxt(name + ".polarization", ndmin=2)[-1, 7]
-    fd = (ef[1] - ef[-1]) / (2.0 * h)
-    ref = dg_ref[1] + dg_ref[3]
-    info += check(
-        close(fd, ref, 1.0e-6),
-        "V1: d(E_field)/d(u_xy = u_yx) = %.10e == G_xy + G_yx of the e0 term = %.10e"
-        % (fd, ref),
+        abs(dv) <= 1.0e-12 * abs(last_values(log0, LBL_V0)[0])
+        and np.abs(dg).max() <= 1.0e-12 * np.abs(g0).max()
+        and abs(r1[7] - r0[7]) <= 1.0e-12 * abs(r0[7]),
+        "V1: V0, G and the field energy with the averaged e0 == without e0 "
+        "(dV0 %.1e, max dG %.1e)" % (dv, np.abs(dg).max()),
     )
     return info
 
@@ -818,7 +809,64 @@ def fake_nl(natom=5):
     return b, lam - lam.mean(axis=0)
 
 
-B_FAKE, LAMBDA_FAKE = fake_nl()
+# Atoms of the BaTiO3 reference (cBTO222.h5 PrimitiveCell, cubic, Ba at the origin)
+BTO_XF = np.array(
+    [
+        [0.0, 0.0, 0.0],
+        [0.5, 0.5, 0.5],
+        [0.0, 0.5, 0.5],
+        [0.5, 0.0, 0.5],
+        [0.5, 0.5, 0.0],
+    ]
+)
+BTO_KINDS = [0, 1, 2, 2, 2]
+
+
+def cubic_ops():
+    """Pm-3m of the BaTiO3 reference: the 48 signed permutation matrices about Ba
+    (symmorphic) with their atom permutations."""
+    import itertools
+
+    ops = []
+    for perm in itertools.permutations(range(3)):
+        for signs in itertools.product((1, -1), repeat=3):
+            r = np.zeros((3, 3))
+            r[range(3), perm] = signs
+            d = (BTO_XF @ r.T)[:, None, :] - BTO_XF[None, :, :]
+            d -= np.round(d)
+            hit = np.abs(d).max(axis=2) < 1.0e-8
+            p = [
+                next(j for j in range(5) if hit[k, j] and BTO_KINDS[j] == BTO_KINDS[k])
+                for k in range(5)
+            ]
+            ops.append((r, p))
+    return ops
+
+
+def symmetrize_bto(t, per_atom=True):
+    """Average over Pm-3m, the convention of anphon (Relaxation::load_piezo): per
+    atom Lambda'_P(k) = R R R R Lambda_k, or a global tensor R...R t."""
+    out = np.zeros_like(t)
+    for r, p in cubic_ops():
+        rt = t
+        for ax in range(1 if per_atom else 0, t.ndim):
+            rt = np.moveaxis(np.tensordot(r, rt, axes=(1, ax)), 0, ax)
+        if per_atom:
+            out[p] += rt
+        else:
+            out += rt
+    return out / 48.0
+
+
+# The fake Lambda is built Pm-3m symmetric, so anphon's space-group average leaves it
+# unchanged.  The fake e0 and B are generic: under a field anphon averages them to
+# E0_EFF and B_EFF (zero: odd rank, centrosymmetric reference); at E = 0 the raw
+# data are used.  Their nonzero field terms are tested on ZnO (stage Z).
+B_FAKE, LAMBDA_RAW = fake_nl()
+LAMBDA_FAKE = symmetrize_bto(LAMBDA_RAW)
+B_EFF = symmetrize_bto(B_FAKE, per_atom=False)
+
+
 PAIRS = [
     [(0, 0)],
     [(1, 1)],
@@ -829,13 +877,16 @@ PAIRS = [
 ]
 
 # argv: src dst what; what contains B (second_order), L (Lambda), N (nested
-# reference cell: doubled along a1, atoms reversed, Lambda blocks tiled)
+# reference cell: doubled along a1, atoms reversed, Lambda blocks tiled), R
+# (the unsymmetrized Lambda)
 NL_SCRIPT = r"""
 import shutil, sys
 import h5py, numpy as np
 src, dst, what = sys.argv[1:4]
 shutil.copy(src, dst)
 b, lam = np.load("fake_b.npy"), np.load("fake_lambda.npy")
+if "R" in what:
+    lam = np.load("fake_lambda_raw.npy")
 with h5py.File(dst, "r+") as f:
     g = f.require_group("Piezoelectric")
     if "B" in what:
@@ -867,6 +918,7 @@ with h5py.File(dst, "r+") as f:
 def build_nl_containers(py, tools_dir):
     np.save("fake_b.npy", B_FAKE)
     np.save("fake_lambda.npy", LAMBDA_FAKE)
+    np.save("fake_lambda_raw.npy", LAMBDA_RAW)
     # the same data through the strainkit writer (end-to-end writer/reader check)
     code = (
         "import shutil, sys\n"
@@ -889,6 +941,7 @@ def build_nl_containers(py, tools_dir):
     run_nl_script(py, "bto_piezo.h5", "bto_pL.h5", "L")
     run_nl_script(py, "bto.h5", "bto_lam.h5", "L")
     run_nl_script(py, "bto_piezo.h5", "bto_nl_nest.h5", "BLN")
+    run_nl_script(py, "bto.h5", "bto_lam_raw.h5", "LR")
 
 
 def nl_terms(efield, umn, u0):
@@ -897,7 +950,7 @@ def nl_terms(efield, umn, u0):
     [Ry], the field-force pattern f_kb = E.(Lambda_k:u) [Ry/Bohr]."""
     omega = OMEGA_REF[0]
     e_ry = efield * EV_A_TO_RY
-    bb = B_FAKE / C_M2_PER_E_BOHR2
+    bb = (B_EFF if np.any(efield) else B_FAKE) / C_M2_PER_E_BOHR2
     lam_u = np.einsum("kibmn,mn->kib", LAMBDA_FAKE, umn)
     dt = 0.5 * omega * np.einsum("ijklm,jk,lm->i", bb, umn, umn)
     dt += np.einsum("kib,kb->i", lam_u, u0)
@@ -1056,7 +1109,8 @@ def test_w1(anphonbin):
         ef[sign] = np.loadtxt(name + ".polarization", ndmin=2)[-1, 7]
     fd = (ef[1] - ef[-1]) / (2.0 * h)
     g_field = (
-        -OMEGA_REF[0] * np.einsum("i,imn->mn", e_ry, piezo_e_bohr2()).ravel() + dg_ref
+        -OMEGA_REF[0] * np.einsum("i,imn->mn", e_ry, piezo_e_bohr2(True)).ravel()
+        + dg_ref
     )
     ref = g_field[1] + g_field[3]
     info += check(
@@ -1088,6 +1142,51 @@ def test_w1(anphonbin):
         ),
         "W1: mpirun -np 4 V0, G, forces and dt == serial (bto_nl.h5)",
     )
+    return info
+
+
+def test_symmetrize(anphonbin):
+    # anphon averages e0, B and Lambda over the space group of the reference
+    # (Pm-3m): the unsymmetrized Lambda gives the run of the symmetric one (W1
+    # w1_lam, raw tensors kept), and the odd-rank e0 and B vanish (with a warning).
+    efield = np.array([0.004, -0.003, 0.01])
+    common = dict(
+        relax_str=4,
+        max_iter=1,
+        displace=DISPLACE_1B,
+        strain=STRAIN_SHEAR,
+        verbosity=2,
+        efield=" ".join(map(str, efield)),
+    )
+    log_l = open("w1_lam.log").read()
+    info = 0
+    for name, sfile, what in (
+        ("s_lam_raw", "bto_lam_raw.h5", "Lambda"),
+        ("s_nl", "bto_nl.h5", "e0, B"),
+    ):
+        rc, log = run_anphon(
+            anphonbin,
+            name,
+            bto_input(name, strainfile=sfile, **common),
+        )
+        if rc:
+            return info + check(False, "S: anphon failed with %s" % sfile)
+        dev = max(
+            np.abs(last_values(log, lbl) - last_values(log_l, lbl)).max()
+            / np.abs(last_values(log_l, lbl)).max()
+            for lbl in (LBL_V0, LBL_G, LBL_Q, LBL_DT)
+        )
+        info += check(
+            dev < 1.0e-10 and "averaged over the 48 symmetry operations" in log,
+            "S: %s symmetrized: V0, G, forces and dt == symmetric Lambda only (rel. dev %.1e)"
+            % (sfile, dev),
+        )
+        warned = re.findall(r"^ (\S+) changes by", log, re.M)
+        info += check(
+            ", ".join(warned) == what,
+            "S: %s: the large-correction warning names %s (got %s)"
+            % (sfile, what, warned),
+        )
     return info
 
 
@@ -1207,7 +1306,6 @@ def test_2_restarts(anphonbin):
         efield=efield,
         restart=True,
     )
-    msg_b = "second-order clamped-ion piezoelectric tensor"
     msg_l = "strain derivative of the Born charges"
     text_scph = bto_input("t6_text_lam", strainfile="bto_lam.h5", restart=True)
     text_qha = bto_input(
@@ -1218,16 +1316,6 @@ def test_2_restarts(anphonbin):
             "w1_nl (restart, no Lambda)",
             bto_input("w1_nl", strainfile="bto_pB.h5", **common),
             msg_l,
-        ),
-        (
-            "w1_nl (restart, no B)",
-            bto_input("w1_nl", strainfile="bto_pL.h5", **common),
-            msg_b,
-        ),
-        (
-            "v1_p (restart, B added)",
-            bto_input("v1_p", strainfile="bto_pB.h5", **common),
-            msg_b,
         ),
         (
             "v1_p (restart, Lambda added)",
@@ -1323,6 +1411,7 @@ def test_v3(anphonbin):
     dg_de = (4.0 * dg_de[2.5e-4] - dg_de[5.0e-4]) / 3.0
 
     info = 0
+    scale_zz = 0.0
     for label, (m, n) in (("zz", (2, 2)), ("xy", (0, 1))):
         dts = {}
         for sign in (1, -1):
@@ -1336,7 +1425,12 @@ def test_v3(anphonbin):
             dts[sign] = last_values(log, LBL_DT)
         lhs = (dts[1][2] - dts[-1][2]) / (2.0 * h_u)
         rhs = -dg_de[m, n] - (dg_de[n, m] if m != n else 0.0)
-        rel = abs(lhs - rhs) / max(abs(lhs), abs(rhs))
+        # The finite differences carry an absolute noise of ~1e-7 of the large zz
+        # response; the xy response of the cubic reference is ~1e3 times smaller
+        # (with the averaged e0 = B = 0), so it is measured against 1% of zz.
+        scale = max(abs(lhs), abs(rhs))
+        scale_zz = max(scale_zz, scale)
+        rel = abs(lhs - rhs) / max(scale, 1.0e-2 * scale_zz)
         info += check(
             rel < 5.0e-5,
             "V3 %s: d(dt_z)/du = %.10e == -dG/dE_z = %.10e (extrapolated), rel. diff %.2e"
@@ -1416,7 +1510,7 @@ def test_w3(anphonbin):
     )
     omega = OMEGA_REF[0]
     e_ry = efield * EV_A_TO_RY
-    c = -omega * np.einsum("a,amnpq->mnpq", e_ry, B_FAKE / C_M2_PER_E_BOHR2)
+    c = -omega * np.einsum("a,amnpq->mnpq", e_ry, B_EFF / C_M2_PER_E_BOHR2)
     s_ref = np.array(
         [
             [
@@ -1427,10 +1521,11 @@ def test_w3(anphonbin):
         ]
     )
     d_ss = blocks["w3_nl"][0] - blocks["w3_p"][0]
+    scale = np.abs(blocks["w3_p"][0]).max()
     info += check(
-        np.allclose(d_ss, s_ref, rtol=1.0e-7, atol=1.0e-7 * np.abs(s_ref).max()),
-        "W3: strain-strain block increment == -Omega E0.B (max dev %.1e of %.1e)"
-        % (np.abs(d_ss - s_ref).max(), np.abs(s_ref).max()),
+        np.abs(d_ss - s_ref).max() <= 1.0e-10 * scale,
+        "W3: strain-strain block increment == -Omega E0.B of the averaged B (zero; "
+        "max dev %.1e of the block %.1e)" % (np.abs(d_ss - s_ref).max(), scale),
     )
     idx = blocks["w3_nl"][1]
     d_qs = blocks["w3_nl"][2] - blocks["w3_p"][2]
@@ -1592,14 +1687,15 @@ def test_zsisa(anphonbin):
     )
     omega = OMEGA_REF[0]
     e_ry = efield * EV_A_TO_RY
-    c_ref = -omega * np.einsum(
-        "a,amnpq->mnpq", e_ry, B_FAKE / C_M2_PER_E_BOHR2
-    ).reshape(9, 9)
+    c_ref = -omega * np.einsum("a,amnpq->mnpq", e_ry, B_EFF / C_M2_PER_E_BOHR2).reshape(
+        9, 9
+    )
     d_c2 = base_nl[0] - base_p[0]
+    scale = np.abs(base_p[0]).max()
     info = info0 + check(
-        np.allclose(d_c2, c_ref, rtol=1.0e-8, atol=1.0e-8 * np.abs(c_ref).max()),
-        "ZSISA: C2_renorm increment == -Omega E0.B (max dev %.1e of %.1e)"
-        % (np.abs(d_c2 - c_ref).max(), np.abs(c_ref).max()),
+        np.abs(d_c2 - c_ref).max() <= 1.0e-10 * scale,
+        "ZSISA: C2_renorm increment == -Omega E0.B of the averaged B (zero; max dev "
+        "%.1e of C2 %.1e)" % (np.abs(d_c2 - c_ref).max(), scale),
     )
     d_dv1 = base_nl[1] - base_p[1]
     l_ref = -mode_lambda(base_nl[3], efield)
@@ -1722,6 +1818,261 @@ def test_1b_errors(anphonbin):
     return info
 
 
+# ------------------------------------------------- ZnO (6mm): production path
+# Generic e0, B and Lambda (raw) and their P6_3mc averages (sym), built by
+# ZNO_SCRIPT with strainkit; the containers hold only /ReferenceCell and
+# /Piezoelectric (STRAIN_COUPLING = 0: couplings from the IFCs).
+ZNO_SCRIPT = r"""
+import re, shutil, sys
+import numpy as np
+sys.path.insert(0, sys.argv[1])
+import ase
+from strainkit import strainfile as sf
+from strainkit.symmetry import space_group_operations, symmetrize_atomic
+from strainkit.writers import ReferenceCell
+lat = np.array([float(x) for x in sys.argv[2].split()]).reshape(3, 3)  # rows, Angstrom
+x = open("ZnO442_harmonic.xml").read()
+pos = {int(i): (e, [float(v) for v in p.split()]) for i, e, p in
+       re.findall(r'<pos index="(\d+)" element="(\w+)">([^<]+)</pos>', x)}
+prim = sorted((int(a), int(s)) for t, a, s in
+              re.findall(r'<map tran="(\d+)" atom="(\d+)">(\d+)</map>', x) if t == "1")
+el = [pos[s][0] for _, s in prim]
+xf = np.array([pos[s][1] for _, s in prim]) * [4.0, 4.0, 2.0] % 1.0
+cell = ReferenceCell(lat, el, xf)
+rots, perms, images = ops = space_group_operations(
+    ase.Atoms(el, cell=lat, scaled_positions=xf, pbc=True))
+
+
+def glob(t):
+    out = np.zeros_like(t)
+    for r in rots:
+        rt = t
+        for ax in range(t.ndim):
+            rt = np.moveaxis(np.tensordot(r, rt, axes=(1, ax)), 0, ax)
+        out += rt
+    return out / len(rots)
+
+
+rng = np.random.default_rng(20261007)
+e0 = rng.uniform(-0.6, 0.6, (3, 3, 3))
+e0 = 0.5 * (e0 + e0.transpose(0, 2, 1))
+b = rng.uniform(-2.0, 2.0, (3, 3, 3, 3, 3))
+for axes in ((0, 2, 1, 3, 4), (0, 1, 2, 4, 3), (0, 3, 4, 1, 2)):
+    b = 0.5 * (b + b.transpose(axes))
+lam = rng.uniform(-1.0, 1.0, (4, 3, 3, 3, 3))
+lam = 0.5 * (lam + lam.transpose(0, 1, 2, 4, 3))
+lam -= lam.mean(axis=0)
+raw = {sf.CLAMPED_ION: e0, sf.SECOND_ORDER: b, sf.BORN_DERIV: lam}
+sym = {sf.CLAMPED_ION: glob(e0), sf.SECOND_ORDER: glob(b),
+       sf.BORN_DERIV: symmetrize_atomic(lam, *ops)}
+np.save("zno_sym_e0.npy", sym[sf.CLAMPED_ION])
+np.save("zno_sym_b.npy", sym[sf.SECOND_ORDER])
+np.save("zno_sym_lam.npy", sym[sf.BORN_DERIV])
+quiet = lambda *a: None
+for name, data in (("zno_ref.h5", {}), ("zno_nl.h5", sym), ("zno_raw.h5", raw),
+                   ("zno_eL.h5", {k: sym[k] for k in (sf.CLAMPED_ION, sf.BORN_DERIV)})):
+    with sf.update(name, cell) as f:
+        if data:
+            sf.write_piezo_datasets(f, data)
+# nested and permuted: /ReferenceCell doubled along a3, atoms reversed
+big = ReferenceCell(lat * [[1], [1], [2]], (el * 2)[::-1],
+                    np.vstack([xf * [1, 1, 0.5], xf * [1, 1, 0.5] + [0, 0, 0.5]])[::-1])
+lam2 = np.concatenate([sym[sf.BORN_DERIV]] * 2)[::-1]
+with sf.update("zno_nest.h5", big) as f:
+    sf.write_piezo_datasets(f, dict(sym, **{sf.BORN_DERIV: lam2}))
+"""
+
+ZNO_ALAT = 1.88972612462577
+ZNO_CELL = np.array(
+    [
+        [3.235859326375770, 0.0, 0.0],
+        [-1.617929663187880, 2.802336379714220, 0.0],
+        [0.0, 0.0, 5.224712025937350],
+    ]
+)
+DISPLACE_ZNO = """&displace
+1
+ 0.004 -0.002 0.006
+ -0.003 0.005 -0.004
+ 0.002 0.003 0.010
+ -0.005 -0.001 -0.008
+/"""
+
+
+def zno_input(name, sfile, umn, efield, restart=False):
+    text = open("zno_t2.in").read()
+    text = text.replace("PREFIX = zno_t2", "PREFIX = %s\n  VERBOSITY = 2" % name)
+    text = text.replace(
+        "RELAX_STR = 1", "RELAX_STR = 4" + ("\n  RESTART_QHA = 1" if restart else "")
+    )
+    text = text.replace(
+        "MAX_STR_ITER = 20",
+        "MAX_STR_ITER = 1\n  STRAIN_COUPLING = 0\n  STRAINFILE = %s" % sfile,
+    )
+    text = text.replace(
+        "TMIN = 100; TMAX = 300; DT = 200",
+        "TMIN = 300; TMAX = 300" + ("\n  ALLOW_UNCONVERGED = 1" if restart else ""),
+    )
+    if not restart and os.path.exists(name + ".qha.h5"):
+        os.remove(name + ".qha.h5")  # else RESTART_QHA would read it
+    text = re.sub(
+        r"EFIELD = .*", "EFIELD = " + " ".join("%.10f" % x for x in efield), text
+    )
+    strain = "\n".join(" %.12e %.12e %.12e" % tuple(r) for r in umn)
+    return text + "&strain\n%s\n/\n%s\n" % (strain, DISPLACE_ZNO)
+
+
+def test_zno_piezo(anphonbin, py, tools_dir):
+    # ZnO (P6_3mc): e0, B and Lambda all have symmetry-allowed nonzero components,
+    # so their field terms are tested through the production path (anphon's
+    # space-group average on): RELAX_STR = 4, one step, sheared strain, generic E.
+    res = subprocess.run(
+        [
+            py,
+            "-c",
+            ZNO_SCRIPT,
+            tools_dir,
+            " ".join(map(str, (ZNO_ALAT * BOHR * ZNO_CELL).ravel())),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if res.returncode != 0:
+        print(res.stderr)
+        return check(False, "Z: building the ZnO containers")
+    e0 = np.load("zno_sym_e0.npy") / C_M2_PER_E_BOHR2
+    bb = np.load("zno_sym_b.npy") / C_M2_PER_E_BOHR2
+    lam = np.load("zno_sym_lam.npy")
+    efield = np.array([0.006, -0.004, 0.01])
+    umn = np.array(STRAIN_SHEAR.split(), float).reshape(3, 3)
+    omega = abs(np.linalg.det(ZNO_ALAT * ZNO_CELL))
+    e_ry = efield * EV_A_TO_RY
+
+    def run(name, sfile, u=umn, nprocs=1, restart=False):
+        rc, log = run_anphon(
+            anphonbin, name, zno_input(name, sfile, u, efield, restart), nprocs
+        )
+        return (log if rc == 0 else None), step_row("step_u0.txt", 0).reshape(
+            -1, 3
+        ) if rc == 0 else None
+
+    log0, _ = run("z_0", "zno_ref.h5")
+    log, u0 = run("z_nl", "zno_nl.h5")
+    if log0 is None or log is None:
+        return check(False, "Z: anphon failed")
+    info = check(
+        "averaged over the 12 symmetry operations" in log and "changes by" not in log,
+        "Z: 12 operations; the symmetric data are left unchanged (no warning)",
+    )
+    dt_ref = omega * (
+        np.einsum("ikl,kl->i", e0, umn)
+        + 0.5 * np.einsum("ijklm,jk,lm->i", bb, umn, umn)
+    ) + np.einsum("kibmn,mn,kb->i", lam, umn, u0)
+    dg_ref = (
+        -omega * np.einsum("i,imn->mn", e_ry, e0 + np.einsum("imnpq,pq->imn", bb, umn))
+        - np.einsum("i,kibmn,kb->mn", e_ry, lam, u0)
+    ).ravel()
+    ddt = last_values(log, LBL_DT) - last_values(log0, LBL_DT)
+    dv = last_values(log, LBL_V0)[0] - last_values(log0, LBL_V0)[0]
+    dg = last_values(log, LBL_G) - last_values(log0, LBL_G)
+    info += check(
+        np.allclose(ddt, dt_ref, rtol=1.0e-6, atol=1.0e-6 * np.abs(dt_ref).max()),
+        "Z: dt(nl) - dt(0) %s == Omega (e0:u + B:u:u/2) + sum (Lambda:u) u0 %s"
+        % (ddt, dt_ref),
+    )
+    info += check(
+        close(dv, -e_ry @ ddt, 1.0e-8),
+        "Z: V0(nl) - V0(0) = %.10e == -E0.(dt(nl) - dt(0)) = %.10e" % (dv, -e_ry @ ddt),
+    )
+    info += check(
+        np.allclose(dg, dg_ref, rtol=1.0e-6, atol=1.0e-6 * np.abs(dg_ref).max()),
+        "Z: G(nl) - G(0) == -Omega E0.(e0 + B:u) - E0.Lambda u0 (max dev %.1e of %.1e)"
+        % (np.abs(dg - dg_ref).max(), np.abs(dg_ref).max()),
+    )
+    # symmetric shear u_xy = u_yx += +-h: the field energy against G_xy + G_yx
+    h = 1.0e-4
+    ef = {}
+    for sign in (1, -1):
+        us = umn.copy()
+        us[0, 1] += sign * h
+        us[1, 0] += sign * h
+        if run("z_s%+d" % sign, "zno_nl.h5", us)[0] is None:
+            return info + check(False, "Z: shear finite-difference run failed")
+        ef[sign] = np.loadtxt("z_s%+d.polarization" % sign, ndmin=2)[-1, 7]
+    fd = (ef[1] - ef[-1]) / (2.0 * h)
+    ref = dg_ref[1] + dg_ref[3]
+    info += check(
+        close(fd, ref, 1.0e-5),
+        "Z: d(E_field)/d(u_xy = u_yx) = %.10e == G_xy + G_yx of the field terms = %.10e"
+        % (fd, ref),
+    )
+
+    labels = (LBL_V0, LBL_G, LBL_Q, LBL_DT)
+    # the raw (unsymmetrized) data give the run of their average, with the warning
+    log_r, _ = run("z_raw", "zno_raw.h5")
+    dev = (
+        max(
+            np.abs(last_values(log_r, lbl) - last_values(log, lbl)).max()
+            / np.abs(last_values(log, lbl)).max()
+            for lbl in labels
+        )
+        if log_r
+        else 1.0
+    )
+    warned = re.findall(r"^ (\S+) changes by", log_r or "", re.M)
+    info += check(
+        dev < 1.0e-9 and warned == ["e0", "B", "Lambda"],
+        "Z: raw e0, B, Lambda == their space-group average (rel. dev %.1e), warned: %s"
+        % (dev, warned),
+    )
+    # nested, permuted /ReferenceCell: bit-identical
+    log_n, _ = run("z_nest", "zno_nest.h5")
+    info += check(
+        log_n is not None
+        and "translation images averaged" in log_n
+        and all(
+            np.array_equal(last_values(log, lbl), last_values(log_n, lbl))
+            for lbl in labels
+        ),
+        "Z: nested + permuted /ReferenceCell gives bit-identical V0, G, forces and dt",
+    )
+    if shutil.which("mpirun") is None:
+        print("  skip   Z: mpirun not found, MPI comparison skipped")
+    else:
+        log_m, _ = run("z_mpi", "zno_nl.h5", nprocs=4)
+        info += check(
+            log_m is not None
+            and all(
+                np.allclose(
+                    last_values(log, lbl),
+                    last_values(log_m, lbl),
+                    rtol=1.0e-9,
+                    atol=1.0e-14,
+                )
+                for lbl in labels
+            ),
+            "Z: mpirun -np 4 V0, G, forces and dt == serial (zno_nl.h5)",
+        )
+    # restarts from z_nl: without B rejected; the raw container (same average) accepted
+    rc, log_x = run_anphon(
+        anphonbin, "z_nl", zno_input("z_nl", "zno_eL.h5", umn, efield, True)
+    )
+    info += check(
+        rc != 0
+        and "second-order clamped-ion piezoelectric tensor" in log_x
+        and "not compatible" in log_x,
+        "Z: restart without B rejected (with the note on unsymmetrized restart files)",
+    )
+    rc, log_x = run_anphon(
+        anphonbin, "z_nl", zno_input("z_nl", "zno_raw.h5", umn, efield, True)
+    )
+    info += check(
+        rc == 0 and "RESTART_QHA is true" in log_x,
+        "Z: restart with the raw container (same space-group average) accepted",
+    )
+    return info
+
+
 def test_missing_e0_warning(anphonbin):
     # ZnO (no inversion), strained cell (RELAX_STR = 4, couplings from the IFCs),
     # EFIELD != 0 and no e0: the warning fires. Reuses the T2 files.
@@ -1794,6 +2145,7 @@ if __name__ == "__main__":
         stages += [
             ("V1", test_v1, (anphonbin,)),
             ("W1", test_w1, (anphonbin,)),
+            ("S", test_symmetrize, (anphonbin,)),
             ("V2", test_v2, (anphonbin,)),
             ("W4", test_w4, (anphonbin,)),
             ("1b errors", test_1b_errors, (anphonbin,)),
@@ -1811,6 +2163,10 @@ if __name__ == "__main__":
         ("T2", test_t2, (anphonbin, zno_dir)),
         ("missing e0", test_missing_e0_warning, (anphonbin,)),
     ]
+    if have_containers:
+        stages.append(
+            ("Z", test_zno_piezo, (anphonbin, py, os.path.join(project_root, "tools")))
+        )
     for label, func, args in stages:
         t0 = time.time()
         print("%s:" % label)

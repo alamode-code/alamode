@@ -20,7 +20,8 @@
              group (--no-symmetrize: raw; --no-clamped-ion keeps an existing
              clamped_ion);
       dfpt:  Lambda -> born_charge_strain_derivative ([--born-ref OUTCAR] for
-             the reference Born charges; the ASR residual is removed);
+             the reference Born charges; the ASR residual is removed; averaged
+             over the space group with the atom permutations, --no-symmetrize: raw);
       berry-lambda: prints the Lambda column and compares it with the stored
              Lambda of --strain-file.
       Only the named datasets are replaced; atoms are mapped onto the
@@ -113,7 +114,8 @@ def main(argv=None):
     c.add_argument(
         "--no-symmetrize",
         action="store_true",
-        help="berry: write the raw e0 and B instead of their point-group average",
+        help="berry: write the raw e0 and B instead of their point-group average; "
+        "dfpt: the raw Lambda instead of its space-group average",
     )
     c.add_argument(
         "--second-order",

@@ -236,7 +236,10 @@ public:
 
     // symprec is Symmetry::tolerance, cached for the spglib calls of this class.
     // ref_has_inversion: the reference cell has the inversion (missing-e0 warning).
-    void setup_relaxation(double symprec, bool ref_has_inversion);
+    // symops_ref: the operations of the reference structure with the atom mapping
+    // (Symmetry::SymmListWithMap_ref), used to symmetrize /Piezoelectric.
+    void setup_relaxation(double symprec, bool ref_has_inversion,
+                          const std::vector<SymmetryOperationWithMapping> &symops_ref);
 
     void compute_del_v_strain(const DerivativeIFC &derivative_ifc, const KpointMeshUniform *kmesh_coarse,
                               const KpointMeshUniform *kmesh_dense, DelVStrainData &del_v_strain,
@@ -274,7 +277,8 @@ public:
     // piezo0, piezo2 and born_strain (and the field terms efield_strain_gradient,
     // efield_strain_curvature) from STRAINFILE /Piezoelectric; every rank.
     // match maps the per-atom Lambda blocks of /ReferenceCell onto the primitive cell.
-    void load_piezo(const strain_parsers::AtomMatch &match);
+    void load_piezo(const strain_parsers::AtomMatch &match,
+                    const std::vector<SymmetryOperationWithMapping> &symops_ref);
 
     // Adds the pV term and, under EFIELD, the piezoelectric enthalpy
     // -Omega_ref E0_i (e0_ikl u_kl + 1/2 B_i,kl,pq u_kl u_pq) (each term when its data is nonzero).

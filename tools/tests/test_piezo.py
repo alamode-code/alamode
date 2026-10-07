@@ -296,7 +296,7 @@ def _born(lines, natom=4):
 
 def test_dfpt_lambda_formula_and_asr(tmp_path):
     out, born_ref, fx = _dfpt_outdir(tmp_path)
-    res = wp.collect(out, born_ref=born_ref, log=QUIET)
+    res = wp.collect(out, born_ref=born_ref, symmetrize=False, log=QUIET)
     lam, diag = res["Lambda"], res["diagnostics"]
     h = fx["h"]
     z = {k: _born(v["born"]) for k, v in fx["cells"].items()}
@@ -319,8 +319,125 @@ def test_dfpt_lambda_formula_and_asr(tmp_path):
     assert lam[0, 2, 2, 0, 0] == pytest.approx(0.37, abs=0.02)
     assert lam[0, 2, 2, 2, 2] == pytest.approx(-1.10, abs=0.02)
     # without --born-ref: Z0 = mean of the strained cells (O(h^2))
-    lam2 = wp.collect(out, log=QUIET)["Lambda"]
+    lam2 = wp.collect(out, symmetrize=False, log=QUIET)["Lambda"]
     assert np.abs(lam2 - lam).max() < 1e-3
+
+
+def _ops(cell):
+    import ase
+
+    from strainkit.symmetry import space_group_operations
+
+    return space_group_operations(
+        ase.Atoms(cell.elements, cell=cell.lavec, scaled_positions=cell.xf, pbc=True)
+    )
+
+
+def _rot4(q, t):
+    return np.einsum("ia,jb,mc,nd,kabcd->kijmn", q, q, q, q, t)
+
+
+def test_symmetrize_atomic_lambda():
+    from strainkit.symmetry import symmetrize_atomic
+
+    cell = _zno_cell()
+    rots, perms, images = _ops(cell)
+    assert len(rots) == 12 and list(images) == [0, 1, 2, 3]  # P6_3mc
+    rng = np.random.default_rng(3)
+    raw = rng.normal(size=(4, 3, 3, 3, 3))
+    raw = 0.5 * (raw + raw.transpose(0, 1, 2, 4, 3))
+    raw -= raw.mean(axis=0)
+    sym = symmetrize_atomic(raw, rots, perms)
+    # idempotent, invariant under every operation, mn symmetry and ASR kept
+    assert np.allclose(symmetrize_atomic(sym, rots, perms), sym, atol=1e-13)
+    for r, p in zip(rots, perms):
+        moved = np.empty_like(sym)
+        moved[p] = _rot4(r, sym)
+        assert np.allclose(moved, sym, atol=1e-13)
+    assert np.allclose(sym, sym.transpose(0, 1, 2, 4, 3))
+    assert np.abs(sym.sum(axis=0)).max() < 1e-13
+    # 6mm: Lambda_xx,zz = Lambda_yy,zz, Lambda_xy,zz = 0
+    assert np.allclose(sym[:, 0, 0, 2, 2], sym[:, 1, 1, 2, 2])
+    assert np.allclose(sym[:, 0, 1, 2, 2], 0.0, atol=1e-13)
+    # the non-symmetric part is removed exactly
+    noise = 0.1 * rng.normal(size=raw.shape)
+    noise -= symmetrize_atomic(noise, rots, perms)
+    assert np.allclose(symmetrize_atomic(sym + noise, rots, perms), sym, atol=1e-13)
+    # equivariance: a rotated frame and permuted atoms give the rotated, permuted result
+    q = np.linalg.qr(rng.normal(size=(3, 3)))[0]
+    perm = [3, 1, 0, 2]
+    rcell = ReferenceCell(
+        cell.lavec @ q.T, [cell.elements[i] for i in perm], cell.xf[perm]
+    )
+    got = symmetrize_atomic(_rot4(q, raw)[perm], *_ops(rcell))
+    assert np.allclose(got, _rot4(q, sym)[perm], atol=1e-12)
+
+
+def test_symmetrize_anisotropic_supercell_reference():
+    """A 2x1x1 cubic BaTiO3 cell (tetragonal lattice) gets the full Pm-3m group:
+    the result equals the primitive-cell symmetrization of the image average."""
+    from strainkit.symmetry import cartesian_rotations, symmetrize_atomic
+
+    a = 4.0
+    xf = np.array(
+        [[0, 0, 0], [0.5, 0.5, 0.5], [0, 0.5, 0.5], [0.5, 0, 0.5], [0.5, 0.5, 0]]
+    )
+    el = ["Ba", "Ti", "O", "O", "O"]
+    prim = ReferenceCell(np.eye(3) * a, el, xf)
+    sup = ReferenceCell(
+        np.diag([2 * a, a, a]),
+        el * 2,
+        np.vstack([xf * [0.5, 1, 1], xf * [0.5, 1, 1] + [0.5, 0, 0]]),
+    )
+    import ase
+
+    rots = cartesian_rotations(
+        ase.Atoms(sup.elements, cell=sup.lavec, scaled_positions=sup.xf, pbc=True)
+    )
+    assert len(rots) == 48
+    ops_p, ops_s = _ops(prim), _ops(sup)
+    assert len(ops_p[0]) == 48 and len(ops_s[0]) == 48
+    assert list(ops_s[2]) == [0, 1, 2, 3, 4] * 2
+    rng = np.random.default_rng(5)
+    raw = rng.normal(size=(10, 3, 3, 3, 3))
+    want = symmetrize_atomic(0.5 * (raw[:5] + raw[5:]), *ops_p)
+    got = symmetrize_atomic(raw, *ops_s)
+    assert np.allclose(got, np.concatenate([want, want]), atol=1e-12)
+    # Pm-3m: Ti Lambda_xx,xx == Lambda_yy,yy == Lambda_zz,zz
+    assert np.allclose(
+        got[1, [0, 1, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2]], got[1, 0, 0, 0, 0]
+    )
+
+
+def test_dfpt_zero_lambda(tmp_path, monkeypatch):
+    """An exactly zero Lambda (e.g. a one-atom cell after the ASR) is no error."""
+    out, born_ref, _ = _dfpt_outdir(tmp_path)
+    monkeypatch.setattr(
+        wp, "born_lambda", lambda zp, zm, h, z0: np.zeros((len(z0), 3, 3, 3, 3))
+    )
+    for sym in (True, False):
+        res = wp.collect(out, born_ref=born_ref, symmetrize=sym, log=QUIET)
+        assert not res["Lambda"].any()
+        assert res["diagnostics"]["Lambda_symmetry_noise_relative"] == 0.0
+
+
+def test_dfpt_lambda_is_space_group_symmetric(tmp_path):
+    from strainkit.symmetry import symmetrize_atomic
+
+    out, born_ref, _ = _dfpt_outdir(tmp_path)
+    logs = []
+    res = wp.collect(out, born_ref=born_ref, log=logs.append)
+    raw = wp.collect(out, born_ref=born_ref, symmetrize=False, log=QUIET)["Lambda"]
+    lam, diag = res["Lambda"], res["diagnostics"]
+    ops = _ops(_zno_cell())
+    assert np.allclose(symmetrize_atomic(lam, *ops), lam, atol=1e-12)
+    assert np.allclose(lam, symmetrize_atomic(raw, *ops), atol=1e-14)
+    assert diag["space_group_order"] == 12 and diag["symmetrized"]
+    assert diag["Lambda_symmetry_noise"] == pytest.approx(np.abs(lam - raw).max())
+    assert 0 < diag["Lambda_symmetry_noise_relative"] < 0.05
+    assert any("space-group (12 operations) noise of Lambda" in x for x in logs)
+    assert np.abs(lam.sum(axis=0)).max() < 1e-12  # ASR kept
+    assert np.allclose(lam, lam.transpose(0, 1, 2, 4, 3))
 
 
 def test_dfpt_maps_onto_permuted_and_nested_reference(tmp_path):
@@ -354,6 +471,9 @@ def test_dfpt_maps_onto_permuted_and_nested_reference(tmp_path):
     with h5py.File(p, "r") as f:
         got = sf.read_piezo_dataset(f, sf.BORN_DERIV)[0]
     assert np.allclose(got, np.concatenate([lam, lam]))
+    from strainkit.symmetry import symmetrize_atomic
+
+    assert np.allclose(symmetrize_atomic(got, *_ops(big)), got, atol=1e-12)
     # the reverse: calculation cell = supercell of the reference -> average of the images
     images = wp.map_to_reference(cell, big)
     assert images == [[0, 4], [1, 5], [2, 6], [3, 7]]

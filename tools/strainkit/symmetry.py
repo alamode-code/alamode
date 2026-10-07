@@ -1,4 +1,4 @@
-"""Point-group symmetrization of Cartesian tensors (via spglib)."""
+"""Space-group symmetrization of Cartesian tensors (via spglib)."""
 
 import itertools
 
@@ -6,36 +6,108 @@ import numpy as np
 
 
 def cartesian_rotations(atoms, symprec=1.0e-5):
-    """Unique Cartesian rotation matrices of the space group of ``atoms``.
+    """Unique Cartesian rotation matrices of the space group of the crystal of
+    ``atoms`` (taken from its primitive cell, so a supercell whose lattice has a
+    lower symmetry than the crystal still gives the full point group).
 
     spglib returns rotations acting on fractional coordinates (x' = R x).  With
     ``A`` the matrix whose rows are the lattice vectors, r = A^T x, hence
     ``R_cart = A^T R (A^T)^-1``.
     """
-    import spglib
-
-    cell = (
-        np.asarray(atoms.cell[:], dtype=float),
-        np.asarray(atoms.get_scaled_positions(), dtype=float),
-        np.asarray(atoms.numbers, dtype=int),
-    )
-    dataset = spglib.get_symmetry_dataset(cell, symprec=symprec)
-    if dataset is None:
-        raise RuntimeError("spglib could not determine the symmetry of the structure")
-    rots_frac = np.asarray(
-        dataset.rotations if hasattr(dataset, "rotations") else dataset["rotations"],
-        dtype=float,
-    )
-    at = np.asarray(atoms.cell[:], dtype=float).T
-    at_inv = np.linalg.inv(at)
     seen = []
-    for r in rots_frac:
-        rc = at @ r @ at_inv
-        if np.abs(rc @ rc.T - np.eye(3)).max() > 1.0e-6:
-            raise RuntimeError("non-orthogonal Cartesian rotation obtained from spglib")
+    for rc in space_group_operations(atoms, symprec)[0]:
         if not any(np.abs(rc - s).max() < 1.0e-8 for s in seen):
             seen.append(rc)
     return np.array(seen)
+
+
+def space_group_operations(atoms, symprec=1.0e-5):
+    """(Cartesian rotations (nop, 3, 3), atom permutations (nop, nprim), images
+    (natom,)) of the space group of the crystal of ``atoms``.
+
+    The operations are those of the primitive cell (spglib, same frame and origin
+    as ``atoms``), acting on its atoms: R r_p + t = r_perm[p] modulo the primitive
+    lattice.  images[k] is the primitive atom of which atom k of ``atoms`` is a
+    translation image (the identity for a primitive ``atoms``).  A supercell whose
+    lattice has a lower symmetry than the crystal (e.g. 2x1x1 cubic) thus still
+    gets the full group: :func:`symmetrize_atomic` averages the images onto the
+    primitive atoms, symmetrizes there and copies the result back.
+    """
+    import spglib
+
+    lat = np.asarray(atoms.cell[:], dtype=float)
+    xf = np.asarray(atoms.get_scaled_positions(), dtype=float)
+    num = np.asarray(atoms.numbers, dtype=int)
+    cart = xf @ lat
+    prim = spglib.standardize_cell(
+        (lat, xf, num), to_primitive=True, no_idealize=True, symprec=symprec
+    )
+    if prim is None:
+        raise RuntimeError("spglib could not determine the primitive cell")
+    plat = np.asarray(prim[0], dtype=float)
+    m = lat @ np.linalg.inv(plat)
+    if np.abs(m - np.round(m)).max() > 1.0e-6:
+        raise RuntimeError("spglib returned a primitive cell in a different frame")
+    inv = np.linalg.inv(plat)
+    tol = 10.0 * symprec
+
+    def same(d):
+        d = d @ inv
+        return np.linalg.norm((d - np.round(d)) @ plat, axis=-1) < tol
+
+    rep, images = [], []
+    for k in range(len(num)):
+        hit = [
+            i for i, j in enumerate(rep) if num[j] == num[k] and same(cart[k] - cart[j])
+        ]
+        if not hit:
+            rep.append(k)
+            hit = [len(rep) - 1]
+        images.append(hit[0])
+    pnum = num[rep]
+    pcart = cart[rep]
+    dataset = spglib.get_symmetry_dataset((plat, pcart @ inv, pnum), symprec=symprec)
+    if dataset is None:
+        raise RuntimeError("spglib could not determine the symmetry of the structure")
+    get = lambda k: getattr(dataset, k) if hasattr(dataset, k) else dataset[k]  # noqa: E731
+    at, at_inv = plat.T, inv.T
+    rots, perms = [], []
+    for r, t in zip(get("rotations"), get("translations")):
+        rc = at @ r @ at_inv
+        if np.abs(rc @ rc.T - np.eye(3)).max() > 1.0e-6:
+            raise RuntimeError("non-orthogonal Cartesian rotation obtained from spglib")
+        img = pcart @ rc.T + np.asarray(t) @ plat
+        hit = same(img[:, None, :] - pcart[None, :, :]) & (
+            pnum[:, None] == pnum[None, :]
+        )
+        perm = hit.argmax(axis=1)
+        if not hit.any(axis=1).all() or sorted(perm) != list(range(len(pnum))):
+            raise RuntimeError("could not map the atoms under a space-group operation")
+        rots.append(rc)
+        perms.append(perm)
+    return np.array(rots), np.array(perms), np.array(images)
+
+
+def symmetrize_atomic(t, rots, perms, images=None):
+    """Average per-atom Cartesian tensors t (natom, 3, ..., 3) over the space group:
+    t'_perm[p] = R...R t_p on every Cartesian index.  With ``images`` (from
+    :func:`space_group_operations`) the translation images are first averaged onto
+    the primitive atoms and the result is copied back to all of them."""
+    t = np.asarray(t, dtype=float)
+    if images is not None:
+        images = np.asarray(images)
+        nprim = perms.shape[1]
+        tp = np.zeros((nprim,) + t.shape[1:])
+        np.add.at(tp, images, t)
+        tp /= np.bincount(images, minlength=nprim).reshape((-1,) + (1,) * (t.ndim - 1))
+        return symmetrize_atomic(tp, rots, perms)[images]
+    out = np.zeros_like(t)
+    for r, p in zip(rots, perms):
+        rt = t
+        for ax in range(1, t.ndim):
+            rt = np.moveaxis(np.tensordot(r, rt, axes=(1, ax)), 0, ax)
+        out[p] += rt
+    return out / len(rots)
 
 
 def symmetrize_rank2(t, rots):

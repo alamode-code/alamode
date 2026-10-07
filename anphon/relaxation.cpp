@@ -42,6 +42,45 @@ extern "C"
 
 using namespace PHON_NS;
 
+namespace
+{
+// Average t (blocks of 3^rank Cartesian components, row-major) over the operations:
+// t'_{P(k)} = R...R t_k, with P = op.mapping for per-atom blocks (else P(k) = k).
+// Returns the largest change.
+double symmetrize_by_operations(double *t, const std::size_t size, const int rank,
+                                const std::vector<SymmetryOperationWithMapping> &ops, const bool per_atom)
+{
+    std::size_t n = 1;
+    for (auto a = 0; a < rank; ++a) n *= 3;
+    const auto nblock = size / n;
+    std::vector<double> out(size, 0.0), cur(n), next(n);
+    for (const auto &op: ops) {
+        for (std::size_t k = 0; k < nblock; ++k) {
+            std::copy(t + k * n, t + (k + 1) * n, cur.begin());
+            for (std::size_t stride = n / 3; stride >= 1; stride /= 3) {
+                for (std::size_t idx = 0; idx < n; ++idx) {
+                    const auto digit = (idx / stride) % 3;
+                    const auto base = idx - digit * stride;
+                    auto v = 0.0;
+                    for (std::size_t j = 0; j < 3; ++j) v += op.rot[digit * 3 + j] * cur[base + j * stride];
+                    next[idx] = v;
+                }
+                std::swap(cur, next);
+            }
+            const auto dst = per_atom ? static_cast<std::size_t>(op.mapping[k]) : k;
+            for (std::size_t idx = 0; idx < n; ++idx) out[dst * n + idx] += cur[idx];
+        }
+    }
+    auto change = 0.0;
+    for (std::size_t i = 0; i < size; ++i) {
+        out[i] /= static_cast<double>(ops.size());
+        change = std::max(change, std::fabs(out[i] - t[i]));
+        t[i] = out[i];
+    }
+    return change;
+}
+} // namespace
+
 Relaxation::Relaxation(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
@@ -87,7 +126,8 @@ void Relaxation::set_default_variables()
     strain_fc5_diag = false;
 }
 
-void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inversion)
+void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inversion,
+                                  const std::vector<SymmetryOperationWithMapping> &symops_ref)
 {
     symprec_ = symprec;
 
@@ -121,7 +161,7 @@ void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inver
         return;
     }
     if (!strain_file.empty()) {
-        load_piezo(validate_strain_file());
+        load_piezo(validate_strain_file(), symops_ref);
     } else if (run.my_rank == 0 &&
                (renorm_2to1st == 2 || renorm_3to2nd == 2 || renorm_3to2nd == 3 || elastic_const == 2))
     {
@@ -141,7 +181,8 @@ void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inver
     }
 }
 
-void Relaxation::load_piezo(const strain_parsers::AtomMatch &match)
+void Relaxation::load_piezo(const strain_parsers::AtomMatch &match,
+                            const std::vector<SymmetryOperationWithMapping> &symops_ref)
 {
     piezo0.fill(0.0);
     piezo2.fill(0.0);
@@ -266,6 +307,48 @@ void Relaxation::load_piezo(const strain_parsers::AtomMatch &match)
                    << " rule by " << std::scientific << std::setprecision(2) << res_mapped
                    << " e (max |Lambda| = " << lambda_max << "). The mean was subtracted; check the data.";
                 warn("setup_relaxation", os.str().c_str());
+            }
+        }
+    }
+
+    // e0, B and Lambda are properties of the reference crystal: average them over
+    // its space group (the operations of the undistorted primitive cell with the
+    // atom mapping; not the field-filtered list), which removes the numerical noise
+    // of the finite differences that would otherwise break the symmetry left by the
+    // field.  Only under a field, where they enter the energy, so that zero-field
+    // runs stay bit-identical.
+    if (has_efield() && !symops_ref.empty() && (has_piezo0() || has_piezo2() || has_born_strain())) {
+        std::ostringstream os, warn_os;
+        const auto apply =
+            [&](const char *name, double *t, const std::size_t size, const int rank, const bool per_atom) {
+                auto tmax = 0.0;
+                for (std::size_t i = 0; i < size; ++i) tmax = std::max(tmax, std::fabs(t[i]));
+                if (tmax == 0.0) return;
+                const auto change = symmetrize_by_operations(t, size, rank, symops_ref, per_atom);
+                os << "    " << name << ": max correction " << change << " (" << change / tmax << " of max |" << name
+                   << "| = " << tmax << ")\n";
+                if (change > 0.05 * tmax) {
+                    warn_os << " " << name << " changes by " << change / tmax * 100.0 << "% of its maximum.\n";
+                }
+            };
+        os << std::scientific << std::setprecision(3);
+        warn_os << std::fixed << std::setprecision(1);
+        // units of the stored values: e0, B in e/Bohr^2, Lambda in e
+        apply("e0", piezo0.data(), piezo0.size(), 3, false);
+        apply("B", piezo2.data(), piezo2.size(), 5, false);
+        apply("Lambda", born_strain.data(), born_strain.size(), 4, true);
+        if (run.my_rank == 0) {
+            if (run.verbosity > 0) {
+                std::cout << "  STRAINFILE /Piezoelectric averaged over the " << symops_ref.size()
+                          << " symmetry operations of the reference structure:\n"
+                          << os.str() << '\n';
+            }
+            if (!warn_os.str().empty()) {
+                warn("setup_relaxation",
+                     ("Symmetrizing STRAINFILE /Piezoelectric over the space group of the reference structure:\n" +
+                      warn_os.str() +
+                      " Check the orientation and the atom order of the data against the reference structure.")
+                         .c_str());
             }
         }
     }

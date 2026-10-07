@@ -649,8 +649,9 @@ def _born_ref_charges(manifest, path):
     return np.array([z[im].mean(axis=0) for im in images])
 
 
-def collect_dfpt(manifest, outdir, born_ref=None, log=print):
-    """(Lambda (natom,3,3,3,3) ASR-corrected, diagnostics) from the 12 strained cells."""
+def collect_dfpt(manifest, outdir, born_ref=None, symmetrize=True, log=print):
+    """(Lambda (natom,3,3,3,3) ASR-corrected and, with ``symmetrize``, averaged over
+    the space group of the reference cell, diagnostics) from the 12 strained cells."""
     h = manifest["h"]
     nat = len(manifest["symbols"])
     z = {}
@@ -683,11 +684,33 @@ def collect_dfpt(manifest, outdir, born_ref=None, log=print):
     log(
         f"  Lambda ASR residual (max |mean over atoms|) {asr:.2e} e, removed; Z0 ASR residual {z_asr:.1e} e"
     )
+    from .symmetry import space_group_operations, symmetrize_atomic
+
+    ops = space_group_operations(_ref_atoms(manifest))
+    lam_sym = symmetrize_atomic(lam, *ops)
+    lmax = float(np.abs(lam).max())
+    noise = float(np.abs(lam_sym - lam).max())
+    rel = noise / lmax if lmax > 0.0 else 0.0
+    log(
+        f"  space-group ({len(ops[0])} operations) noise of Lambda: max {noise:.4f} e "
+        f"({rel:.1%} of max |Lambda| = {lmax:.4f} e)"
+        + ("; symmetrized" if symmetrize else "; raw (--no-symmetrize)")
+    )
+    if symmetrize:
+        lam = lam_sym
     log(
         "  (the PIEZOELECTRIC TENSOR blocks of these OUTCARs are ignored: "
         "B comes only from the Berry route)"
     )
-    return lam, {"asr_residual_removed": asr, "z0_asr_residual": z_asr, "h": h}
+    return lam, {
+        "asr_residual_removed": asr,
+        "z0_asr_residual": z_asr,
+        "h": h,
+        "space_group_order": len(ops[0]),
+        "Lambda_symmetry_noise": noise,
+        "Lambda_symmetry_noise_relative": rel,
+        "symmetrized": bool(symmetrize),
+    }
 
 
 def collect_berry_lambda(manifest, outdir, log=print):
@@ -767,7 +790,7 @@ def collect(
             sf.add_piezo_datasets(strain_file, data, attrs, overwrite, log)
         return result
     if route == "dfpt":
-        lam, diag = collect_dfpt(manifest, outdir, born_ref, log)
+        lam, diag = collect_dfpt(manifest, outdir, born_ref, symmetrize, log)
         if verbose or ref is None:
             _print_lambda(lam, manifest["symbols"], log)
         if ref is not None:
@@ -778,7 +801,8 @@ def collect(
             )
             attrs = {
                 "method": "VASP LEPSILON Born charges of the clamped-ion +-h cells, central differences, "
-                "reduced by F^-1 (rev.2 P1); ASR: atomic mean subtracted",
+                "reduced by F^-1 (rev.2 P1); ASR: atomic mean subtracted"
+                + ("; space-group symmetrized" if symmetrize else ""),
                 **src,
                 **diag,
                 "born_ref": os.path.abspath(born_ref)

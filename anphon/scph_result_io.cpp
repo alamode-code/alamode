@@ -151,15 +151,24 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
     if (!same_values("/settings/pol_ref", settings.pol_ref.data(), 3)) {
         exit("scph_result_io", "The POL_REF tag is not consistent with the restart file");
     }
+    // Under EFIELD the stored tensors are the space-group averaged ones; files written
+    // before that averaging hold the raw data and are rejected here.
+    const std::string piezo_note =
+        "\n (Under EFIELD, e0, B and Lambda are averaged over the space group of the reference"
+        "\n structure; a restart file written with the unsymmetrized tensors is not compatible.)";
     if (!same_values("/settings/piezo_clamped_ion", settings.piezo0.data(), 27)) {
         exit(
             "scph_result_io",
-            "The clamped-ion piezoelectric tensor (STRAINFILE /Piezoelectric) is not consistent with the restart file");
+            ("The clamped-ion piezoelectric tensor (STRAINFILE /Piezoelectric) is not consistent with the restart file" +
+             piezo_note)
+                .c_str());
     }
     if (!same_values("/settings/piezo_second_order", settings.piezo2.data(), 243)) {
         exit("scph_result_io",
-             "The second-order clamped-ion piezoelectric tensor (STRAINFILE /Piezoelectric/second_order) is not\n"
-             " consistent with the restart file");
+             ("The second-order clamped-ion piezoelectric tensor (STRAINFILE /Piezoelectric/second_order) is not\n"
+              " consistent with the restart file" +
+              piezo_note)
+                 .c_str());
     }
     // Lambda: absent (in the file or in this run) means zero
     const auto path_lambda = std::string("/settings/born_charge_strain_derivative");
@@ -176,8 +185,10 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
     }
     if (!same_lambda) {
         exit("scph_result_io",
-             "The strain derivative of the Born charges (STRAINFILE /Piezoelectric/born_charge_strain_derivative)\n"
-             " is not consistent with the restart file");
+             ("The strain derivative of the Born charges (STRAINFILE /Piezoelectric/born_charge_strain_derivative)\n"
+              " is not consistent with the restart file" +
+              piezo_note)
+                 .c_str());
     }
     // STRAIN_FC5: absent means 0 (also every file written before the tag existed)
     const auto fc5_file = fh.exist("/settings/strain_fc5") ? load<int>(fh, "/settings/strain_fc5") : 0;

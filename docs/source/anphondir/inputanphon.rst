@@ -1422,6 +1422,20 @@ Description of input variables
                ``MODE = QHA`` (the strain derivative of the force and the elastic constants), only when
                ``EFIELD`` is nonzero.
 
+               **Space-group average.** Under a nonzero ``EFIELD`` anphon then averages
+               :math:`e^{(0)}`, :math:`B` and :math:`\Lambda` over the space group of the reference
+               (undistorted) structure, :math:`\Lambda` with the atom permutation of each operation
+               (:math:`\Lambda_{P(k)} \leftarrow R\,R\,R\,R\,\Lambda_k`). These are properties of the
+               reference crystal, so its full group applies although the field lowers the symmetry of the
+               relaxed structure; the average removes the finite-difference noise of the data, which would
+               otherwise leave a small symmetry-breaking residue in the relaxed structure. The log prints the
+               largest correction of each tensor and warns when it exceeds 5% of its largest component
+               (wrong orientation or atom order of the data). Odd-rank tensors vanish for a
+               centrosymmetric reference. Without a field the data are used as given. A restart
+               (``RESTART_SCPH``/``RESTART_QHA``) from a state file written by an earlier version with the
+               unsymmetrized tensors under a field is rejected as inconsistent, because the field terms of
+               the free energy changed; rerun from scratch.
+
                Only the symmetry operations of the (distorted) cell that leave :math:`\boldsymbol{E}`
                invariant are kept; the k-point reduction, the symmetrization of the dynamical matrix and
                of the Born charges, and the ``IRREPS`` labels refer to this subgroup. The re-seeding of

@@ -659,7 +659,7 @@ void PHON::execute_self_consistent_phonon() const
     const auto ref_has_inversion = std::any_of(ops_ref.begin(), ops_ref.end(), [](const SymmetryOperation &op) {
         return (op.rotation_cart + Eigen::Matrix3d::Identity()).cwiseAbs().maxCoeff() < 1.0e-6;
     });
-    relaxation->setup_relaxation(symmetry->tolerance, ref_has_inversion);
+    relaxation->setup_relaxation(symmetry->tolerance, ref_has_inversion, symmetry->SymmListWithMap_ref);
 
     if (run_info.mode == "SCPH") {
         scph->setup_scph();
