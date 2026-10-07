@@ -670,7 +670,14 @@ Description of input variables
                produces DOS, bands, and thermodynamic functions) — refuse
                unconverged temperatures with an error. Set
                ``ALLOW_UNCONVERGED = 1`` to use such data anyway (a warning is
-               printed).
+               printed). When the structural optimization of an SCPH
+               temperature fails, its row holds a copy of the last converged
+               temperature (or the harmonic data if none converged yet), and
+               so do that run's DOS and band outputs; its thermodynamic
+               functions are evaluated at its own temperature from those
+               fallback frequencies. ``/convergence/data_temperature`` records
+               the source temperature (NaN for harmonic), and the warning
+               names it.
 
 ````
 

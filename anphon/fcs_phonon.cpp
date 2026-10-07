@@ -31,6 +31,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "memory.h"
 #include "mpi_common.h"
 #include "phonon.h"
+#include "scph_result_io.h"
 #include "stage_timer.h"
 #include "system.h"
 
@@ -55,10 +56,6 @@ Eigen::Vector3d snap_to_lattice_vector(const Eigen::Vector3d &xf, const char *ca
     return rounded;
 }
 
-// Refuse data from unconverged SCPH/structural iterations at temperature
-// row itemp unless the user opted in (absent /convergence data, e.g. a
-// legacy import, cannot be checked and is accepted). data_name and
-// source_name complete the messages of the caller.
 // 64-bit mixer (splitmix64) and its map to [-1, 1), for the fc5 fingerprint.
 std::uint64_t splitmix64(std::uint64_t x)
 {
@@ -73,6 +70,10 @@ double unit_interval(const std::uint64_t h)
     return static_cast<double>(h >> 11) * 0x1.0p-52 - 1.0;
 }
 
+// Refuse data from unconverged SCPH/structural iterations at temperature
+// row itemp unless the user opted in (absent /convergence data, e.g. a
+// legacy import, cannot be checked and is accepted). data_name and
+// source_name complete the messages of the caller.
 void check_iteration_converged(const HighFive::File &file, const int itemp, const bool allow_unconverged,
                                const char *caller, const std::string &data_name, const std::string &source_name)
 {
@@ -83,11 +84,15 @@ void check_iteration_converged(const HighFive::File &file, const int itemp, cons
         return static_cast<size_t>(itemp) >= flags.size() || flags[itemp] != 0;
     };
     if (!iteration_converged("scph") || !iteration_converged("structure")) {
+        // A failed relaxation stores a copy of another temperature (or the
+        // harmonic data), not the unconverged iterate: say so.
+        auto note = scph_row_data_note(file, static_cast<size_t>(itemp));
+        if (!note.empty()) note = "\n Note: " + note + ".";
         if (allow_unconverged) {
             warn(caller,
                  ("The iterations at FC2_TEMPERATURE did not converge;\n"
                   " using the " +
-                  data_name + " anyway because ALLOW_UNCONVERGED = 1.")
+                  data_name + " anyway because ALLOW_UNCONVERGED = 1." + note)
                      .c_str());
         } else {
             exit(caller,
@@ -95,7 +100,8 @@ void check_iteration_converged(const HighFive::File &file, const int itemp, cons
                   " in the run that produced " +
                   source_name +
                   ". Reconverge it (MAXITER, MAX_STR_ITER, ...)\n"
-                  " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.")
+                  " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway." +
+                  note)
                      .c_str());
         }
     }

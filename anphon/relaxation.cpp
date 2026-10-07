@@ -11,6 +11,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "relaxation.h"
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
+#include <algorithm>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <fstream>
 #include <iomanip>
@@ -965,7 +966,7 @@ void Relaxation::calculate_u0(const std::vector<double> &q0, std::vector<double>
     }
 }
 
-void Relaxation::update_cell_coordinate(
+bool Relaxation::update_cell_coordinate(
     RelaxationStructureState &structure_state, const std::complex<double> *const v1_array_atT,
     const double *const *const omega2_array, const std::complex<double> *const del_v0_strain_atT,
     const double *const *const C2_array, const std::complex<double> *const *const *const cmat_convert,
@@ -1195,8 +1196,6 @@ void Relaxation::update_cell_coordinate(
         }
     }
 
-    calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
-
     du0 = 0.0;
     calculate_u0(delta_q0, delta_u0, omega2_harmonic, evec_harmonic);
     for (is = 0; is < ns; is++) {
@@ -1212,6 +1211,48 @@ void Relaxation::update_cell_coordinate(
         }
     }
     du_tensor = std::sqrt(du_tensor);
+
+    // Trust region: a quasi-Newton step on a near-zero curvature (a soft mode,
+    // or a jump to another SCP solution branch) can be tens of bohr. Scale the
+    // whole step down and restart the optimizer from the Hessian at the next
+    // structure. ponytail: fixed bounds, ~3x the largest step of the regular
+    // tests (0.32 bohr, 0.018); a tag or an adaptive radius if a system needs one.
+    constexpr double max_step_u0 = 1.0;     // [bohr], |du0| over the primitive cell
+    constexpr double max_step_strain = 0.1; // du_tensor
+    const auto scale = std::min({1.0,
+                                 du0 > max_step_u0 ? max_step_u0 / du0 : 1.0,
+                                 du_tensor > max_step_strain ? max_step_strain / du_tensor : 1.0});
+    if (scale < 1.0) {
+        if (run.verbosity > 0) {
+            std::cout << " Warning: the optimizer step (du0 = " << std::scientific << std::setprecision(6) << du0
+                      << " bohr, du_tensor = " << du_tensor << ") exceeds the trust region\n"
+                      << " (" << max_step_u0 << " bohr, " << max_step_strain << "). The step is scaled by " << scale
+                      << " and the optimizer history is reset.\n";
+        }
+        for (is = 0; is < ns; is++) {
+            q0[is] -= (1.0 - scale) * delta_q0[is];
+            delta_q0[is] *= scale;
+            delta_u0[is] *= scale;
+        }
+        for (is = 0; is < 6; is++) {
+            const auto back = (1.0 - scale) * delta_umn[is];
+            if (is < 3) {
+                u_tensor[is][is] -= back;
+            } else {
+                const auto i1 = (is + 1) % 3;
+                const auto i2 = (is + 2) % 3;
+                u_tensor[i1][i2] -= back;
+                u_tensor[i2][i1] -= back;
+            }
+            delta_umn[is] *= scale;
+        }
+        du0 *= scale;
+        du_tensor *= scale;
+        optimizer->reset();
+    }
+
+    calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
+    return scale < 1.0;
 }
 
 void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structure_state,
@@ -1237,6 +1278,11 @@ void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structu
 
     const auto ns = system->get_num_modes();
     int is, i1, i2;
+
+    // The next converged SCP solve may sit on another solution branch (it
+    // starts cold), and the rescue moved the structure: neither belongs in the
+    // optimizer history, so restart it from the Hessian there.
+    if (optimizer) optimizer->reset();
 
     double last_step_norm = 0.0;
     for (is = 0; is < ns; is++) {

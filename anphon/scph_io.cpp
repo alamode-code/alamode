@@ -424,7 +424,8 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
                    conv_scph,
                    conv_str,
                    structure,
-                   &provenance);
+                   &provenance,
+                   conv_str && data_temperature.size() == NT ? &data_temperature : nullptr);
 
     if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << filename;

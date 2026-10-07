@@ -316,7 +316,8 @@ public:
     void calculate_u0(const std::vector<double> &q0, std::vector<double> &u0, double **omega2_harmonic,
                       std::complex<double> ***evec_harmonic) const;
 
-    void update_cell_coordinate(RelaxationStructureState &, const std::complex<double> *const,
+    // Returns true when the step exceeded the trust region and was scaled down.
+    bool update_cell_coordinate(RelaxationStructureState &, const std::complex<double> *const,
                                 const double *const *const, const std::complex<double> *const,
                                 const double *const *const, const std::complex<double> *const *const *const,
                                 const std::vector<int> &, double **omega2_harmonic,

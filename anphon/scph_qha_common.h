@@ -138,6 +138,12 @@ protected:
     std::vector<unsigned char> converged_scph_temp;
     std::vector<unsigned char> converged_str_temp;
 
+    // Temperature whose data each row actually holds (SCPH relaxation, rank 0):
+    // T itself, the source temperature when a failed row got a copy of the last
+    // converged one, NaN when it got the harmonic data. Written as
+    // /convergence/data_temperature; empty means untracked and is not written.
+    std::vector<double> data_temperature;
+
     // Converged relaxed structure per temperature (rank 0, RELAX_STR != 0).
     // Recorded next to converged_str_temp, so it holds whatever structure
     // the temperature loop actually accepted, including a fallback copied

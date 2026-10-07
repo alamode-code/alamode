@@ -13,6 +13,7 @@
 #include <cmath>
 #include <filesystem>
 #include <mpi.h>
+#include <sstream>
 #include <utility>
 #include "constants.h"
 #include "error.h"
@@ -320,7 +321,8 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
                                  const std::vector<double> *v0, const ScphFc2RowsH5 *fc2,
                                  const std::vector<unsigned char> *converged_scph,
                                  const std::vector<unsigned char> *converged_structure,
-                                 const ScphStructureH5 *structure, const ScphProvenanceH5 *provenance) const
+                                 const ScphStructureH5 *structure, const ScphProvenanceH5 *provenance,
+                                 const std::vector<double> *data_temperature) const
 {
     using namespace H5Easy;
 
@@ -507,6 +509,15 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         if (converged_structure) {
             dump(fh, "/convergence/structure", *converged_structure);
         }
+        if (data_temperature) {
+            dump(fh, "/convergence/data_temperature", *data_temperature);
+            dumpAttribute(fh, "/convergence/data_temperature", "unit", std::string("K"));
+            dumpAttribute(fh,
+                          "/convergence/data_temperature",
+                          "definition",
+                          std::string("temperature whose result the row holds: T when converged, the source "
+                                      "temperature when copied after a failed optimization, NaN for harmonic"));
+        }
 
         if (fc2) {
             // Base harmonic FC2 (readable by any current anphon as a plain
@@ -571,8 +582,19 @@ void ScphResultIOH5::check_convergence(const std::vector<double> &temps_requeste
     list_temps("SCPH iteration       ", bad_scph);
     list_temps("structural relaxation", bad_str);
 
+    std::string notes;
+    for (size_t i = 0; i < rows.size(); ++i) {
+        const auto note = scph_row_data_note(fh, rows[i]);
+        if (!note.empty()) notes += " Note: " + note + ".\n";
+    }
+    std::cout << notes;
+
     if (allow_unconverged) {
-        warn("scph_result_io", "Using unconverged renormalized data because ALLOW_UNCONVERGED = 1.");
+        warn("scph_result_io",
+             notes.empty() ? "Using unconverged renormalized data because ALLOW_UNCONVERGED = 1."
+                           : ("Using the flagged data because ALLOW_UNCONVERGED = 1:\n" + notes +
+                              " These rows are not results at their own temperature.")
+                                 .c_str());
     } else {
         exit("scph_result_io",
              "Refusing to use unconverged renormalized IFCs/structure.\n"
@@ -601,6 +623,26 @@ void ScphResultIOH5::load_convergence(const std::vector<double> &temps_requested
     };
     load("scph", scph_out);
     load("structure", structure_out);
+}
+
+std::string PHON_NS::scph_row_data_note(const HighFive::File &fh, const size_t row)
+{
+    const std::string path = "/convergence/data_temperature";
+    if (!fh.exist(path)) return {};
+    const auto source = H5Easy::load<std::vector<double>>(fh, path);
+    const auto temps = H5Easy::load<std::vector<double>>(fh, "/settings/temperatures");
+    if (row >= source.size() || row >= temps.size()) return {};
+    const auto temp = temps[row];
+
+    std::ostringstream ss;
+    if (std::isnan(source[row])) {
+        ss << "the stored data for " << temp << " K are the harmonic ones (the structural optimization at " << temp
+           << " K failed before any temperature converged)";
+    } else if (std::fabs(source[row] - temp) > eps6) {
+        ss << "the stored data for " << temp << " K are a copy of the converged result at " << source[row]
+           << " K (the structural optimization at " << temp << " K failed)";
+    }
+    return ss.str();
 }
 
 const std::string &ScphResultIOH5::get_filename() const

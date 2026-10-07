@@ -1580,13 +1580,23 @@ def test_zsisa(anphonbin):
     base_p = run("wq_p", "bto_piezo.h5", umn0)
     if base_nl is None or base_p is None:
         return check(False, "ZSISA: QHA runs failed or printed no ZSISA inputs")
+    # The unstable QHA Hessian of cubic BaTiO3 proposes a ~7 bohr step here:
+    # the trust region must scale it to exactly 1 bohr and say so.
+    m = re.search(r"optimizer step \(du0 = (\S+) bohr", base_p[3])
+    info0 = check(
+        m is not None
+        and float(m.group(1)) > 1.0
+        and "optimizer history is reset" in base_p[3]
+        and " du0 =   1.000000e+00 [Bohr]" in base_p[3],
+        "QHA: an oversized optimizer step is scaled to the 1 bohr trust region",
+    )
     omega = OMEGA_REF[0]
     e_ry = efield * EV_A_TO_RY
     c_ref = -omega * np.einsum(
         "a,amnpq->mnpq", e_ry, B_FAKE / C_M2_PER_E_BOHR2
     ).reshape(9, 9)
     d_c2 = base_nl[0] - base_p[0]
-    info = check(
+    info = info0 + check(
         np.allclose(d_c2, c_ref, rtol=1.0e-8, atol=1.0e-8 * np.abs(c_ref).max()),
         "ZSISA: C2_renorm increment == -Omega E0.B (max dev %.1e of %.1e)"
         % (np.abs(d_c2 - c_ref).max(), np.abs(c_ref).max()),

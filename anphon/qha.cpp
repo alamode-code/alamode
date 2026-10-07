@@ -129,15 +129,15 @@ public:
         qha_.print_stage_time("structure print + symmetry", time_stage);
         time_stage = qha_.timer->elapsed();
 
-        qha_.relaxation->update_cell_coordinate(structure_state,
-                                                v1_QHA_,
-                                                omega2_harm_renorm_[iT],
-                                                del_v0_del_umn_QHA_,
-                                                C2_array,
-                                                cmat_convert_,
-                                                harm_optical_modes,
-                                                qha_.omega2_harmonic,
-                                                qha_.evec_harmonic);
+        const auto step_capped = qha_.relaxation->update_cell_coordinate(structure_state,
+                                                                         v1_QHA_,
+                                                                         omega2_harm_renorm_[iT],
+                                                                         del_v0_del_umn_QHA_,
+                                                                         C2_array,
+                                                                         cmat_convert_,
+                                                                         harm_optical_modes,
+                                                                         qha_.omega2_harmonic,
+                                                                         qha_.evec_harmonic);
         const auto du0 = structure_state.du0;
         const auto du_tensor = structure_state.du_tensor;
 
@@ -168,7 +168,7 @@ public:
                                               cell_grad_norm);
         qha_.print_stage_time("optimizer, step files, gradients", time_stage);
 
-        if (du0 < qha_.relaxation->coord_conv_tol && du_tensor < qha_.relaxation->cell_conv_tol) {
+        if (!step_capped && du0 < qha_.relaxation->coord_conv_tol && du_tensor < qha_.relaxation->cell_conv_tol) {
             std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
                       << std::setprecision(6) << qha_.relaxation->coord_conv_tol << '\n';
             if (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell) {

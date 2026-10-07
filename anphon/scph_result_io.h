@@ -18,6 +18,11 @@
 #include <string>
 #include <vector>
 
+namespace HighFive
+{
+class File;
+}
+
 namespace PHON_NS
 {
 // Plain-data descriptions of what goes into PREFIX.scph.h5 / PREFIX.qha.h5
@@ -177,7 +182,8 @@ public:
                      const std::complex<double> *const *const *const *delta_harm_renorm, const std::vector<double> *v0,
                      const ScphFc2RowsH5 *fc2, const std::vector<unsigned char> *converged_scph,
                      const std::vector<unsigned char> *converged_structure, const ScphStructureH5 *structure = nullptr,
-                     const ScphProvenanceH5 *provenance = nullptr) const;
+                     const ScphProvenanceH5 *provenance = nullptr,
+                     const std::vector<double> *data_temperature = nullptr) const;
 
     // Refuse (or, with allow_unconverged, only warn about) temperatures
     // whose SCPH iteration or structural optimization did not converge.
@@ -197,4 +203,9 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl;
 };
+
+// A sentence naming where the stored data of temperature row `row` come from, for the unconverged-data messages: a copy of another temperature
+// or the harmonic data. Empty when the row holds its own data, or when the file
+// predates /convergence/data_temperature.
+std::string scph_row_data_note(const HighFive::File &fh, size_t row);
 } // namespace PHON_NS

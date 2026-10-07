@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <vector>
 #include "anharmonic_core.h"
@@ -141,6 +142,7 @@ public:
         initial_structure_state_this_temp_ = structure_state;
         converged_this_temp_ = false;
         n_scp_failures_ = 0;
+        n_capped_steps_ = 0;
     }
 
     StructOptStepStatus do_structure_step(const unsigned int iT, const double temp, const int i_str_loop,
@@ -262,16 +264,16 @@ public:
             coord_hessian = &fe_hessian;
         }
 
-        scph_.relaxation->update_cell_coordinate(structure_state,
-                                                 v1_SCP_,
-                                                 omega2_anharm_[iT],
-                                                 del_v0_del_umn_SCP_,
-                                                 ws_.C2_array,
-                                                 cmat_convert_,
-                                                 harm_optical_modes,
-                                                 scph_.omega2_harmonic,
-                                                 scph_.evec_harmonic,
-                                                 coord_hessian);
+        const auto step_capped = scph_.relaxation->update_cell_coordinate(structure_state,
+                                                                          v1_SCP_,
+                                                                          omega2_anharm_[iT],
+                                                                          del_v0_del_umn_SCP_,
+                                                                          ws_.C2_array,
+                                                                          cmat_convert_,
+                                                                          harm_optical_modes,
+                                                                          scph_.omega2_harmonic,
+                                                                          scph_.evec_harmonic,
+                                                                          coord_hessian);
         const auto du0 = structure_state.du0;
         const auto du_tensor = structure_state.du_tensor;
 
@@ -303,8 +305,21 @@ public:
                                                cell_grad_norm);
         scph_.print_stage_time("optimizer, step files, gradients", time_stage);
 
+        // Repeated trust-region hits mean the optimizer keeps seeing near-zero
+        // curvature (a soft mode, or an SCP solution branch other than the one
+        // it started on after an SCP failure): walking on is meaningless.
+        // "In a row" counts optimizer updates only: SCP-failure rescues in
+        // between neither count nor reset it, since they only backtrack toward
+        // the capped structure and say nothing about the curvature.
+        n_capped_steps_ = step_capped ? n_capped_steps_ + 1 : 0;
+        if (n_capped_steps_ >= max_consecutive_capped_steps_) {
+            std::cout << " The optimizer step exceeded the trust region " << n_capped_steps_
+                      << " times in a row. Give up the structural optimization at this temperature.\n";
+            return StructOptStepStatus::Aborted;
+        }
+
         const bool step_converged =
-            (du0 < scph_.relaxation->coord_conv_tol && du_tensor < scph_.relaxation->cell_conv_tol);
+            !step_capped && (du0 < scph_.relaxation->coord_conv_tol && du_tensor < scph_.relaxation->cell_conv_tol);
         const bool force_converged =
             (scph_.relaxation->gradient_conv_tol <= 0.0) || (grad_norm < scph_.relaxation->gradient_conv_tol);
         const bool cell_force_converged = (ws_.relax_mode != RelaxationStrMode::CoordinatesAndCell) ||
@@ -382,6 +397,12 @@ public:
         const auto accepted_this_temp = converged_this_temp && final_structure_is_finite;
         bench_converged_.push_back(accepted_this_temp);
 
+        auto &data_temperature = scph_.data_temperature;
+        if (data_temperature.size() != scph_.converged_str_temp.size()) {
+            data_temperature.assign(scph_.converged_str_temp.size(), std::numeric_limits<double>::quiet_NaN());
+        }
+        data_temperature[iT] = temp;
+
         if (accepted_this_temp) {
             last_converged_structure_state_ = ws_.structure_state;
             last_converged_iT_ = iT;
@@ -398,13 +419,21 @@ public:
             if (has_last_converged_structure_) {
                 ws_.structure_state = last_converged_structure_state_;
                 copy_temperature_result(iT, last_converged_iT_);
+                data_temperature[iT] = data_temperature[last_converged_iT_];
                 std::cout << " The failed structure and SCP data are discarded; the last converged"
-                          << " temperature point is kept as the restart state for the next temperature.\n";
+                          << " temperature point is kept as the restart state for the next temperature.\n"
+                          << " The data stored for " << temp << " K (state file, structure, V0, .scph_bands,"
+                          << " .scph_dos) are a copy of those at " << data_temperature[iT] << " K; its thermodynamic"
+                          << " functions are evaluated at " << temp << " K from the copied frequencies.\n";
             } else {
                 ws_.structure_state = initial_structure_state_this_temp_;
                 set_harmonic_temperature_result(iT);
+                data_temperature[iT] = std::numeric_limits<double>::quiet_NaN();
                 std::cout << " No converged temperature point is available yet; the initial structure and"
-                          << " harmonic dynamical matrix are kept as the restart state.\n";
+                          << " harmonic dynamical matrix are kept as the restart state.\n"
+                          << " The data stored for " << temp << " K (state file, V0, .scph_bands, .scph_dos) are"
+                          << " the harmonic ones; its thermodynamic functions are evaluated at " << temp
+                          << " K from the harmonic frequencies.\n";
             }
 
             str_diverged_ = 0;
@@ -712,6 +741,8 @@ private:
     std::ofstream &fout_step_u_tensor_;
     int n_scp_failures_ = 0;
     const int max_consecutive_scp_failures_ = 10;
+    int n_capped_steps_ = 0;
+    const int max_consecutive_capped_steps_ = 3;
     std::vector<double> bench_temp_;
     std::vector<int> bench_steps_;
     std::vector<bool> bench_converged_;
@@ -787,6 +818,7 @@ void Scph::exec_scph()
     // and stored in the state file.
     converged_scph_temp.assign(NT, 1);
     converged_str_temp.assign(NT, 1);
+    data_temperature.clear();
 
     // Sized on every rank before the restart branch below, which broadcasts
     // loaded values into it.

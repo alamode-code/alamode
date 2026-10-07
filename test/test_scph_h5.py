@@ -372,6 +372,13 @@ def check_fresh_run(anphonbin, reference_dir):
             print("temperature-dependent FC2 disagrees with .scph_dfc2")
             return 1
 
+        # every temperature converged: each row holds its own data
+        if not np.array_equal(
+            f["convergence/data_temperature"][...], f["settings/temperatures"][...]
+        ):
+            print("/convergence/data_temperature differs from the temperatures")
+            return 1
+
         u_tensor = f["structure/u_tensor"][...]
         spg = [
             s.decode() if isinstance(s, bytes) else s
@@ -576,6 +583,10 @@ def check_convergence_guard(anphonbin):
         if f["convergence/scph"][...].all() or f["convergence/structure"][...].all():
             print("unconverged run was not flagged in /convergence")
             return 1
+        # no temperature converged before: the row holds the harmonic data
+        if not np.isnan(f["convergence/data_temperature"][...]).all():
+            print("/convergence/data_temperature of a harmonic fallback is not NaN")
+            return 1
 
     kpath = "&kpoint\n 1\n G 0.0 0.0 0.0 X 0.5 0.0 0.5 11\n/\n"
     with open("ucband.in", "w") as f:
@@ -591,6 +602,109 @@ def check_convergence_guard(anphonbin):
         f.write(kpath)
     if run_anphon(anphonbin, "ucband_ok.in", "ucband_ok.log") != 0:
         print("ALLOW_UNCONVERGED = 1 did not allow the run")
+        return 1
+    with open("ucband_ok.log") as f:
+        if "the stored data for 300 K are the harmonic ones" not in f.read():
+            print("the ALLOW_UNCONVERGED warning does not name the harmonic fallback")
+            return 1
+    return 0
+
+
+def check_failed_temperature_provenance(anphonbin):
+    # A controlled failure: a seed run relaxes 300 K; the main run starts every
+    # temperature (SET_INIT_STR = 1) from that structure with MAX_STR_ITER = 1.
+    # 300 K then converges (du0 2e-6 < 1e-4, du_tensor 7e-8 < 1e-5) and 100 K
+    # fails (du_tensor 2e-3), each by about two orders of magnitude; the 100 K
+    # row is a copy of 300 K. /convergence/data_temperature must say so, the
+    # copied row must equal its source, and the FC2_TEMPERATURE warning must
+    # name it; a file without the dataset keeps the generic message.
+    with open("BTO_scph_thermo.in") as f:
+        base = f.read().replace("KMESH_SCPH = 4 4 4", "KMESH_SCPH = 2 2 2")
+    seed = base.replace("PREFIX = cBTO222_scph", "PREFIX = cpseed").replace(
+        "TMIN = 280", "TMIN = 300"
+    )
+    with open("cpseed.in", "w") as f:
+        f.write(seed)
+    for stale in ("cpseed.scph.h5", "cpbto.scph.h5"):  # a leftover would restart
+        if os.path.exists(stale):
+            os.remove(stale)
+    if run_anphon(anphonbin, "cpseed.in", "cpseed.log") != 0:
+        print("seed SCPH run failed")
+        return 1
+    with h5py.File("cpseed.scph.h5", "r") as f:
+        u_tensor = f["structure/u_tensor"][0]
+        u0 = f["structure/u0"][0]
+    strain = "&strain\n" + "".join(" %.15e %.15e %.15e\n" % tuple(r) for r in u_tensor)
+    displace = "&displace\n1\n" + "".join(" %.15e %.15e %.15e\n" % tuple(r) for r in u0)
+    src = re.sub(r"&strain\n.*?/", strain + "/", base, flags=re.S)
+    src = re.sub(r"&displace\n.*?/", displace + "/", src, flags=re.S)
+    src = (
+        src.replace("PREFIX = cBTO222_scph", "PREFIX = cpbto")
+        .replace("TMIN = 280", "TMIN = 100")
+        .replace("DT = 10", "DT = 200")
+        .replace("MAX_STR_ITER = 1000", "MAX_STR_ITER = 1")
+        .replace("COORD_CONV_TOL = 1.0e-5", "COORD_CONV_TOL = 1.0e-4")
+        .replace("CELL_CONV_TOL = 5.0e-7", "CELL_CONV_TOL = 1.0e-5")
+        .replace("SET_INIT_STR = 3", "SET_INIT_STR = 1")
+    )
+    with open("cp.in", "w") as f:
+        f.write(src)
+    if run_anphon(anphonbin, "cp.in", "cp.log") != 0:
+        print("copy-provenance SCPH run failed")
+        return 1
+    with h5py.File("cpbto.scph.h5", "r") as f:
+        temps = f["settings/temperatures"][...]
+        flags = f["convergence/structure"][...]
+        source = f["convergence/data_temperature"][...]
+        rows = [
+            f[name][...]
+            for name in (
+                "dymat/delta",
+                "dymat/delta_harm_renorm",
+                "V0",
+                "structure/u_tensor",
+                "structure/u0",
+                "ForceConstants/Order2_temperature_dependent/force_constant_values",
+            )
+        ]
+    if list(temps) != [100.0, 300.0] or list(flags) != [0, 1]:
+        print("expected 100 K failed and 300 K converged, got", temps, flags)
+        return 1
+    if list(source) != [300.0, 300.0]:
+        print("/convergence/data_temperature should be [300, 300], got", source)
+        return 1
+    if any(not np.array_equal(r[0], r[1]) for r in rows):
+        print("the copied 100 K row differs from its 300 K source")
+        return 1
+
+    kpath = "&kpoint\n 1\n G 0.0 0.0 0.0 X 0.5 0.0 0.5 3\n/\n"
+
+    def band_log(statefile, name):
+        with open(name + ".in", "w") as f:
+            f.write(
+                "&general\n PREFIX = %s; MODE = phonons; FCSFILE = %s;"
+                % (name, statefile)
+            )
+            f.write(" FC2_TEMPERATURE = 100; ALLOW_UNCONVERGED = 1\n/\n" + kpath)
+        if run_anphon(anphonbin, name + ".in", name + ".log") != 0:
+            return None
+        with open(name + ".log") as f:
+            return f.read()
+
+    log = band_log("cpbto.scph.h5", "cpband")
+    note = "the stored data for 100 K are a copy of the converged result at 300 K"
+    if log is None or note not in log:
+        print("the ALLOW_UNCONVERGED warning does not name the copied temperature")
+        return 1
+
+    shutil.copy("cpbto.scph.h5", "cplegacy.scph.h5")
+    with h5py.File("cplegacy.scph.h5", "a") as f:
+        del f["convergence/data_temperature"]
+    log = band_log("cplegacy.scph.h5", "cplegacy")
+    if log is None or "ALLOW_UNCONVERGED = 1" not in log or note in log:
+        print(
+            "a state file without /convergence/data_temperature was not read as before"
+        )
         return 1
     return 0
 
@@ -896,6 +1010,10 @@ def runtest_scph_h5(anphonbin, project_root):
     if check_convergence_guard(anphonbin):
         return 1
     print("Convergence flags + ALLOW_UNCONVERGED guard --> pass")
+
+    if check_failed_temperature_provenance(anphonbin):
+        return 1
+    print("Provenance of a failed temperature (/convergence/data_temperature) --> pass")
 
     if check_relaxed_structure(anphonbin):
         return 1

@@ -931,6 +931,11 @@ void Scph::write_fe_state_h5(const NDArray<std::complex<double>, 4> &delta_dymat
     corr_k.resize(ns, ns, nk);
     corr_r.resize(ns, ns, nk);
     const auto saved_flags = converged_scph_temp;
+    // A copied (failed) row here lacks the curvature correction of its source
+    // temperature, so "copy of the result at X K" would be wrong: leave the
+    // provenance out of this file (absent = unknown, the generic message).
+    const auto saved_data_temperature = std::move(data_temperature);
+    data_temperature.clear();
     std::string missing;
     for (unsigned int iT = 0; iT < NT; ++iT) {
         const bool have = iT < fe_dymat_correction.size() && fe_dymat_correction[iT].size() == nk;
@@ -971,6 +976,7 @@ void Scph::write_fe_state_h5(const NDArray<std::complex<double>, 4> &delta_dymat
                         kmesh_coarse.get(),
                         mindist_list);
     converged_scph_temp = saved_flags;
+    data_temperature = saved_data_temperature;
     if (!missing.empty()) {
         warn("write_fe_state_h5",
              ("No free-energy curvature at T =" + missing +
