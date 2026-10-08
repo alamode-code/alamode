@@ -14,6 +14,7 @@
 #include <array>
 #include <cmath>
 #include <complex>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -381,6 +382,30 @@ protected:
     Eigen::MatrixXcd strain_vertex(const DelVStrainData &del_v_strain,
                                    const std::array<std::array<double, 3>, 3> &u_tensor, const std::vector<double> &q0,
                                    int i1, int ik, int nk) const;
+
+    // With Fourier interpolation (KMESH_INTERPOLATE coarser than KMESH_SCPH), the q0- and
+    // strain-renormalized harmonic matrix (and the FC5 part of the SCP matrix) of every
+    // dense k is interpolated from the coarse mesh, and so are its derivatives. This
+    // returns the dense occupation matrices G_k pulled back to the coarse points by the
+    // adjoint of that Fourier interpolation (harmonic-mode basis of each coarse point c):
+    //   sum_k tr[interp(M)_k G_k] = sum_c tr[M_c Geff_c]   for any coarse-mesh M,
+    // which makes the explicit derivatives of the renormalized harmonic matrix in the force
+    // and the stress exact for the interpolated model (SCP and iterative QHA; the
+    // perturbative QHA does not interpolate). Not covered: the interpolated self-energy is
+    // not self-adjoint (its quartic is coarse in k, dense in q), so the SCP force and
+    // stress are still not exact derivatives of F_total (FE_scph_correction); the residual
+    // was small in the BaTiO3 tests but is not bounded in general, e.g. near soft modes.
+    // The adjoint reverses the Fourier step only, not the symmetrization at the irreducible
+    // points and the star replication of the solve: it relies on vertices and occupations
+    // that already carry the symmetry. Eigenvalue repairs in the SCP iteration break the
+    // linearity the identity rests on.
+    // Empty when the meshes coincide (the interpolation is the identity). The result is
+    // cached and reused while the occupations (cmat_convert, omega2_anharm_T, T) are unchanged.
+    const std::vector<Eigen::MatrixXcd> &coarse_occupation_matrices(std::complex<double> ***cmat_convert,
+                                                                    double **omega2_anharm_T, double T_in,
+                                                                    const KpointMeshUniform *kmesh_dense_in) const;
+    mutable std::vector<Eigen::MatrixXcd> geff_cache;
+    mutable std::uint64_t geff_cache_key = 0;
 
     void get_derivative_central_diff(double delta_t, unsigned int nk, double **omega0, double **omega2,
                                      double **domega_dt);

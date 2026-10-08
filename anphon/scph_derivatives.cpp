@@ -23,11 +23,13 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <complex>
+#include <cstdint>
 #include <iostream>
 #include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
+#include "interpolation.h"
 #include "kpoint.h"
 #include "memory.h"
 #include "relaxation.h"
@@ -272,6 +274,103 @@ int ScphQhaCommon::scp_occupation_matrix(const int ik, const std::complex<double
     return count_zero;
 }
 
+const std::vector<Eigen::MatrixXcd> &
+ScphQhaCommon::coarse_occupation_matrices(std::complex<double> ***cmat_convert, double **omega2_anharm_T,
+                                          const double T_in, const KpointMeshUniform *kmesh_dense_in) const
+{
+    // The renormalized harmonic matrix of the SCP (and QHA) solve is Delta(k) =
+    // interp(Delta_c)(k): Delta is formed on the coarse points c (renormalize_v2_from_q0,
+    // renormalize_v2_from_umn) and Fourier-interpolated to the dense k. Its derivative over
+    // q0 or u is the interpolation of the coarse-point vertices M_c, not the vertex taken
+    // directly at the dense k; the two differ off the coarse mesh when the q0- and
+    // strain-renormalization has a longer range than the coarse supercell. With the
+    // Cartesian forms Mt = E M E^+ and Gt = E G E^+ (E: harmonic eigenvectors),
+    //   sum_k tr[interp(M)_k G_k] = sum_k sum_ij interp(Mt)_k(i,j) Gt_k(j,i)
+    //                             = sum_c sum_ij Mt_c(i,j) Y_c(i,j)
+    // with the adjoint Y_c(i,j) = (1/Nc) sum_R e^{-2 pi i c.R} sum_k phi_ij(k,R) Gt_k(j,i),
+    // phi_ij(k,R) the minimum-image phase of r2q, and the coarse DFT of
+    // fourier_dymat_k_to_r. Back in the mode basis: Geff_c = E_c^+ Y_c^T E_c.
+    using namespace Eigen;
+    const auto nk = kmesh_dense_in->nk;
+    const auto nkc = kmesh_coarse->nk;
+    const auto ns = dynamical->neval;
+    if (nkc == nk) {
+        geff_cache.clear();
+        geff_cache_key = 0;
+        return geff_cache;
+    }
+
+    // FNV-1a over the occupation inputs: the force and the stress (and the Hessian's
+    // finite differences at fixed occupations) of one solved state share one adjoint
+    std::uint64_t key = 1469598103934665603ULL;
+    const auto mix = [&key](const void *p, const std::size_t n) {
+        const auto *c = static_cast<const unsigned char *>(p);
+        for (std::size_t i = 0; i < n; ++i) key = (key ^ c[i]) * 1099511628211ULL;
+    };
+    mix(&T_in, sizeof(T_in));
+    mix(&kmesh_dense_in, sizeof(kmesh_dense_in));
+    for (unsigned int ik = 0; ik < nk; ++ik) {
+        mix(omega2_anharm_T[ik], ns * sizeof(double));
+        for (unsigned int is = 0; is < ns; ++is) mix(cmat_convert[ik][is], ns * sizeof(std::complex<double>));
+    }
+    if (key == geff_cache_key && geff_cache.size() == nkc) return geff_cache;
+    const auto nk1 = kmesh_coarse->nk_i[0];
+    const auto nk2 = kmesh_coarse->nk_i[1];
+    const auto nk3 = kmesh_coarse->nk_i[2];
+
+    const auto evec_at = [&](const unsigned int knum) {
+        MatrixXcd e(ns, ns);
+        for (unsigned int is = 0; is < ns; ++is)
+            for (unsigned int js = 0; js < ns; ++js) e(is, js) = evec_harmonic[knum][js][is];
+        return e;
+    };
+
+    // X[i][j][R] = sum_k phi_ij(k,R) Gt_k(j,i)
+    NDArray<std::complex<double>, 3> x(ns, ns, nkc), y(ns, ns, nkc);
+    for (unsigned int i = 0; i < ns; ++i)
+        for (unsigned int j = 0; j < ns; ++j)
+            for (unsigned int r = 0; r < nkc; ++r) x[i][j][r] = 0.0;
+    MatrixXcd G(ns, ns);
+    for (unsigned int ik = 0; ik < nk; ++ik) {
+        scp_occupation_matrix(static_cast<int>(ik), cmat_convert[ik], omega2_anharm_T[ik], T_in, G);
+        const auto e = evec_at(ik);
+        const MatrixXcd gt = e * G * e.adjoint();
+        const auto *xk = kmesh_dense_in->xk[ik];
+        // the phase depends on the atom pair only
+        const auto nat = static_cast<int>(ns / 3);
+#pragma omp parallel for
+        for (int ab = 0; ab < nat * nat; ++ab) {
+            const auto a = static_cast<unsigned int>(ab / nat);
+            const auto b = static_cast<unsigned int>(ab % nat);
+            for (unsigned int r = 0; r < nkc; ++r) {
+                const auto &shifts = mindist_list[a][b][r].shift;
+                std::complex<double> phase = 0.0;
+                for (const auto &it: shifts) {
+                    phase += std::exp(im * (2.0 * pi *
+                                            (static_cast<double>(it.sx) * xk[0] + static_cast<double>(it.sy) * xk[1] +
+                                             static_cast<double>(it.sz) * xk[2])));
+                }
+                phase /= static_cast<double>(shifts.size());
+                for (unsigned int i = 3 * a; i < 3 * a + 3; ++i)
+                    for (unsigned int j = 3 * b; j < 3 * b + 3; ++j) x[i][j][r] += phase * gt(j, i);
+            }
+        }
+    }
+    // the coarse DFT matrix of fourier_dymat_k_to_r is symmetric in (k, R)
+    fourier_dymat_k_to_r(nk1, nk2, nk3, ns, x, y);
+
+    geff_cache.assign(nkc, MatrixXcd(ns, ns));
+    MatrixXcd yt(ns, ns);
+    for (unsigned int ic = 0; ic < nkc; ++ic) {
+        for (unsigned int i = 0; i < ns; ++i)
+            for (unsigned int j = 0; j < ns; ++j) yt(j, i) = y[i][j][ic];
+        const auto e = evec_at(kmap_coarse_to_dense[ic]);
+        geff_cache[ic] = e.adjoint() * yt * e;
+    }
+    geff_cache_key = key;
+    return geff_cache;
+}
+
 void ScphQhaCommon::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, std::complex<double> *v1_renorm,
                                                 std::complex<double> ***v3_renorm, std::complex<double> ***cmat_convert,
                                                 double **omega2_anharm_T, const double T_in,
@@ -295,6 +394,18 @@ void ScphQhaCommon::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, st
 
     MatrixXcd G(ns, ns);
 
+    // With interpolation, the vertices of the coarse points against the pulled-back
+    // occupations (coarse_occupation_matrices); the 1/(4N) of v3 stays that of the dense mesh.
+    const auto &geff = coarse_occupation_matrices(cmat_convert, omega2_anharm_T, T_in, kmesh_dense_in);
+    for (std::size_t ic = 0; ic < geff.size(); ++ic) {
+        const auto knum = kmap_coarse_to_dense[ic];
+#pragma omp parallel for
+        for (int is = 0; is < ns; is++) {
+            Map<const MatrixXcdRowMajor> V3(v3_renorm[knum][is], ns, ns);
+            v1_SCP[is] += V3.cwiseProduct(geff[ic]).sum();
+        }
+    }
+
     // calculate SCP renormalization
     for (auto ik = 0; ik < nk_scph; ik++) {
         const auto count_zero = scp_occupation_matrix(ik, cmat_convert[ik], omega2_anharm_T[ik], T_in, G);
@@ -302,6 +413,7 @@ void ScphQhaCommon::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, st
             std::cout << "Warning in compute_anharmonic_v1_array : ";
             std::cout << count_zero << " non-acoustic zero frequencies are detected at ik = " << ik << ".\n\n";
         }
+        if (!geff.empty()) continue;
 
 #pragma omp parallel for
         for (int is = 0; is < ns; is++) {
@@ -351,6 +463,7 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
     const auto ns2 = static_cast<std::size_t>(ns) * ns;
     // STRAIN_FC5: the occupation matrices of every k (row-major), see below
     std::vector<std::complex<double>> gall(dv4_fc5 ? nk * ns2 : 0);
+    const auto &geff = coarse_occupation_matrices(cmat_convert, omega2_anharm_T, T_in, kmesh_dense_in);
     for (auto ik = 0; ik < nk; ik++) {
         scp_occupation_matrix(ik, cmat_convert[ik], omega2_anharm_T[ik], T_in, G, &is_acoustic_now);
         if (dv4_fc5) Map<MatrixXcdRowMajor>(gall.data() + ik * ns2, ns, ns) = G;
@@ -363,9 +476,19 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
                           << ik << '\n';
             }
         }
+        if (!geff.empty()) continue;
         const MatrixXcd GT = G.transpose();
         for (auto i1 = 0; i1 < 9; i1++) {
             del_v0_del_umn_SCP[i1] += factor2 * del_v2_del_umn_renorm[i1 * nk + ik].cwiseProduct(GT).sum();
+        }
+    }
+    // With interpolation, the vertices of the coarse points against the pulled-back
+    // occupations (coarse_occupation_matrices).
+    for (std::size_t ic = 0; ic < geff.size(); ++ic) {
+        const MatrixXcd GT = geff[ic].transpose();
+        const auto knum = kmap_coarse_to_dense[ic];
+        for (auto i1 = 0; i1 < 9; i1++) {
+            del_v0_del_umn_SCP[i1] += factor2 * del_v2_del_umn_renorm[i1 * nk + knum].cwiseProduct(GT).sum();
         }
     }
 
@@ -373,16 +496,29 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
     // change of the SCP matrix, (1/2) dPhi4/du_mn G, so the term is half the harmonic-like
     // trace above: (1/2) sum_k tr[F_mn[k] G_k^T] / (4N).
     if (dv4_fc5) {
-        std::vector<unsigned int> kall(nk);
-        for (auto ik = 0; ik < nk; ik++) kall[ik] = static_cast<unsigned int>(ik);
-        std::vector<std::complex<double>> f(fc5_mn.size() * nk * ns2);
-        dv4_fc5->contract_channels(gall.data(), kall, f.data());
+        // The FC5 part of the SCP matrix is formed at the coarse points (RealSpaceV4::fmat)
+        // and interpolated like the rest of it, so with interpolation its strain derivative
+        // is contracted at the coarse points against the pulled-back occupations.
+        const bool interp = !geff.empty();
+        std::vector<unsigned int> kout;
+        if (interp) {
+            for (const auto knum: kmap_coarse_to_dense) kout.push_back(static_cast<unsigned int>(knum));
+        } else {
+            for (auto ik = 0; ik < nk; ik++) kout.push_back(static_cast<unsigned int>(ik));
+        }
+        const auto nout = kout.size();
+        std::vector<std::complex<double>> f(fc5_mn.size() * nout * ns2);
+        dv4_fc5->contract_channels(gall.data(), kout, f.data());
         for (std::size_t c = 0; c < fc5_mn.size(); c++) {
             std::complex<double> sum = 0.0;
-            for (auto ik = 0; ik < nk; ik++) {
-                Map<const MatrixXcdRowMajor> F(f.data() + (c * nk + ik) * ns2, ns, ns);
-                Map<const MatrixXcdRowMajor> Gk(gall.data() + ik * ns2, ns, ns);
-                sum += F.cwiseProduct(Gk.transpose()).sum();
+            for (std::size_t i = 0; i < nout; i++) {
+                Map<const MatrixXcdRowMajor> F(f.data() + (c * nout + i) * ns2, ns, ns);
+                if (interp) {
+                    sum += F.cwiseProduct(geff[i].transpose()).sum();
+                } else {
+                    Map<const MatrixXcdRowMajor> Gk(gall.data() + kout[i] * ns2, ns, ns);
+                    sum += F.cwiseProduct(Gk.transpose()).sum();
+                }
             }
             del_v0_del_umn_SCP[fc5_mn[c]] += 0.5 * factor2 * sum;
         }

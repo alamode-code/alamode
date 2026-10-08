@@ -1439,6 +1439,199 @@ def test_v3(anphonbin):
     return info
 
 
+FE_DISP = """&displace
+1
+0.0 0.0 0.004
+0.0 0.0 0.11
+0.0 0.0 -0.088
+0.0 0.0 -0.088
+0.0 0.0 -0.154
+/"""
+
+
+def test_fe(anphonbin):
+    # The reported F_total (PREFIX.scph_thermo) is the free energy whose
+    # derivatives are the printed stress, force and -S, also with Fourier interpolation
+    # (KMESH_INTERPOLATE < KMESH_SCPH; F_total is evaluated on the &kpoint mesh, set =
+    # KMESH_SCPH). Polar BaTiO3 at 300 K, bto.h5, RELAX_STR = 4. The q0- and
+    # strain-renormalized harmonic matrix of the solve is interpolated from the coarse
+    # mesh, so its vertices must be too (ScphQhaCommon::coarse_occupation_matrices); the
+    # vertices taken at the dense k gave a stress 1-3e-4 Ry off dF/du here, the force
+    # 1e-2 off, and dF/dE off -d by 1.6e-3. What is left is the residual of the
+    # interpolated self-energy, which is not self-adjoint (~1e-6 Ry in the stress, 1e-3
+    # of the small force here; not a general bound, e.g. near soft modes).
+    umn0 = np.diag([0.004, 0.004, 0.01])
+    shear = np.array(
+        [[0.0, 0.002, -0.001], [0.002, 0.0, 0.0015], [-0.001, 0.0015, 0.0]]
+    )
+
+    def run(
+        name,
+        umn,
+        temp=300.0,
+        displace=FE_DISP,
+        relax=False,
+        efield=None,
+        nonanalytic=0,
+    ):
+        if os.path.exists(name + ".scph.h5"):
+            os.remove(name + ".scph.h5")
+        text = bto_input(
+            name,
+            efield=efield,
+            relax_str=4,
+            max_iter=80 if relax else 1,
+            displace=displace,
+            strain="\n".join(" %.12e %.12e %.12e" % tuple(r) for r in umn),
+            verbosity=2,
+            strainfile="bto.h5",
+            coord_tol="1.0e-9" if relax else "10.0",
+            extra="\n  GRADIENT_CONV_TOL = 1.0e-9" if relax else "",
+        )
+        text = text.replace("  8 8 8", "  4 4 4")
+        text = text.replace(
+            "TMIN = 300; TMAX = 300", "TMIN = %g; TMAX = %g" % (temp, temp)
+        )
+        if nonanalytic:
+            text = text.replace(
+                "BORNINFO = BORNINFO",
+                "BORNINFO = BORNINFO\n  NONANALYTIC = %d" % nonanalytic,
+            )
+        rc, log = run_anphon(anphonbin, name, text)
+        if rc or "Structural optimization converged" not in log:
+            return None
+        th = np.loadtxt(name + ".scph_thermo", ndmin=2)[-1]
+        return dict(
+            F=th[-2], S=th[-1], G=last_values(log, LBL_G).reshape(3, 3), log=log
+        )
+
+    def fd_strain(prefix, direction, hs, umn=umn0, **kw):
+        # central differences of F_total along umn + h direction; with two steps,
+        # Richardson-extrapolated
+        d = []
+        for i, h in enumerate(hs):
+            f = {}
+            for sign in (1, -1):
+                r = run("%s%d%+d" % (prefix, i, sign), umn + sign * h * direction, **kw)
+                if r is None:
+                    return None
+                f[sign] = r["F"]
+            d.append((f[1] - f[-1]) / (2.0 * h))
+        return d[0] if len(d) == 1 else (4.0 * d[1] - d[0]) / 3.0
+
+    ezz = np.zeros((3, 3))
+    ezz[2, 2] = 1.0
+    two = (1.0e-3, 5.0e-4)  # the O(h^2) error at 1e-3 is ~2e-5
+    info = 0
+
+    def strain_check(label, prefix, base, direction, hs=two, tol=5.0e-6, **kw):
+        d = fd_strain(prefix, direction, hs, **kw)
+        g = np.sum(base["G"] * direction)
+        return check(
+            d is not None and abs(d - g) < tol,
+            "FE %s: dF_total/du = %.6e == G = %.6e" % (label, d or 0.0, g),
+        )
+
+    # 1. fixed structure, 2/4 meshes: zz, the force, -S
+    base = run("fe_0", umn0)
+    if base is None:
+        return check(False, "FE: base run failed")
+    info += strain_check("zz (fixed structure)", "fe_zz", base, ezz)
+    # the force: a displacement that keeps the centre of mass (Ti z against O3 z),
+    # q0 of the evaluated structures from step_q0.txt (row 0)
+    g_q = last_values(base["log"], LBL_Q)
+    mass = masses_ry(base["log"], ["Ba", "Ti", "O", "O", "O"])
+    disp0 = np.array([r.split() for r in FE_DISP.splitlines()[2:7]], float)
+    dvec = np.zeros((5, 3))
+    dvec[1, 2], dvec[4, 2] = 1.0, -mass[1] / mass[4]
+    # ratio Delta F / (g . Delta q0), Richardson over two steps (O(h^2): 5e-3 at 2e-3 Bohr)
+    ratio = []
+    for i, h in enumerate((2.0e-3, 1.0e-3)):
+        f, q = {}, {}
+        for sign in (1, -1):
+            d = disp0 + sign * h * dvec
+            disp = "&displace\n1\n%s\n/" % "\n".join(
+                " %.12e %.12e %.12e" % tuple(r) for r in d
+            )
+            r = run("fe_q%d%+d" % (i, sign), umn0, displace=disp)
+            if r is None:
+                return info + check(False, "FE: displacement runs failed")
+            f[sign], q[sign] = r["F"], step_row("step_q0.txt", 0)
+        ratio.append((f[1] - f[-1]) / (g_q @ (q[1] - q[-1])))
+    ratio = (4.0 * ratio[1] - ratio[0]) / 3.0
+    info += check(
+        abs(ratio - 1.0) < 3.0e-3,  # 1e-3 left (self-energy residual), 1e-2 before
+        "FE force (fixed structure): Delta F_total / (g . Delta q0) = %.6f (extrapolated)"
+        % ratio,
+    )
+    t = [run("fe_t%+d" % s, umn0, temp=300.0 + s) for s in (1, -1)]
+    if None in t:
+        return info + check(False, "FE: T runs failed")
+    dfdt = (t[0]["F"] - t[1]["F"]) / 2.0
+    kb_ry = 1.380649e-23 / 4.3597447222071e-18 * 2.0
+    info += check(
+        abs(dfdt + base["S"] * kb_ry) < 1.0e-4 * base["S"] * kb_ry,
+        "FE T (fixed structure): dF_total/dT = %.8e == -S = %.8e Ry/K"
+        % (dfdt, -base["S"] * kb_ry),
+    )
+    # 2. a sheared cell: the shear stress (G_xy + G_yx)
+    exy = np.zeros((3, 3))
+    exy[0, 1] = exy[1, 0] = 1.0
+    sh = run("fe_s0", umn0 + shear)
+    if sh is None:
+        return info + check(False, "FE: shear run failed")
+    info += strain_check("xy (sheared cell)", "fe_xy", sh, exy, umn=umn0 + shear)
+    # 3. NONANALYTIC = 3 on 2/4 meshes, commensurate with the 2x2x2 harmonic supercell
+    #    (with a coarse mesh that is not, F_total has a separate known inconsistency).
+    #    3/6 meshes pass with and without the coarse-mesh adjoint (a 3x3x3 coarse cell
+    #    holds the range of the 2x2x2 IFCs) and are not a test of it.
+    b = run("fe_na3_0", umn0, nonanalytic=3)
+    if b is None:
+        return info + check(False, "FE: NONANALYTIC = 3 base run failed")
+    info += strain_check(
+        "zz (NONANALYTIC = 3)", "fe_na3", b, ezz, tol=1.0e-5, nonanalytic=3
+    )
+    # 4. internal coordinates relaxed (the force enters through dq0/du): the envelope
+    #    dF_total/du_zz == G_zz, and dF_total/dE_z == -d_z
+    rel = run("fe_r0", umn0, relax=True)
+    if rel is None:
+        return info + check(False, "FE: relaxation failed")
+    u0 = np.loadtxt("fe_r0.atom_disp", ndmin=2)[-1, 1:].reshape(-1, 3)
+    seed = "&displace\n1\n%s\n/" % "\n".join(
+        " %.12e %.12e %.12e" % tuple(r) for r in u0
+    )
+    info += strain_check(
+        "zz (relaxed q0)",
+        "fe_rzz",
+        rel,
+        ezz,
+        hs=(1.0e-3,),
+        tol=2.0e-5,
+        displace=seed,
+        relax=True,
+    )
+    # the polar soft mode makes F(E) strongly curved: Richardson over two field steps
+    dfde, dz = [], []
+    for h_e in (1.0e-3, 5.0e-4):  # V/A
+        fe = {}
+        for sign in (1, -1):
+            efield = "0 0 %.6e" % (sign * h_e)
+            r = run("fe_e%+d" % sign, umn0, displace=seed, relax=True, efield=efield)
+            if r is None:
+                return info + check(False, "FE: field runs failed")
+            fe[sign] = (r["F"], last_values(r["log"], LBL_DT)[2])
+        dfde.append((fe[1][0] - fe[-1][0]) / (2.0 * h_e * EV_A_TO_RY))
+        dz.append(0.5 * (fe[1][1] + fe[-1][1]))
+    dfde = (4.0 * dfde[1] - dfde[0]) / 3.0
+    dz = (4.0 * dz[1] - dz[0]) / 3.0
+    info += check(
+        abs(dfde + dz) < 5.0e-4 * abs(dz),
+        "FE E (relaxed q0): dF_total/dE_z = %.6e == -d_z = %.6e e Bohr (extrapolated)"
+        % (dfde, -dz),
+    )
+    return info
+
+
 def test_w3(anphonbin):
     # BUBBLE = 4 at the first structure (COORD_CONV_TOL = 10: converged at once),
     # matched meshes, bto_nl.h5 and bto_piezo.h5 at the same field.
@@ -1922,6 +2115,82 @@ def zno_input(name, sfile, umn, efield, restart=False):
     return text + "&strain\n%s\n/\n%s\n" % (strain, DISPLACE_ZNO)
 
 
+def test_fe_qha(anphonbin):
+    # FE for the iterative QHA with Fourier interpolation: ZnO with its full anharmonic
+    # IFCs (3x3x2 cubic/quartic supercell) and zno_ref.h5, KMESH_INTERPOLATE = 2 2 1 <
+    # KMESH_QHA = 4 4 2 (= the &kpoint mesh), RELAX_STR = 4, one step at a displaced and
+    # strained structure: dF_total/du == the QHA stress for zz and xy, and the force.
+    # (QHA of cubic BaTiO3 has imaginary modes, which F_vib skips.)
+    umn0 = np.array(
+        [[0.003, 0.001, 0.0], [0.001, -0.002, 0.0005], [0.0, 0.0005, 0.004]]
+    )
+    lbl_g = "ZSISA inputs: QHA stress dF/du_mn [Ry] :"
+    lbl_q = "ZSISA inputs: QHA force (all Gamma modes) :"
+
+    def run(name, umn, displace=DISPLACE_ZNO):
+        text = zno_input(name, "zno_ref.h5", umn, np.zeros(3))
+        text = text.replace(DISPLACE_ZNO, displace)
+        text = text.replace(
+            "FCSFILE = zno_tiny_anharm.xml",
+            "FCSFILE = ZnO332_500K_cutoff1208_nbody233.xml",
+        )
+        text = text.replace("KMESH_INTERPOLATE = 4 4 2", "KMESH_INTERPOLATE = 2 2 1")
+        text = text.replace("  8 8 8", "  4 4 2").replace(
+            "COORD_CONV_TOL = 1.0e-10", "COORD_CONV_TOL = 10.0"
+        )
+        rc, log = run_anphon(anphonbin, name, text)
+        if rc or "Structural optimization converged" not in log or "negative" in log:
+            return None
+        th = np.loadtxt(name + ".qha_thermo", ndmin=2)[-1]
+        return dict(
+            F=th[-2], G=last_values(log, lbl_g).reshape(3, 3), g=last_values(log, lbl_q)
+        )
+
+    base = run("feq_0", umn0)
+    if base is None:
+        return check(False, "FE QHA: base run failed (or imaginary modes)")
+    info = 0
+    for label, (m, n) in (("zz", (2, 2)), ("xy", (0, 1))):
+        e = np.zeros((3, 3))
+        e[m, n] = e[n, m] = 1.0
+        d = []
+        for i, h in enumerate((1.0e-3, 5.0e-4)):
+            f = [run("feq_%s%d%+d" % (label, i, s), umn0 + s * h * e) for s in (1, -1)]
+            if None in f:
+                return info + check(False, "FE QHA: strain runs failed")
+            d.append((f[0]["F"] - f[1]["F"]) / (2.0 * h))
+        d = (4.0 * d[1] - d[0]) / 3.0
+        g = np.sum(base["G"] * e)
+        info += check(
+            abs(d - g) < 1.0e-6 * max(1.0, abs(base["G"]).max() / 1.0e-2),
+            "FE QHA %s: dF_total/du = %.8e == G = %.8e (extrapolated)" % (label, d, g),
+        )
+    # the force: Zn1 z against O1 z (equal displacement of the centre of mass kept)
+    disp0 = np.array([r.split() for r in DISPLACE_ZNO.splitlines()[2:6]], float)
+    mass = np.array([65.38, 65.38, 15.999, 15.999])
+    dvec = np.zeros((4, 3))
+    dvec[0, 2], dvec[2, 2] = 1.0, -mass[0] / mass[2]
+    ratio = []
+    for i, h in enumerate((2.0e-3, 1.0e-3)):
+        f, q = {}, {}
+        for sign in (1, -1):
+            d = disp0 + sign * h * dvec
+            disp = "&displace\n1\n%s\n/" % "\n".join(
+                " %.12e %.12e %.12e" % tuple(x) for x in d
+            )
+            r = run("feq_q%d%+d" % (i, sign), umn0, disp)
+            if r is None:
+                return info + check(False, "FE QHA: displacement runs failed")
+            f[sign], q[sign] = r["F"], step_row("step_q0.txt", 0)
+        ratio.append((f[1] - f[-1]) / (base["g"] @ (q[1] - q[-1])))
+    ratio = (4.0 * ratio[1] - ratio[0]) / 3.0
+    info += check(
+        abs(ratio - 1.0) < 5.0e-4,
+        "FE QHA force: Delta F_total / (g . Delta q0) = %.6f (extrapolated)" % ratio,
+    )
+    return info
+
+
 def test_zno_piezo(anphonbin, py, tools_dir):
     # ZnO (P6_3mc): e0, B and Lambda all have symmetry-allowed nonzero components,
     # so their field terms are tested through the production path (anphon's
@@ -2151,6 +2420,7 @@ if __name__ == "__main__":
             ("1b errors", test_1b_errors, (anphonbin,)),
             ("phase-2 restarts", test_2_restarts, (anphonbin,)),
             ("V3/W2", test_v3, (anphonbin,)),
+            ("FE", test_fe, (anphonbin,)),
             ("W3", test_w3, (anphonbin,)),
             (
                 "cell",
@@ -2167,6 +2437,7 @@ if __name__ == "__main__":
         stages.append(
             ("Z", test_zno_piezo, (anphonbin, py, os.path.join(project_root, "tools")))
         )
+        stages.append(("FE QHA", test_fe_qha, (anphonbin,)))
     for label, func, args in stages:
         t0 = time.time()
         print("%s:" % label)
