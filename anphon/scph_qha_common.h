@@ -196,6 +196,11 @@ protected:
     void zerofill_harmonic_dymat_renormalize(std::complex<double> ****delta_harmonic_dymat_renormalize,
                                              const unsigned int NT) const;
 
+    // Rank 0: a correction from a file that took it against the analytic fc2 part only
+    // (no delta_baseline marker) is rebased on the full harmonic matrix of this run,
+    // delta += F^-1[D_analytic - D_harm] on the coarse mesh. Nothing to do for NONANALYTIC = 0.
+    void convert_legacy_delta(std::complex<double> ****delta, unsigned int NT, const std::string &filename) const;
+
     void load_scph_dymat_from_file(std::complex<double> ****dymat_out, std::string filename_dymat,
                                    const KpointMeshUniform *kmesh_dense_in, const KpointMeshUniform *kmesh_coarse_in,
                                    const unsigned int nonanalytic_in, const bool selfenergy_offdiagonal_in);

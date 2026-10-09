@@ -1542,6 +1542,7 @@ def test_fe(anphonbin):
         relax=False,
         efield=None,
         nonanalytic=0,
+        kmesh_interpolate="2 2 2",
     ):
         if os.path.exists(name + ".scph.h5"):
             os.remove(name + ".scph.h5")
@@ -1559,12 +1560,17 @@ def test_fe(anphonbin):
         )
         text = text.replace("  8 8 8", "  4 4 4")
         text = text.replace(
+            "KMESH_INTERPOLATE = 2 2 2", "KMESH_INTERPOLATE = " + kmesh_interpolate
+        )
+        text = text.replace(
             "TMIN = 300; TMAX = 300", "TMIN = %g; TMAX = %g" % (temp, temp)
         )
         if nonanalytic:
             text = text.replace(
                 "BORNINFO = BORNINFO",
-                "BORNINFO = BORNINFO\n  NONANALYTIC = %d" % nonanalytic,
+                "BORNINFO = BORNINFO\n  NONANALYTIC = %d" % nonanalytic
+                # NONANALYTIC = 1: a damping wide enough to reach the zone boundary
+                + ("\n  NA_SIGMA = 1.0" if nonanalytic == 1 else ""),
             )
         rc, log = run_anphon(anphonbin, name, text)
         if rc or "Structural optimization converged" not in log:
@@ -1650,8 +1656,7 @@ def test_fe(anphonbin):
     if sh is None:
         return info + check(False, "FE: shear run failed")
     info += strain_check("xy (sheared cell)", "fe_xy", sh, exy, umn=umn0 + shear)
-    # 3. NONANALYTIC = 3 on 2/4 meshes, commensurate with the 2x2x2 harmonic supercell
-    #    (with a coarse mesh that is not, F_total has a separate known inconsistency).
+    # 3. NONANALYTIC = 3 on 2/4 meshes, commensurate with the 2x2x2 harmonic supercell.
     #    3/6 meshes pass with and without the coarse-mesh adjoint (a 3x3x3 coarse cell
     #    holds the range of the 2x2x2 IFCs) and are not a test of it.
     b = run("fe_na3_0", umn0, nonanalytic=3)
@@ -1660,6 +1665,34 @@ def test_fe(anphonbin):
     info += strain_check(
         "zz (NONANALYTIC = 3)", "fe_na3", b, ezz, tol=1.0e-5, nonanalytic=3
     )
+    # 3b. A coarse mesh not commensurate with the harmonic supercell (matched 4/4).
+    #     The stored corrections are taken against the full harmonic matrix (with the
+    #     Ewald or nonanalytic term) that the interpolation adds back; against its
+    #     analytic part only, they carried D_harm - D_analytic once more at the coarse
+    #     points (dF/du_zz off G by 1.3e-2 with NONANALYTIC = 3 and 4e-3 with 2, and
+    #     dF/dT off -S by 1.5e-3 and 4e-3 relative; 7.7e-3 with NONANALYTIC = 1).
+    kw44 = dict(nonanalytic=3, kmesh_interpolate="4 4 4")
+    b = run("fe_na3m_0", umn0, **kw44)
+    if b is None:
+        return info + check(False, "FE: NONANALYTIC = 3, 4/4 meshes, base run failed")
+    info += strain_check("zz (NONANALYTIC = 3, 4/4)", "fe_na3m", b, ezz, **kw44)
+    for na in (3, 2, 1):
+        kw44["nonanalytic"] = na
+        bt = b if na == 3 else run("fe_na%dm_0" % na, umn0, **kw44)
+        t = [
+            run("fe_na%dm_t%+d" % (na, s), umn0, temp=300.0 + s, **kw44)
+            for s in (1, -1)
+        ]
+        if bt is None or None in t:
+            return info + check(
+                False, "FE: NONANALYTIC = %d, 4/4 meshes, T runs failed" % na
+            )
+        dfdt = (t[0]["F"] - t[1]["F"]) / 2.0
+        info += check(
+            abs(dfdt + bt["S"] * kb_ry) < 1.0e-4 * bt["S"] * kb_ry,
+            "FE T (NONANALYTIC = %d, 4/4): dF_total/dT = %.8e == -S = %.8e Ry/K"
+            % (na, dfdt, -bt["S"] * kb_ry),
+        )
     # 4. internal coordinates relaxed (the force enters through dq0/du): the envelope
     #    dF_total/du_zz == G_zz, and dF_total/dE_z == -d_z
     rel = run("fe_r0", umn0, relax=True)

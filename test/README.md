@@ -43,7 +43,10 @@ Silicon ANPHON --> pass
 - `test_dfc2_fold.py` covers `DFC2FILE` from an SCPH run whose `&cell` is an
   integer supercell of the primitive cell (BaTiO3 1x1x2 cell, 2 2 1 meshes):
   the folded correction must reproduce a primitive-cell SCPH with the same q
-  sampling (2 2 2 / 2 2 2).
+  sampling (2 2 2 / 2 2 2). It also runs SCPH with `NONANALYTIC = 3` on a skewed
+  10-atom cell (2 4 4 meshes, equivalent to the cubic 4x4x4 one and not
+  commensurate with the 2x2x2 IFCs), whose frequencies must equal the 5-atom ones
+  at the folded q: this needs one Bloch gauge for the IFCs and the Ewald terms.
 - `test_cell_images` (C++, built with anphon) covers the minimum-image search of
   `System::get_minimum_distances` beyond the 27 neighboring cells (`images_beyond_27`)
   on orthogonal, hexagonal and skewed supercells against a brute-force search.

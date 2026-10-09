@@ -514,9 +514,14 @@ Description of input variables
                FC2 onto the ``KMESH_INTERPOLATE`` cell; to combine the
                correction with a harmonic FC2 of a larger supercell, use
                :ref:`DFC2FILE <anphon_dfc2file>` instead. The temperature must
-               be one of the values on the file's temperature grid. The stored FC2 is the short-range part; the
-               non-analytic long-range term is added at runtime from ``BORNINFO``
-               as usual. In ``MODE = kappa``, this tag also switches
+               be one of the values on the file's temperature grid. The stored FC2
+               must be read with the ``NONANALYTIC`` of the run that wrote it (2 and
+               3 may read each other's files, a ``NONANALYTIC = 0`` file may be read
+               with a nonanalytic term with a warning; other combinations stop with an error):
+               the nonanalytic term is then added from ``BORNINFO`` as usual, and the
+               frequencies of the SCPH/QHA run are reproduced exactly at the
+               :math:`q` points of its ``KMESH_INTERPOLATE`` mesh (see
+               :ref:`label_hdf5_scph_nonanalytic`). In ``MODE = kappa``, this tag also switches
                ``PREFIX``.kappa.h5 to its temperature-resolved layout so that
                runs at different basis temperatures accumulate into one file
                (set ``TMIN = TMAX = FC2_TEMPERATURE`` per run). Temperatures whose
@@ -572,6 +577,14 @@ Description of input variables
                     - total (base + :math:`\Delta\Phi(T)`) read directly from the state file
                   * - ``FC2FILE`` = ``PREFIX``.scph.h5, no ``FC2_TEMPERATURE``, no ``DFC2FILE``
                     - base FC2 of the state file only; the renormalized FC2 is **not** used
+
+               The correction is relative to the full harmonic dynamical matrix of the
+               SCPH/QHA run, so the present run must use the same ``NONANALYTIC``
+               (2 and 3 are interchangeable) and the same ``BORNINFO``. A file of a
+               ``NONANALYTIC = 0`` run may be used with ``NONANALYTIC > 0`` with a
+               warning: the correction then lacks the long-range term, which is added
+               to the harmonic part only (an approximation). See
+               :ref:`label_hdf5_scph_nonanalytic`.
 
                Note that the crystal structure is still taken from
                ``FCSFILE``/``FC2FILE``; ``DFC2FILE`` contributes force-constant

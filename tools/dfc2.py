@@ -109,8 +109,17 @@ class DFC2Correction:
         shifts, atoms, coords, values = [], [], [], []
         current_temp_match = False
 
+        self.nonanalytic, self.delta_baseline = None, 0
         for line in f:
-            if line.startswith("#"):
+            if line.startswith("# Header"):
+                # "# Header = -1 : NONANALYTIC = n ; DELTA_BASELINE = 1"
+                items = dict(
+                    (k.strip(), v.strip())
+                    for k, v in (t.split("=") for t in line.split(":")[1].split(";"))
+                )
+                self.nonanalytic = int(items["NONANALYTIC"])
+                self.delta_baseline = int(items["DELTA_BASELINE"])
+            elif line.startswith("#"):
                 if "Temp" in line:
                     temp_in_file = float(line.split("=")[1].strip())
                     current_temp_match = abs(temp_in_file - self.temperature) < 0.01
@@ -131,6 +140,17 @@ class DFC2Correction:
         self.values = np.array(values)
 
         print(f"Loaded {len(values)} corrections at T={self.temperature} K")
+        if self.delta_baseline == 0:
+            print(
+                "Note: a dfc2 file of an earlier version (no header line). With NONANALYTIC != 0 its"
+                " corrections were taken against the analytic FC2 and are valid only for"
+                " NONANALYTIC = 2 or 3 with KMESH_INTERPOLATE commensurate with the FC2 supercell."
+            )
+        elif self.nonanalytic:
+            print(
+                "Note: the corrections are for NONANALYTIC = %d; use the same treatment (2 and 3 are"
+                " interchangeable) with the renormalized FC2." % self.nonanalytic
+            )
 
 
 class FC2Updater:

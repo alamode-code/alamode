@@ -114,6 +114,11 @@ public:
 
     // info_out: when given, the LAPACK INFO is stored there instead of exiting on
     // failure (for calls inside OpenMP regions).
+    // fc2 + the NONANALYTIC = 1/2 term, made real at the time-reversal invariant k:
+    // the matrix of eval_k, shared with calc_harmonic_dymat.
+    void assemble_dymat_fc2_na(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
+                               const Dielec &dielec, std::complex<double> **dymat_out) const;
+
     void eval_k(const double *, const double *, const std::vector<FcsArrayWithCell> &, const Dielec &, double *,
                 std::complex<double> **, const bool, int *info_out = nullptr) const;
 
@@ -166,6 +171,12 @@ public:
 
     void set_projection_directions(const std::vector<std::vector<double>> projections_in);
 
+    // The harmonic dynamical matrix of the run at one k point, short + long range, as
+    // exec_interpolation adds it back to an interpolated correction: fc2 (+ the
+    // NONANALYTIC = 1/2 term) or the dipole-free IFCs + Ewald (NONANALYTIC = 3).
+    void calc_harmonic_dymat(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
+                             const Dielec &dielec, const Ewald &ewald, std::complex<double> **dymat_out) const;
+
     void precompute_dymat_harm(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_in,
                                const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald,
                                std::vector<Eigen::MatrixXcd> &dymat_short,
@@ -203,7 +214,8 @@ public:
     void calc_new_dymat_with_evec(std::complex<double> ***dymat_out, double **omega2_in,
                                   std::complex<double> ***evec_in, const KpointMeshUniform *kmesh_coarse,
                                   const std::vector<int> &kmap_interpolate_to_scph,
-                                  const std::vector<FcsArrayWithCell> &fc2) const;
+                                  const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+                                  const Ewald &ewald) const;
 
     // For NONANALYTIC = 3 the dipole-free force constants are taken from ewald, not from fc2.
     //

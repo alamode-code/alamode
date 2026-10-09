@@ -19,6 +19,7 @@
 #include <vector>
 #include "constants.h"
 #include "dielec.h"
+#include "ewald.h"
 #include "ifc_derivative.h"
 #include "interpolation.h"
 #include "phonon_dos.h"
@@ -165,14 +166,27 @@ void ScphQhaCommon::setup_eigvecs()
     evec_harmonic.resize(kmesh_dense->nk, ns, ns);
     omega2_harmonic.resize(kmesh_dense->nk, ns);
 
+    // The harmonic reference of the SCP solve is the full harmonic dynamical matrix of the
+    // run, the one the interpolation adds back (Dynamical::calc_harmonic_dymat): with
+    // NONANALYTIC = 3, eval_k has no Ewald term.
     for (int ik = 0; ik < kmesh_dense->nk; ++ik) {
-        dynamical->eval_k(kmesh_dense->xk[ik],
-                          kmesh_dense->kvec_na[ik],
-                          fcs_phonon->force_constant_with_cell[0],
-                          *dielec,
-                          omega2_harmonic[ik],
-                          evec_harmonic[ik],
-                          true);
+        if (dynamical->nonanalytic == 3) {
+            dynamical->eval_k_ewald(kmesh_dense->xk[ik],
+                                    kmesh_dense->kvec_na[ik],
+                                    ewald->fc2_without_dipole,
+                                    *ewald,
+                                    omega2_harmonic[ik],
+                                    evec_harmonic[ik],
+                                    true);
+        } else {
+            dynamical->eval_k(kmesh_dense->xk[ik],
+                              kmesh_dense->kvec_na[ik],
+                              fcs_phonon->force_constant_with_cell[0],
+                              *dielec,
+                              omega2_harmonic[ik],
+                              evec_harmonic[ik],
+                              true);
+        }
 
         for (auto is = 0; is < ns; ++is) {
             if (std::abs(omega2_harmonic[ik][is]) < eps) {
@@ -279,6 +293,7 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
     }
 
     if (run.my_rank == 0) {
+        bool legacy_text_delta = false;
         double temp;
         std::ifstream ifs_dymat;
         auto file_dymat = filename_dymat;
@@ -302,6 +317,15 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
         ifs_dymat >> nk_scph_tmp[0] >> nk_scph_tmp[1] >> nk_scph_tmp[2];
         ifs_dymat >> Tmin_tmp >> Tmax_tmp >> dT_tmp;
         ifs_dymat >> nonanalytic_tmp >> consider_offdiag_tmp;
+        std::string rest_of_line;
+        std::getline(ifs_dymat, rest_of_line);
+        int delta_baseline = 0;
+        std::istringstream(rest_of_line) >> delta_baseline;
+        if (delta_baseline > 1) {
+            exit("load_scph_dymat_from_file",
+                 "Unsupported correction convention (third entry of line 4) in the restart file");
+        }
+        legacy_text_delta = delta_baseline != 1;
 
         if (nk_interpolate_ref[0] != kmesh_coarse_in->nk_i[0] || nk_interpolate_ref[1] != kmesh_coarse_in->nk_i[1] ||
             nk_interpolate_ref[2] != kmesh_coarse_in->nk_i[2])
@@ -314,7 +338,7 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
             exit("load_scph_dymat_from_file", "The number of KMESH_SCPH is not consistent");
         }
         if (nonanalytic_tmp != nonanalytic_in) {
-            warn("load_scph_dymat_from_file", "The NONANALYTIC tag is not consistent");
+            exit("load_scph_dymat_from_file", "The NONANALYTIC tag is not consistent with the restart file");
         }
         if (consider_offdiag_tmp != selfenergy_offdiagonal_in) {
             exit("load_scph_dymat_from_file", "The SELF_OFFDIAG tag is not consistent");
@@ -358,9 +382,55 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
             exit("load_scph_dymat_from_file", "The temperature information is not consistent");
         }
         if (run.verbosity > 0) std::cout << " done.\n";
+        if (legacy_text_delta) convert_legacy_delta(dymat_out, NT, file_dymat);
     }
     // Broadcast to all MPI threads
     mpi_bcast_complex(dymat_out, NT, kmesh_coarse_in->nk, ns);
+}
+
+void ScphQhaCommon::convert_legacy_delta(std::complex<double> ****delta, const unsigned int NT,
+                                         const std::string &filename) const
+{
+    if (dynamical->nonanalytic == 0) return;
+    if (dynamical->nonanalytic == 1) {
+        // the earlier versions also used another phase of the Parlinski term
+        exit("convert_legacy_delta",
+             ("The anharmonic corrections of " + filename +
+              " were written by an earlier version with NONANALYTIC = 1,\n"
+              " whose Parlinski term had a different phase; they cannot be reused. Rerun the calculation.")
+                 .c_str());
+    }
+
+    const auto ns = dynamical->neval;
+    const auto nk = kmesh_coarse->nk;
+    NDArray<std::complex<double>, 2> d_full(ns, ns), d_analytic(ns, ns);
+    NDArray<std::complex<double>, 3> shift_q(ns, ns, nk), shift_r(ns, ns, nk);
+    for (unsigned int ik = 0; ik < nk; ++ik) {
+        dynamical->calc_harmonic_dymat(kmesh_coarse->xk[ik],
+                                       kmesh_coarse->kvec_na[ik],
+                                       fcs_phonon->force_constant_with_cell[0],
+                                       *dielec,
+                                       *ewald,
+                                       d_full);
+        dynamical->calc_analytic_k(kmesh_coarse->xk[ik], fcs_phonon->force_constant_with_cell[0], d_analytic);
+        for (unsigned int is = 0; is < ns; ++is) {
+            for (unsigned int js = 0; js < ns; ++js) shift_q[is][js][ik] = d_analytic[is][js] - d_full[is][js];
+        }
+    }
+    fourier_dymat_k_to_r(kmesh_coarse->nk_i[0], kmesh_coarse->nk_i[1], kmesh_coarse->nk_i[2], ns, shift_q, shift_r);
+    for (unsigned int iT = 0; iT < NT; ++iT) {
+        for (unsigned int is = 0; is < ns; ++is) {
+            for (unsigned int js = 0; js < ns; ++js) {
+                for (unsigned int ir = 0; ir < nk; ++ir) delta[iT][is][js][ir] += shift_r[is][js][ir];
+            }
+        }
+    }
+    warn("convert_legacy_delta",
+         ("The anharmonic corrections of " + filename +
+          " were stored against the analytic part of the harmonic\n"
+          " dynamical matrix (a file of an earlier version); they are rebased on the full harmonic matrix\n"
+          " of this run (with its nonanalytic term).")
+             .c_str());
 }
 
 void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> *const *const *const *dymat_in,
@@ -398,7 +468,8 @@ void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> 
     ofs_dymat << std::setw(10) << Tmax;
     ofs_dymat << std::setw(10) << dT << '\n';
     ofs_dymat << std::setw(5) << nonanalytic_in;
-    ofs_dymat << std::setw(5) << selfenergy_offdiagonal_in << '\n';
+    ofs_dymat << std::setw(5) << selfenergy_offdiagonal_in;
+    ofs_dymat << std::setw(5) << 1 << '\n'; // delta_baseline: corrections on the full harmonic matrix
 
     for (auto iT = 0; iT < NT; ++iT) {
         const auto temp = Tmin + static_cast<double>(iT) * dT;

@@ -192,6 +192,10 @@ public:
     // Whether the run that wrote the file relaxed with STRAIN_FC5 = 1.
     bool used_strain_fc5() const;
 
+    // Whether the /dymat corrections are relative to the full harmonic matrix
+    // (/settings/delta_baseline = 1); older files: relative to the analytic part.
+    bool delta_on_full_harmonic() const;
+
     // The stored convergence flags of the requested temperatures (1 where the
     // file carries none, as check_convergence treats them).
     void load_convergence(const std::vector<double> &temps_requested, std::vector<unsigned char> &scph_out,

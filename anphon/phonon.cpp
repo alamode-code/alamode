@@ -446,7 +446,7 @@ void PHON::setup_base() const
                  symmetry->SymmListWithMap,
                  relaxing_structure && (relaxation->has_efield() || relaxation->pol_ref_given),
                  relaxing_structure);
-    ewald->init(*dielec, fcs_phonon->force_constant_with_cell[0]);
+    ewald->init(*dielec, fcs_phonon->force_constant_with_cell[0], fcs_phonon->nfc2_without_dfc2);
 
     // The adaptive smearing widths come from the group velocities, which need the
     // non-analytic term, so this must follow dielec->init() and ewald->init().  ismear

@@ -97,6 +97,11 @@ void ScphQhaCommon::write_anharmonic_correction_fc2(std::complex<double> ****del
         }
         ofs_fc2 << std::setw(5) << system->get_primcell().kind[i] + 1 << '\n';
     }
+    // The corrections are taken against the full harmonic matrix of this run, whose
+    // nonanalytic treatment the reader must reproduce (DELTA_BASELINE = 1). Files without
+    // this line took them against the analytic part. The leading -1 keeps the line from
+    // being read as a temperature tag by older parsers.
+    ofs_fc2 << "# Header = -1 : NONANALYTIC = " << dynamical->nonanalytic << " ; DELTA_BASELINE = 1\n";
 
     for (unsigned int iT = 0; iT < NT; ++iT) {
         const auto temp = Tmin + dT * static_cast<double>(iT);
@@ -248,7 +253,14 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
     const auto nk3 = kmesh_coarse_in->nk_i[2];
     const auto ncell = nk1 * nk2 * nk3;
 
-    // Harmonic (short-range) dynamical matrix on the coarse mesh -> real space
+    // Exported FC2 convention: base_values are the FC2 that a run with the same NONANALYTIC
+    // turns back into the harmonic matrix of this run (Dynamical::calc_harmonic_dymat) at the
+    // q of the coarse mesh, and the temperature-dependent values are base_values plus the
+    // correction delta_dymat (Dynamical::calc_new_dymat_with_evec), so FC2_TEMPERATURE and
+    // DFC2FILE reproduce the SCP matrix there. A reader adds the Parlinski term
+    // (NONANALYTIC = 1) at every q: it is left out. The mixed-space and Ewald terms of a
+    // reader vanish (are already in the IFCs) at q commensurate with the file's supercell:
+    // they are kept.
     NDArray<std::complex<double>, 2> dymat_tmp;
     NDArray<std::complex<double>, 3> dymat_harm_q;
     NDArray<std::complex<double>, 3> dymat_harm_r;
@@ -257,10 +269,16 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
     dymat_harm_r.resize(ns, ns, ncell);
 
     for (unsigned int ik = 0; ik < ncell; ++ik) {
-        Dynamical::calc_analytic_k(*system,
-                                   kmesh_coarse_in->xk[ik],
-                                   fcs_phonon->force_constant_with_cell[0],
-                                   dymat_tmp);
+        if (dynamical->nonanalytic == 1) {
+            dynamical->calc_analytic_k(kmesh_coarse_in->xk[ik], fcs_phonon->force_constant_with_cell[0], dymat_tmp);
+        } else {
+            dynamical->calc_harmonic_dymat(kmesh_coarse_in->xk[ik],
+                                           kmesh_coarse_in->kvec_na[ik],
+                                           fcs_phonon->force_constant_with_cell[0],
+                                           *dielec,
+                                           *ewald,
+                                           dymat_tmp);
+        }
         for (unsigned int is = 0; is < ns; ++is) {
             for (unsigned int js = 0; js < ns; ++js) {
                 dymat_harm_q[is][js][ik] = dymat_tmp[is][js];
@@ -459,6 +477,10 @@ bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::s
         io.load_dymat("delta", settings.temperatures, ns, kmesh_coarse->nk, delta_main);
         if (delta_harm_renorm) {
             io.load_dymat("delta_harm_renorm", settings.temperatures, ns, kmesh_coarse->nk, delta_harm_renorm);
+        }
+        if (!io.delta_on_full_harmonic()) {
+            convert_legacy_delta(delta_main, NT, filename);
+            if (delta_harm_renorm) convert_legacy_delta(delta_harm_renorm, NT, filename);
         }
         if (v0) {
             io.load_v0(settings.temperatures, *v0);

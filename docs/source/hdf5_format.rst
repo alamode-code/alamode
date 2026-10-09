@@ -163,7 +163,7 @@ Written by ``MODE = SCPH`` and ``MODE = QHA`` at the end of the run. A later run
 
 * ``/ForceConstants/Order2``: the harmonic force constants folded onto the supercell of ``KMESH_INTERPOLATE``;
   ``Order2_temperature_dependent/force_constant_values`` holds the effective (renormalized) values at every temperature
-  and uses the index datasets of ``Order2``.
+  and uses the index datasets of ``Order2``. See :ref:`label_hdf5_scph_nonanalytic` for what they mean with ``NONANALYTIC > 0``.
 * ``/convergence``: whether the SCPH iteration (``scph``) and the structural optimization (``structure``) converged at each temperature.
   Later runs refuse unconverged temperatures unless ``ALLOW_UNCONVERGED`` is set.
 * ``/structure`` (``RELAX_STR > 0``): the relaxed structure at each temperature: the displacement gradient ``u_tensor``,
@@ -171,6 +171,41 @@ Written by ``MODE = SCPH`` and ``MODE = QHA`` at the end of the run. A later run
   ``/provenance`` records a fingerprint of the force constants used, which ``RELAXED_STRUCTURE`` checks.
 * ``/dymat``, ``V0``: the change of the dynamical matrix and the potential energy used to restart the calculation.
 * ``/settings``: the temperatures and meshes of the run. The root attribute ``mode`` is ``SCPH`` or ``QHA``.
+  ``nonanalytic`` is the ``NONANALYTIC`` of the run, and ``delta_baseline = 1`` marks the convention of the corrections described below.
+
+.. _label_hdf5_scph_nonanalytic:
+
+Force constants and corrections with ``NONANALYTIC > 0``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The corrections (``/dymat`` and the difference ``Order2_temperature_dependent`` − ``Order2``, which is also what ``DFC2FILE``
+and the text file ``PREFIX.scph_dfc2`` carry) are the change of the dynamical matrix relative to the *full* harmonic dynamical matrix
+of the run, including its nonanalytic term (marker ``/settings/delta_baseline = 1``).
+The base values ``Order2`` are the force constants that a run with the same ``NONANALYTIC`` turns back into that harmonic matrix
+at the :math:`q` points of the ``KMESH_INTERPOLATE`` mesh:
+
+* ``NONANALYTIC = 0`` and ``1``: the original harmonic force constants (a reader adds the Parlinski term itself at every :math:`q`);
+* ``NONANALYTIC = 2`` and ``3``: the full harmonic matrix including the dipole-dipole part, whose mixed-space or Ewald term
+  vanishes at :math:`q` commensurate with the supercell of the file.
+
+Consequently, the force constants of a state file (``FCSFILE``, ``FC2FILE`` with or without ``FC2_TEMPERATURE``, and ``DFC2FILE``)
+must be read with the ``NONANALYTIC`` of the run that wrote it; ``2`` and ``3`` may read each other's files.
+A file written with ``NONANALYTIC = 0`` may also be read with ``NONANALYTIC > 0`` (e.g. SCPH without the
+nonanalytic term, then phonons or kappa with it): a warning is printed, because the correction was then computed
+without the long-range term and the nonanalytic term is added to the harmonic part only, which is an approximation.
+Other combinations (a file with ``NONANALYTIC > 0`` read with ``0``, ``1`` read with ``2``/``3`` or the reverse)
+stop with an error, and so does a restart with a different ``NONANALYTIC``.
+The agreement with the SCPH/QHA frequencies is exact at the :math:`q` points of the ``KMESH_INTERPOLATE`` mesh only.
+Elsewhere the result depends on how the reader interpolates: the total force constants read through ``FC2_TEMPERATURE``
+are interpolated as a whole, while ``DFC2FILE`` interpolates the correction alone as the SCPH run does, and the two differ
+off the mesh (and so do quantities sampled there, such as group velocities from finite differences and thermal conductivities).
+
+Files without ``delta_baseline`` (earlier versions) took the corrections relative to the analytic part of the harmonic matrix.
+On restart they are converted (``NONANALYTIC = 2``, ``3``), and refused for ``NONANALYTIC = 1``, whose Parlinski term had a
+different phase. Read as force constants, they are equivalent to the present convention only for ``NONANALYTIC = 0``, or for
+``2`` and ``3`` when ``KMESH_INTERPOLATE`` is commensurate with the supercell of the harmonic force constants; a warning is printed.
+Tools that read ``Order2`` without ``anphon`` (the ALM reader of ``FC2FIX`` and the python
+``fcsio`` reader, which warns) take the values as they are and do not apply this convention.
 
 .. _label_hdf5_selfenergy:
 

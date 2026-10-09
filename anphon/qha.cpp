@@ -717,7 +717,9 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                         evec_harm_renorm_tmp,
                                         kmesh_coarse.get(),
                                         kmap_coarse_to_dense,
-                                        fcs_phonon->force_constant_with_cell[0]);
+                                        fcs_phonon->force_constant_with_cell[0],
+                                        *dielec,
+                                        *ewald);
     // delta_harmonic_dymat_renormalize is copied to dymat_anharm after structure convergence,
     // which is required for postprocess.
 
@@ -1203,7 +1205,9 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                 evec_harm_renorm_tmp,
                                                 kmesh_coarse.get(),
                                                 kmap_coarse_to_dense,
-                                                fcs_phonon->force_constant_with_cell[0]);
+                                                fcs_phonon->force_constant_with_cell[0],
+                                                *dielec,
+                                                *ewald);
 
             // copy delta_harmonic_dymat_renormalize to dymat_anharm
             for (is1 = 0; is1 < ns; is1++) {

@@ -1,4 +1,5 @@
 import itertools
+import warnings
 
 import h5py
 import numpy as np
@@ -318,6 +319,15 @@ class ForceConstantParser:
         inv_lavec = np.linalg.inv(lavec_prim)
 
         with h5py.File(self.filename, "r") as f:
+            if "settings/nonanalytic" in f and int(f["settings/nonanalytic"][()]) != 0:
+                warnings.warn(
+                    "%s is an SCPH/QHA state file of a run with NONANALYTIC = %d: its Order2 base"
+                    " values follow that run's nonanalytic convention (analytic IFCs for 1, the"
+                    " full harmonic matrix on the coarse mesh for 2 and 3) and must be used with"
+                    " the same NONANALYTIC."
+                    % (self.filename, int(f["settings/nonanalytic"][()])),
+                    stacklevel=2,
+                )
             for order in range(2, maxorder + 1):
                 search_tag = "/ForceConstants/Order{:d}".format(order)
 

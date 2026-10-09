@@ -472,7 +472,9 @@ public:
                                                       evec_harm_renorm_tmp_,
                                                       scph_.kmesh_coarse.get(),
                                                       scph_.kmap_coarse_to_dense,
-                                                      scph_.fcs_phonon->force_constant_with_cell[0]);
+                                                      scph_.fcs_phonon->force_constant_with_cell[0],
+                                                      *scph_.dielec,
+                                                      *scph_.ewald);
         }
 
         scph_.converged_str_temp[iT] = converged_this_temp ? 1 : 0;
@@ -712,7 +714,9 @@ private:
                                                   scph_.evec_harmonic,
                                                   scph_.kmesh_coarse.get(),
                                                   scph_.kmap_coarse_to_dense,
-                                                  scph_.fcs_phonon->force_constant_with_cell[0]);
+                                                  scph_.fcs_phonon->force_constant_with_cell[0],
+                                                  *scph_.dielec,
+                                                  *scph_.ewald);
         for (auto is = 0; is < ns; ++is) {
             for (auto js = 0; js < ns; ++js) {
                 for (auto ik = 0; ik < nk_interpolate; ++ik) {
@@ -1184,7 +1188,9 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                                 evec_anharm_tmp,
                                                 kmesh_coarse.get(),
                                                 kmap_coarse_to_dense,
-                                                fcs_phonon->force_constant_with_cell[0]);
+                                                fcs_phonon->force_constant_with_cell[0],
+                                                *dielec,
+                                                *ewald);
 
             if (!warmstart_scph) converged_prev = false;
         }
@@ -1473,7 +1479,9 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
                                         evec_anharm_tmp,
                                         kmesh_coarse.get(),
                                         kmap_coarse_to_dense,
-                                        fcs_phonon->force_constant_with_cell[0]);
+                                        fcs_phonon->force_constant_with_cell[0],
+                                        *dielec,
+                                        *ewald);
 
     print_stage_time("new dynamical matrix", time_stage);
     time_stage = timer->elapsed();

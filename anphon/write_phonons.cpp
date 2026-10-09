@@ -3115,7 +3115,12 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
 
     // Get eigenvalues and eigenvectors at xk
 
-    phon->dynamical->eval_k(xk, kvec, phon->fcs_phonon->force_constant_with_cell[0], *phon->dielec, eval, evec, true);
+    if (phon->dynamical->nonanalytic == 3) {
+        phon->dynamical->eval_k_ewald(xk, kvec, phon->ewald->fc2_without_dipole, *phon->ewald, eval, evec, true);
+    } else {
+        phon->dynamical
+            ->eval_k(xk, kvec, phon->fcs_phonon->force_constant_with_cell[0], *phon->dielec, eval, evec, true);
+    }
 
     for (i = 0; i < ns; ++i) {
         for (j = 0; j < ns; ++j) {
@@ -3124,17 +3129,10 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
         }
     }
 
-    // Get fractional coordinates of atoms in a primitive cell
+    // Fractional coordinates of atoms in a primitive cell: the positions the Bloch phases
+    // of the eigenvectors refer to (Fcs_phonon::replicate_force_constant)
 
-    xtmp.resize(natmin, 3);
-
-    for (i = 0; i < natmin; ++i) {
-        for (j = 0; j < 3; ++j) {
-            xtmp(i, j) = phon->system->get_supercell(0).x_fractional(phon->system->get_map_p2s(0)[i][0], j);
-        }
-    }
-    xtmp = xtmp * phon->system->get_supercell(0).lattice_vector.transpose();
-    xtmp = xtmp * phon->system->get_primcell().lattice_vector.inverse().transpose();
+    xtmp = phon->system->get_primcell().x_fractional;
 
     // Prepare fractional coordinates of atoms in the supercell
     unsigned int icell = 0;

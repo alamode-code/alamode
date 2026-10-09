@@ -317,6 +317,14 @@ private:
     };
     std::vector<DeltaFc2Row> dfc2_rows;
 
+public:
+    // Entries of force_constant_with_cell[0] before the DFC2FILE rows were appended:
+    // Ewald::init takes the dipole part out of these only.
+    std::size_t nfc2_without_dfc2 = static_cast<std::size_t>(-1);
+    // NONANALYTIC of this run: FC2 of a state file must come from a compatible one
+    int nonanalytic = 0;
+
+private:
     void read_delta_fc2_from_scph(const std::string &fname_dfc2);
 
     void append_delta_fc2_rows(std::vector<FcsArrayWithCell> &fc2_inout);

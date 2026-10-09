@@ -184,7 +184,7 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
    * - ``PREFIX``.scph.h5, ``PREFIX``.qha.h5
      - Always (default format)
      - Results at every temperature, used by later runs (``FC2_TEMPERATURE``, ``RELAXED_STRUCTURE``) and for restarting.
-       See :ref:`label_hdf5_scph`
+       See :ref:`label_hdf5_scph`, and :ref:`label_hdf5_scph_nonanalytic` for the force constants with ``NONANALYTIC > 0``
    * - ``PREFIX``.scph_eval, .qha_eval
      - *KPMODE* = 0
      - Frequencies vs. temperature at the given :math:`k` points
@@ -233,7 +233,10 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
    * - ``PREFIX``.scph_dfc2, .qha_dfc2
      - Always
      - Change of the harmonic force constants :math:`\Delta\Phi_2` at each temperature
-       (see the :ref:`formalism of the SCPH calculation <formalism_SCPH>`)
+       (see the :ref:`formalism of the SCPH calculation <formalism_SCPH>`), relative to the full
+       harmonic dynamical matrix of the run; the comment line ``# Header = -1 : NONANALYTIC = n ;
+       DELTA_BASELINE = 1`` gives the ``NONANALYTIC`` to use with it (files without it are of an
+       earlier version, see :ref:`label_hdf5_scph_nonanalytic`)
    * - ``PREFIX``.atom_disp, ``PREFIX``.normal_disp
      - ``RELAX_STR`` > 0
      - Atomic displacements vs. temperature, in Cartesian and normal coordinates

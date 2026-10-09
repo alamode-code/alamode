@@ -331,54 +331,42 @@ void Dynamical::prepare_mindist_list(std::vector<int> **mindist_out) const
     xcrd.clear();
 }
 
+void Dynamical::assemble_dymat_fc2_na(const double *xk_in, const double *kvec_in,
+                                      const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+                                      std::complex<double> **dymat_out) const
+{
+    // fc2 plus the NONANALYTIC = 1/2 term (nothing for 0 and 3)
+    calc_analytic_k(xk_in, fc2, dymat_out);
+
+    if (nonanalytic == 1 || nonanalytic == 2) {
+        NDArray<std::complex<double>, 2> dymat_na_k(neval, neval);
+        calc_nonanalytic_k(xk_in, kvec_in, dielec, dymat_na_k);
+        for (unsigned int i = 0; i < neval; ++i) {
+            for (unsigned int j = 0; j < neval; ++j) dymat_out[i][j] += dymat_na_k[i][j];
+        }
+    }
+
+    // Force the dynamical matrix be real when k point is
+    // zone-center or zone-boundaries.
+    if (std::sqrt(pow2(std::fmod(xk_in[0], 0.5)) + pow2(std::fmod(xk_in[1], 0.5)) + pow2(std::fmod(xk_in[2], 0.5))) <
+        eps)
+    {
+        for (unsigned int i = 0; i < neval; ++i) {
+            for (unsigned int j = 0; j < neval; ++j) {
+                dymat_out[i][j] = std::complex<double>(dymat_out[i][j].real(), 0.0);
+            }
+        }
+    }
+}
+
 void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
                        const Dielec &dielec, double *eval_out, std::complex<double> **evec_out, const bool require_evec,
                        int *info_out) const
 {
     // Calculate phonon energy for the specific k-point given in fractional basis
 
-    unsigned int i, j;
-    NDArray<std::complex<double>, 2> dymat_k;
-
-    dymat_k.resize(neval, neval);
-
-    calc_analytic_k(xk_in, fc2, dymat_k);
-
-    if (nonanalytic) {
-
-        // Add non-analytic correction
-
-        NDArray<std::complex<double>, 2> dymat_na_k;
-
-        dymat_na_k.resize(neval, neval);
-
-        if (nonanalytic == 1) {
-            calc_nonanalytic_k_parlinski(xk_in, kvec_in, dielec, dymat_na_k);
-        } else if (nonanalytic == 2) {
-            calc_nonanalytic_k_mixedspace(xk_in, kvec_in, dielec, dymat_na_k);
-        }
-
-        for (i = 0; i < neval; ++i) {
-            for (j = 0; j < neval; ++j) {
-                dymat_k[i][j] += dymat_na_k[i][j];
-            }
-        }
-        dymat_na_k.clear();
-    }
-
-    // Force the dynamical matrix be real when k point is
-    // zone-center or zone-boundaries.
-
-    if (std::sqrt(pow2(std::fmod(xk_in[0], 0.5)) + pow2(std::fmod(xk_in[1], 0.5)) + pow2(std::fmod(xk_in[2], 0.5))) <
-        eps)
-    {
-
-        for (i = 0; i < neval; ++i) {
-            for (j = 0; j < neval; ++j) {
-                dymat_k[i][j] = std::complex<double>(dymat_k[i][j].real(), 0.0);
-            }
-        }
-    }
+    NDArray<std::complex<double>, 2> dymat_k(neval, neval);
+    assemble_dymat_fc2_na(xk_in, kvec_in, fc2, dielec, dymat_k);
 
     const auto info = solve_dense_hermitian_info(neval,
                                                  dymat_k,
@@ -484,6 +472,7 @@ void Dynamical::calc_analytic_k(const System &system, const NDArray<double, 2> &
     Eigen::Matrix3d convmat = system.get_primcell().reciprocal_lattice_vector * system.get_supercell(0).lattice_vector;
 
     const auto xf_tmp = system.get_supercell(0).x_fractional;
+    const auto &xf_prim = system.get_primcell().x_fractional;
 
     for (i = 0; i < neval; ++i) {
         for (auto j = 0; j < neval; ++j) {
@@ -503,10 +492,12 @@ void Dynamical::calc_analytic_k(const System &system, const NDArray<double, 2> &
         const auto atm2_p = system.get_map_s2p(0)[atm2_s].atom_num;
 
         for (i = 0; i < 3; ++i) {
-            vec[i] = xf_tmp(atm2_s, i) + xshift_s[icell][i] - xf_tmp(system.get_map_p2s(0)[atm2_p][0], i);
+            vec[i] = xf_tmp(atm2_s, i) + xshift_s[icell][i] - xf_tmp(atm1_s, i);
         }
 
-        vec = convmat * vec;
+        // lattice vector in the gauge of the IFCs (primitive-cell positions,
+        // Fcs_phonon::replicate_force_constant), not of the supercell images
+        vec = convmat * vec - tpi * (xf_prim.row(atm2_p) - xf_prim.row(atm1_p)).transpose();
 
         const auto phase = vec[0] * xk_in[0] + vec[1] * xk_in[1] + vec[2] * xk_in[2];
 
@@ -638,21 +629,19 @@ void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *
         }
     }
 
-    // Multiply an additional phase factor for the non-analytic term.
+    // Multiply an additional phase factor for the non-analytic term: e^{iq.(tau_i - tau_j)}
+    // with the primitive-cell positions tau, the gauge of the IFCs (Fcs_phonon::replicate_force_constant).
 
-    const auto xf_tmp = system->get_supercell(0).x_fractional;
-    const auto convmat = pcell.reciprocal_lattice_vector * system->get_supercell(0).lattice_vector;
+    const auto &xf_prim = pcell.x_fractional;
 
     for (iat = 0; iat < nat_prim; ++iat) {
         for (jat = 0; jat < nat_prim; ++jat) {
 
             for (i = 0; i < 3; ++i) {
-                xdiff[i] = xf_tmp(system->get_map_p2s(0)[iat][0], i) - xf_tmp(system->get_map_p2s(0)[jat][0], i);
+                xdiff[i] = xf_prim(iat, i) - xf_prim(jat, i);
             }
 
-            xdiff = convmat * xdiff;
-
-            const double phase = xk_tmp[0] * xdiff[0] + xk_tmp[1] * xdiff[1] + xk_tmp[2] * xdiff[2];
+            const double phase = tpi * (xk_in[0] * xdiff[0] + xk_in[1] * xdiff[1] + xk_in[2] * xdiff[2]);
 
             for (i = 0; i < 3; ++i) {
                 for (j = 0; j < 3; ++j) {
@@ -679,6 +668,7 @@ void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double 
         system->get_primcell().reciprocal_lattice_vector * system->get_supercell(0).lattice_vector;
 
     const auto xf_tmp = system->get_supercell(0).x_fractional;
+    const auto &xf_prim = system->get_primcell().x_fractional;
 
     for (i = 0; i < neval; ++i) {
         for (j = 0; j < neval; ++j) {
@@ -732,10 +722,11 @@ void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double 
                         unsigned int cell = mindist_list[iat][atm_s2][j];
 
                         for (unsigned int k = 0; k < 3; ++k) {
-                            vec[k] = xf_tmp(system->get_map_p2s(0)[jat][i], k) + xshift_s[cell][k] - xf_tmp(atm_p2, k);
+                            vec[k] = xf_tmp(system->get_map_p2s(0)[jat][i], k) + xshift_s[cell][k] - xf_tmp(atm_p1, k);
                         }
 
-                        vec = convmat * vec;
+                        // lattice vector in the gauge of the IFCs (primitive-cell positions)
+                        vec = convmat * vec - tpi * (xf_prim.row(jat) - xf_prim.row(iat)).transpose();
                         double phase = vec[0] * xk_in[0] + vec[1] * xk_in[1] + vec[2] * xk_in[2];
 
                         exp_phase_tmp += std::exp(im * phase);
@@ -1652,72 +1643,53 @@ std::vector<std::vector<double>> Dynamical::get_projection_directions() const
     return projection_directions;
 }
 
+void Dynamical::calc_harmonic_dymat(const double *xk_in, const double *kvec_in,
+                                    const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald,
+                                    std::complex<double> **dymat_out) const
+{
+    // The same matrix eval_k / eval_k_ewald diagonalize, so that E omega2 E^+ of the
+    // harmonic eigenvectors equals it exactly.
+    if (nonanalytic != 3) {
+        assemble_dymat_fc2_na(xk_in, kvec_in, fc2, dielec, dymat_out);
+        return;
+    }
+    calc_analytic_k(xk_in, ewald.fc2_without_dipole, dymat_out);
+    NDArray<std::complex<double>, 2> mat_na(neval, neval);
+    ewald.add_longrange_matrix(xk_in, kvec_in, mat_na);
+    for (unsigned int i = 0; i < neval; ++i) {
+        for (unsigned int j = 0; j < neval; ++j) dymat_out[i][j] += mat_na[i][j];
+    }
+}
+
 void Dynamical::precompute_dymat_harm(const unsigned int nk_in, const double *const *xk_in,
                                       const double *const *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
                                       const Dielec &dielec, const Ewald &ewald,
                                       std::vector<Eigen::MatrixXcd> &dymat_short,
                                       std::vector<Eigen::MatrixXcd> &dymat_long) const
 {
+    // The full harmonic matrix (calc_harmonic_dymat) goes to dymat_short; dymat_long is
+    // left empty. Splitting it would drop the zone-boundary treatment of eval_k.
     const auto ns = neval;
-    dymat_short.clear();
+    dymat_short.assign(nk_in, Eigen::MatrixXcd(ns, ns));
     dymat_long.clear();
 
-    dymat_short.resize(nk_in);
-    if (nonanalytic) {
-        dymat_long.resize(nk_in);
-    }
-
-    Eigen::MatrixXcd mat_tmp_eigen(ns, ns);
-
-    NDArray<std::complex<double>, 2> mat_tmp;
-    mat_tmp.resize(ns, ns);
-
+    NDArray<std::complex<double>, 2> mat_tmp(ns, ns);
     for (auto ik = 0; ik < nk_in; ++ik) {
-        if (nonanalytic == 3) {
-            calc_analytic_k(xk_in[ik], ewald.fc2_without_dipole, mat_tmp);
-        } else {
-            calc_analytic_k(xk_in[ik], fc2, mat_tmp);
-        }
-
+        calc_harmonic_dymat(xk_in[ik], kvec_in[ik], fc2, dielec, ewald, mat_tmp);
         for (auto is = 0; is < ns; ++is) {
-            for (auto js = 0; js < ns; ++js) {
-                mat_tmp_eigen(is, js) = mat_tmp[is][js];
-            }
-        }
-        dymat_short[ik] = mat_tmp_eigen;
-    }
-
-    if (nonanalytic) {
-
-        for (auto ik = 0; ik < nk_in; ++ik) {
-            if (nonanalytic == 1) {
-                calc_nonanalytic_k_parlinski(xk_in[ik], kvec_in[ik], dielec, mat_tmp);
-            } else if (nonanalytic == 2) {
-                calc_nonanalytic_k_mixedspace(xk_in[ik], kvec_in[ik], dielec, mat_tmp);
-
-            } else if (nonanalytic == 3) {
-                ewald.add_longrange_matrix(xk_in[ik], kvec_in[ik], mat_tmp);
-            }
-            for (auto is = 0; is < ns; ++is) {
-                for (auto js = 0; js < ns; ++js) {
-                    mat_tmp_eigen(is, js) = mat_tmp[is][js];
-                }
-            }
-            dymat_long[ik] = mat_tmp_eigen;
+            for (auto js = 0; js < ns; ++js) dymat_short[ik](is, js) = mat_tmp[is][js];
         }
     }
-
-    mat_tmp.clear();
 }
 
 
 void Dynamical::compute_renormalized_harmonic_frequency(
     double **omega2_out, std::complex<double> ***evec_harm_renormalized, std::complex<double> **delta_v2_renorm,
-    const double *const *omega2_harmonic, const std::complex<double> *const *const *evec_harmonic,
-    const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-    const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
-    MinimumDistList ***mindist_list, const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
-    const Ewald &ewald) const
+    const double *const * /* omega2_harmonic: cancels, see below */,
+    const std::complex<double> *const *const *evec_harmonic, const KpointMeshUniform *kmesh_coarse,
+    const KpointMeshUniform *kmesh_dense, const std::vector<int> &kmap_interpolate_to_scph,
+    std::complex<double> ****mat_transform_sym, MinimumDistList ***mindist_list,
+    const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald) const
 {
     using namespace Eigen;
 
@@ -1740,38 +1712,27 @@ void Dynamical::compute_renormalized_harmonic_frequency(
     NDArray<double, 2> eval_interpolate;
 
     NDArray<std::complex<double>, 3> dymat_new;
-    NDArray<std::complex<double>, 3> dymat_harmonic_without_renormalize;
     NDArray<std::complex<double>, 3> dymat_q;
-
-    constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
 
     SelfAdjointEigenSolver<MatrixXcd> saes;
 
     eval_interpolate.resize(nk, ns);
     dymat_new.resize(ns, ns, nk_interpolate);
     dymat_q.resize(ns, ns, nk_interpolate);
-    dymat_harmonic_without_renormalize.resize(nk_interpolate, ns, ns);
 
-    // Set initial harmonic dymat without IFC renormalization
-
-    for (ik = 0; ik < nk_interpolate; ++ik) {
-        calc_analytic_k(kmesh_coarse->xk[ik], fc2, dymat_harmonic_without_renormalize[ik]);
-    }
-
+    // The correction to the harmonic dynamical matrix is delta_v2_renorm alone, taken
+    // in the basis of the harmonic eigenvectors: D = D_harm + E delta_v2 E^+, where
+    // D_harm = E omega2_harmonic E^+ is the matrix exec_interpolation adds back. Subtracting
+    // a different harmonic matrix (e.g. the analytic part only) would leave its difference
+    // from D_harm in the correction, counted twice on the coarse mesh.
     for (ik = 0; ik < nk_irred_interpolate; ++ik) {
 
         knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
         knum = kmap_interpolate_to_scph[knum_interpolate];
 
-        // calculate Fmat
         for (is = 0; is < ns; ++is) {
             for (js = 0; js < ns; ++js) {
-                if (is == js) {
-                    Fmat(is, js) = omega2_harmonic[knum][is];
-                } else {
-                    Fmat(is, js) = complex_zero;
-                }
-                Fmat(is, js) += delta_v2_renorm[knum_interpolate][is * ns + js];
+                Fmat(is, js) = delta_v2_renorm[knum_interpolate][is * ns + js];
             }
         }
 
@@ -1792,15 +1753,6 @@ void Dynamical::compute_renormalized_harmonic_frequency(
     }
 
     replicate_dymat_for_all_kpoints(kmesh_coarse, ns, mat_transform_sym, dymat_q);
-
-    // Subtract harmonic contribution to the dynamical matrix
-    for (ik = 0; ik < nk_interpolate; ++ik) {
-        for (is = 0; is < ns; ++is) {
-            for (js = 0; js < ns; ++js) {
-                dymat_q[is][js][ik] -= dymat_harmonic_without_renormalize[ik][is][js];
-            }
-        }
-    }
 
     fourier_dymat_k_to_r(nk1, nk2, nk3, ns, dymat_q, dymat_new);
 
@@ -1835,7 +1787,6 @@ void Dynamical::compute_renormalized_harmonic_frequency(
     dymat_new.clear();
 
     eval_interpolate.clear();
-    dymat_harmonic_without_renormalize.clear();
 }
 
 
@@ -1886,29 +1837,10 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
         r2q(xk_dense[ik], nk1, nk2, nk3, ns, mindist_list_in, dymat_r, mat_tmp);
 
         NDArray<std::complex<double>, 2> mat_harmonic(ns, ns);
-        if (nonanalytic == 3) {
-            calc_analytic_k(xk_dense[ik], ewald.fc2_without_dipole, mat_harmonic);
-        } else {
-            calc_analytic_k(xk_dense[ik], fc2, mat_harmonic);
-        }
+        calc_harmonic_dymat(xk_dense[ik], kvec_dense[ik], fc2, dielec, ewald, mat_harmonic);
         for (unsigned int i = 0; i < ns; ++i) {
             for (unsigned int j = 0; j < ns; ++j) {
                 mat_tmp[i][j] += mat_harmonic[i][j];
-            }
-        }
-        if (nonanalytic) {
-            NDArray<std::complex<double>, 2> mat_harmonic_na(ns, ns);
-            if (nonanalytic == 1) {
-                calc_nonanalytic_k_parlinski(xk_dense[ik], kvec_dense[ik], dielec, mat_harmonic_na);
-            } else if (nonanalytic == 2) {
-                calc_nonanalytic_k_mixedspace(xk_dense[ik], kvec_dense[ik], dielec, mat_harmonic_na);
-            } else if (nonanalytic == 3) {
-                ewald.add_longrange_matrix(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
-            }
-            for (unsigned int i = 0; i < ns; ++i) {
-                for (unsigned int j = 0; j < ns; ++j) {
-                    mat_tmp[i][j] += mat_harmonic_na[i][j];
-                }
             }
         }
 
@@ -1953,7 +1885,7 @@ void Dynamical::exec_interpolation_precomputed(const unsigned int kmesh_orig[3],
                 mat_tmp[i][j] += dymat_short[ik](i, j);
             }
         }
-        if (nonanalytic) {
+        if (!dymat_long.empty()) {
             for (unsigned int i = 0; i < ns; ++i) {
                 for (unsigned int j = 0; j < ns; ++j) {
                     mat_tmp[i][j] += dymat_long[ik](i, j);
@@ -1976,7 +1908,8 @@ void Dynamical::exec_interpolation_precomputed(const unsigned int kmesh_orig[3],
 void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, double **omega2_in,
                                          std::complex<double> ***evec_in, const KpointMeshUniform *kmesh_coarse,
                                          const std::vector<int> &kmap_interpolate_to_scph,
-                                         const std::vector<FcsArrayWithCell> &fc2) const
+                                         const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+                                         const Ewald &ewald) const
 {
     std::complex<double> im(0.0, 1.0);
 
@@ -2055,8 +1988,8 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
         }
 
 
-        // Subtract harmonic contribution
-        calc_analytic_k(kmesh_coarse->xk[ik], fc2, dymat_harmonic);
+        // Subtract the harmonic dynamical matrix that exec_interpolation adds back
+        calc_harmonic_dymat(kmesh_coarse->xk[ik], kmesh_coarse->kvec_na[ik], fc2, dielec, ewald, dymat_harmonic);
 
         for (is = 0; is < ns; ++is) {
             for (js = 0; js < ns; ++js) {

@@ -95,8 +95,10 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
             exit("scph_result_io", "The number of KMESH_SCPH (KMESH_QHA) is not consistent");
         }
     }
+    // The stored corrections are taken against the harmonic matrix of the writing run,
+    // which depends on its nonanalytic treatment.
     if (load<int>(fh, "/settings/nonanalytic") != settings.nonanalytic) {
-        warn("scph_result_io", "The NONANALYTIC tag is not consistent");
+        exit("scph_result_io", "The NONANALYTIC tag is not consistent with the restart file");
     }
     if (load<int>(fh, "/settings/selfenergy_offdiag") != settings.selfenergy_offdiag) {
         exit("scph_result_io", "The SELF_OFFDIAG tag is not consistent");
@@ -205,6 +207,18 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
             exit("scph_result_io", "The quintic IFCs (STRAIN_FC5) are not consistent with the restart file");
         }
     }
+}
+
+bool ScphResultIOH5::delta_on_full_harmonic() const
+{
+    const HighFive::File fh(impl->filename, HighFive::File::ReadOnly);
+    if (!fh.exist("/settings/delta_baseline")) return false; // legacy file
+    const auto baseline = H5Easy::load<int>(fh, "/settings/delta_baseline");
+    if (baseline != 1) {
+        exit("scph_result_io",
+             "Unsupported /settings/delta_baseline in the restart file (written by a newer version?)");
+    }
+    return true;
 }
 
 bool ScphResultIOH5::used_strain_fc5() const
@@ -368,6 +382,9 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         dump(fh, "/settings/temperatures", settings.temperatures);
         dumpAttribute(fh, "/settings/temperatures", "unit", std::string("K"));
         dump(fh, "/settings/nonanalytic", settings.nonanalytic);
+        // /dymat corrections are taken against the full harmonic matrix of the run
+        // (with its nonanalytic term); absent: against the analytic fc2 part only
+        dump(fh, "/settings/delta_baseline", 1);
         dump(fh, "/settings/selfenergy_offdiag", settings.selfenergy_offdiag);
         dump(fh, "/settings/relax_str", settings.relax_str);
         if (settings.efield[0] != 0.0 || settings.efield[1] != 0.0 || settings.efield[2] != 0.0) {

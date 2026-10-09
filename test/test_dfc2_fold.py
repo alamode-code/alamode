@@ -8,6 +8,11 @@ as an SCPH run on the 5-atom primitive cell with 2 2 2 / 2 2 2, so both must
 converge to the same anharmonic FC2 correction. A MODE = phonons run on the
 primitive cell must therefore give the same frequencies whether it reads the
 primitive-cell state file (same-cell path) or folds the doubled-cell one.
+
+check_skewed_cell_na3: SCPH with NONANALYTIC = 3 on a 10-atom cell with a skewed
+basis, whose supercell images of the primitive atoms are wrapped by a lattice
+vector, on a mesh equivalent to the cubic 4x4x4 one (not commensurate with the
+2x2x2 IFC supercell), must reproduce the 5-atom SCPH frequencies at the folded q.
 """
 
 import os
@@ -127,7 +132,273 @@ def main():
         "BaTiO3 DFC2FILE, correction breaking the primitive translations --> %s"
         % ("pass" if ok else "fail")
     )
+    if not ok:
+        return 1
+
+    ok = check_skewed_cell_na3(anphonbin, project_root)
+    print(
+        "BaTiO3 SCPH, NONANALYTIC = 3, skewed 10-atom cell == primitive cell --> %s"
+        % ("pass" if ok else "fail")
+    )
+    if not ok:
+        return 1
+
+    ok = check_fc2_export_round_trip(anphonbin)
+    print(
+        "BaTiO3 SCPH state file with NONANALYTIC = 1/2/3 read back as FC2 --> %s"
+        % ("pass" if ok else "fail")
+    )
     return 0 if ok else 1
+
+
+def check_fc2_export_round_trip(anphonbin):
+    """The FC2 of an SCPH state file, read with the same NONANALYTIC, must give back the
+    SCP frequencies at the q of the coarse mesh: through DFC2FILE, through the
+    temperature-dependent FC2 (FCSFILE or FC2FILE + FC2_TEMPERATURE), and the harmonic
+    ones through FC2FILE alone. 4/4 meshes, not commensurate with the 2x2x2 IFCs, so the
+    nonanalytic term of the run differs from that of the IFCs alone on that mesh;
+    NA_SIGMA = 1 for NONANALYTIC = 1 keeps its (complex) zone-boundary term.
+    """
+    qs = [[0, 0, 0.25], [0.25, 0.25, 0], [0.5, 0.25, 0], [0.5, 0.5, 0.5]]
+    kpts = "&kpoint\n 0\n%s\n/\n" % "\n".join(" %g %g %g" % tuple(q) for q in qs)
+
+    def run(prefix, general, na, extra=""):
+        if os.path.exists(prefix + ".scph.h5"):
+            os.remove(prefix + ".scph.h5")
+        with open(prefix + ".in", "w") as f:
+            f.write(
+                "&general\n PREFIX = %s; %s\n NONANALYTIC = %d; BORNINFO = BORNINFO%s\n/\n%s%s"
+                % (
+                    prefix,
+                    general,
+                    na,
+                    "; NA_SIGMA = 1.0" if na == 1 else "",
+                    extra,
+                    kpts,
+                )
+            )
+        if run_anphon(anphonbin, prefix + ".in", prefix + ".log") != 0:
+            print("%s failed, see %s.log" % (prefix, prefix))
+            return None
+        if general.startswith("MODE = SCPH"):
+            return np.loadtxt(prefix + ".scph_eval")[:, 3].reshape(len(qs), -1)
+        with open(prefix + ".log") as f:
+            freq = [
+                float(line.split()[1])
+                for line in f
+                if "cm^-1" in line and line.split()[0].isdigit()
+            ]
+        return np.array(freq).reshape(len(qs), -1)
+
+    ok = True
+    for na in (1, 2, 3):
+        p = "rt%d" % na
+        scph = run(
+            p,
+            "MODE = SCPH; FCSFILE = cBTO222.h5; TMIN = 300; TMAX = 300",
+            na,
+            "&scph\n KMESH_INTERPOLATE = 4 4 4; KMESH_SCPH = 4 4 4; SELF_OFFDIAG = 1;"
+            " MAXITER = 500; MIXALPHA = 0.2\n/\n",
+        )
+        harm = run(p + "_h", "MODE = phonons; FCSFILE = cBTO222.h5", na)
+        routes = {
+            "DFC2FILE": "FCSFILE = cBTO222.h5; DFC2FILE = %s.scph.h5; FC2_TEMPERATURE = 300",
+            "FCSFILE + FC2_TEMPERATURE": "FCSFILE = %s.scph.h5; FC2_TEMPERATURE = 300",
+            "FC2FILE + FC2_TEMPERATURE": "FCSFILE = cBTO222.h5; FC2FILE = %s.scph.h5; FC2_TEMPERATURE = 300",
+            "FC2FILE (harmonic)": "FCSFILE = cBTO222.h5; FC2FILE = %s.scph.h5",
+        }
+        for name, src in routes.items():
+            f = run(p + "_r", "MODE = phonons; " + src % p, na)
+            ref = harm if "harmonic" in name else scph
+            if scph is None or harm is None or f is None or f.shape != ref.shape:
+                return False
+            diff = np.abs(f - ref).max()
+            # the frequencies are printed with 4 (log) and 6 (scph_eval) digits
+            if not np.isfinite(diff) or diff > 2.0e-3:
+                print(
+                    "NONANALYTIC = %d, %s: max |diff| = %.3e cm^-1" % (na, name, diff)
+                )
+                ok = False
+
+    # The FC2 of a state file are read only with a compatible NONANALYTIC (2 and 3
+    # interchangeable), and a restart only with the same one.
+    def refused(prefix, text, message):
+        with open(prefix + ".in", "w") as f:
+            f.write(text)
+        if run_anphon(anphonbin, prefix + ".in", prefix + ".log") == 0:
+            return False
+        with open(prefix + ".log") as f:
+            return message in f.read()
+
+    for na_file, na_reader in ((1, 0), (3, 1), (2, 0)):
+        text = (
+            "&general\n PREFIX = rt_x; MODE = phonons; FCSFILE = rt%d.scph.h5;"
+            " FC2_TEMPERATURE = 300\n NONANALYTIC = %d; BORNINFO = BORNINFO\n/\n%s"
+            % (na_file, na_reader, kpts)
+        )
+        if not refused("rt_x", text, "this run uses NONANALYTIC"):
+            print(
+                "FC2 of a NONANALYTIC = %d file read with %d: not refused"
+                % (na_file, na_reader)
+            )
+            ok = False
+    # a NONANALYTIC = 0 state file read with a nonanalytic term: allowed, with a warning
+    if (
+        run(
+            "rt0",
+            "MODE = SCPH; FCSFILE = cBTO222.h5; TMIN = 300; TMAX = 300",
+            0,
+            "&scph\n KMESH_INTERPOLATE = 4 4 4; KMESH_SCPH = 4 4 4; SELF_OFFDIAG = 1;"
+            " MAXITER = 500; MIXALPHA = 0.2\n/\n",
+        )
+        is None
+    ):
+        return False
+    for na_reader in (3, 1):
+        f = run(
+            "rt0_r%d" % na_reader,
+            "MODE = phonons; FCSFILE = rt0.scph.h5; FC2_TEMPERATURE = 300",
+            na_reader,
+        )
+        with open("rt0_r%d.log" % na_reader) as fh:
+            warned = "computed without the long-range" in fh.read()
+        if f is None or not warned:
+            print(
+                "NONANALYTIC = 0 file read with %d: not accepted with a warning"
+                % na_reader
+            )
+            ok = False
+    cross = run(
+        "rt_c", "MODE = phonons; FCSFILE = rt3.scph.h5; FC2_TEMPERATURE = 300", 2
+    )
+    ref3 = np.loadtxt("rt3.scph_eval")[:, 3].reshape(len(qs), -1)
+    if cross is None or np.abs(cross - ref3).max() > 2.0e-3:
+        print(
+            "a NONANALYTIC = 3 state file read with NONANALYTIC = 2 does not reproduce it"
+        )
+        ok = False
+    with open("rt3.in") as f:
+        restart = (
+            f.read()
+            .replace("NONANALYTIC = 3", "NONANALYTIC = 2")
+            .replace("SELF_OFFDIAG = 1;", "SELF_OFFDIAG = 1; RESTART_SCPH = 1;")
+        )
+    if not refused("rt3", restart, "NONANALYTIC tag is not consistent"):
+        print("a restart with a different NONANALYTIC: not refused")
+        ok = False
+    return ok
+
+
+def check_skewed_cell_na3(anphonbin, project_root):
+    """SCPH, NONANALYTIC = 3, 10-atom cell a(2,0,0), a(1,1,0), a(0,0,1) on 2 4 4 meshes
+    (= cubic 4x4x4) against the 5-atom cell on 4 4 4 meshes, at 300 K.
+
+    The Ewald terms and the IFCs must use one Bloch gauge (lattice vectors measured
+    from the primitive-cell positions), and the SCP correction must be taken against
+    the harmonic matrix the interpolation adds back. Before, the two gauges differed
+    at q off the 2x2x2 set (images wrapped by a(2,0,0)) and the folded frequencies were
+    off by up to 4e2 cm^-1, with NONANALYTIC = 0 exact.
+    """
+    import re
+
+    lat10 = np.array([[2, 0, 0], [1, 1, 0], [0, 0, 1]], float)  # rows, units of A
+    b10 = np.linalg.inv(lat10).T  # reciprocal vectors / (2 pi / A)
+    sites = np.array(
+        [[0, 0, 0], [0.5, 0.5, 0.5], [0, 0.5, 0.5], [0.5, 0, 0.5], [0.5, 0.5, 0]]
+    )
+    shutil.copy(
+        os.path.join(project_root, "example/BaTiO3/scph_relax/BORNINFO"), "BORNINFO"
+    )
+    cell10 = "&cell\n %.11f\n%s\n/\n" % (
+        A,
+        "\n".join(" %g %g %g" % tuple(r) for r in lat10),
+    )
+
+    def general(prefix, mode, born):
+        na = "NONANALYTIC = 3; BORNINFO = %s" % born if born else "NONANALYTIC = 0"
+        return (
+            "&general\n PREFIX = %s; MODE = %s; FCSFILE = cBTO222.h5\n %s\n"
+            " TMIN = 300; TMAX = 300\n/\n" % (prefix, mode, na)
+        )
+
+    def kpoints(ks):
+        return "&kpoint\n 0\n%s\n/\n" % "\n".join(
+            " %.12f %.12f %.12f" % tuple(k) for k in ks
+        )
+
+    def run(prefix, text):
+        if os.path.exists(prefix + ".scph.h5"):  # would turn the run into a restart
+            os.remove(prefix + ".scph.h5")
+        with open(prefix + ".in", "w") as f:
+            f.write(text)
+        if run_anphon(anphonbin, prefix + ".in", prefix + ".log") != 0:
+            print("%s failed, see %s.log" % (prefix, prefix))
+            return False
+        return True
+
+    # Z* in the atom order of the 10-atom cell (BORN holds one tensor per atom); the
+    # order is read from a run without the nonanalytic term
+    if not run(
+        "na3_pos10",
+        general("na3_pos10", "phonons", None) + cell10 + kpoints([[0, 0, 0]]),
+    ):
+        return False
+    with open("na3_pos10.log") as f:
+        txt = (
+            f.read()
+            .split("Atomic positions in the primitive cell (fractional):")[1]
+            .split("\n\n")[0]
+        )
+    born = np.loadtxt("BORNINFO")
+    rows = [born[:3]]
+    for *xf, _ in re.findall(r"^\s*\d+:\s+(\S+)\s+(\S+)\s+(\S+)\s+(\w+)", txt, re.M):
+        d = (np.array(xf, float) @ lat10 - sites + 0.5) % 1.0 - 0.5
+        k = int(np.argmin(np.linalg.norm(d, axis=1)))
+        if np.linalg.norm(d[k]) > 1.0e-6:
+            print("atom at %s of the 10-atom cell is not a cubic site" % xf)
+            return False
+        rows.append(born[3 + 3 * k : 6 + 3 * k])
+    if len(rows) != 11:
+        print("expected 10 atoms in the 10-atom cell, found %d" % (len(rows) - 1))
+        return False
+    np.savetxt("BORN10", np.vstack(rows), fmt="%16.8f")
+
+    # 10-atom k (on the 2 4 4 mesh); each holds the cubic q = k and k + b1
+    k10 = np.array(
+        [[0, 0, 0], [0.5, 0, 0], [0, 0, 0.5], [0.5, 0.25, 0.25], [0, 0.25, 0.5]]
+    )
+    q5 = [q for k in k10 for q in (k @ b10, k @ b10 + b10[0])]
+    scph = "&scph\n KMESH_INTERPOLATE = %s; KMESH_SCPH = %s\n SELF_OFFDIAG = 1; MAXITER = 500; MIXALPHA = 0.2\n/\n"
+    if not run(
+        "na3_p",
+        general("na3_p", "SCPH", "BORNINFO") + scph % ("4 4 4", "4 4 4") + kpoints(q5),
+    ):
+        return False
+    if not run(
+        "na3_s10",
+        general("na3_s10", "SCPH", "BORN10")
+        + cell10
+        + scph % ("2 4 4", "2 4 4")
+        + kpoints(k10),
+    ):
+        return False
+
+    def read_scph_eval(prefix, ns):
+        return np.loadtxt(prefix + ".scph_eval")[:, 3].reshape(-1, ns)
+
+    f5, f10 = read_scph_eval("na3_p", 15), read_scph_eval("na3_s10", 30)
+    ok = len(f5) == 2 * len(k10) and len(f10) == len(k10)
+    for ik in range(len(k10)) if ok else []:
+        diff = np.abs(
+            np.sort(f10[ik]) - np.sort(np.concatenate(f5[2 * ik : 2 * ik + 2]))
+        ).max()
+        # both runs converge to SCPH_TOL on the same q set; the eval file has 6 digits
+        if not np.isfinite(diff) or diff > 1.0e-3:
+            print(
+                "k = %s of the 10-atom cell: max |diff| = %.3e cm^-1" % (k10[ik], diff)
+            )
+            ok = False
+    return ok
 
 
 def check_translation_breaking(anphonbin):

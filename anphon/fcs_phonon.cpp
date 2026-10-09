@@ -108,6 +108,53 @@ void check_iteration_converged(const HighFive::File &file, const int itemp, cons
 }
 } // namespace
 
+namespace
+{
+// State files of earlier versions took the FC2 correction of a NONANALYTIC != 0 run against
+// the analytic part of the harmonic matrix (no /settings/delta_baseline). That equals the
+// present convention for NONANALYTIC = 2/3 only on coarse meshes commensurate with the
+// supercell of the harmonic IFCs.
+// The FC2 of an SCPH/QHA state file (base and temperature-dependent values, DFC2FILE
+// corrections) reproduce the harmonic and SCP matrices of the run that wrote it, at the q of
+// its coarse mesh, only when read with the nonanalytic treatment of that run: base_values are
+// the analytic IFCs for NONANALYTIC = 1 (a reader adds the Parlinski term at every q) and the
+// full harmonic matrix for 2 and 3 (whose terms vanish at the q commensurate with the file's
+// supercell, so 2 and 3 read each other's files). A NONANALYTIC = 0 file read with a
+// nonanalytic term is an approximation that is allowed with a warning; anything else is refused.
+void check_state_file_nonanalytic(const HighFive::File &file, const int nonanalytic_reader, const std::string &fname,
+                                  const char *caller)
+{
+    if (!file.exist("/settings/nonanalytic")) return; // not a state file
+    const auto na_file = H5Easy::load<int>(file, "/settings/nonanalytic");
+    if (na_file == nonanalytic_reader || (na_file >= 2 && nonanalytic_reader >= 2)) return;
+    if (na_file == 0) {
+        warn(caller,
+             ("The FC2 of " + fname + " come from a run with NONANALYTIC = 0, read here with NONANALYTIC = " +
+              std::to_string(nonanalytic_reader) +
+              ".\n The SCPH/QHA correction was computed without the long-range (nonanalytic) term; the\n"
+              " nonanalytic term is added to the harmonic part only. This is an approximation.")
+                 .c_str());
+        return;
+    }
+    exit(caller,
+         ("The FC2 of " + fname + " come from a run with NONANALYTIC = " + std::to_string(na_file) +
+          ", but this run uses NONANALYTIC = " + std::to_string(nonanalytic_reader) +
+          ".\n They reproduce the frequencies of that run only with the same nonanalytic treatment\n"
+          " (NONANALYTIC = 2 and 3 may read each other's files). Set NONANALYTIC (and BORNINFO) accordingly.")
+             .c_str());
+}
+
+void warn_legacy_fc2_convention(const HighFive::File &file, const char *caller)
+{
+    if (!file.exist("/settings/nonanalytic") || file.exist("/settings/delta_baseline")) return;
+    if (H5Easy::load<int>(file, "/settings/nonanalytic") == 0) return;
+    warn(caller,
+         "This state file of an earlier version was written with NONANALYTIC != 0. Its FC2 reproduces\n"
+         " the SCPH/QHA frequencies only when NONANALYTIC = 2 or 3 and KMESH_INTERPOLATE is commensurate\n"
+         " with the supercell of the harmonic IFCs; otherwise rerun with the present version.");
+}
+} // namespace
+
 Fcs_phonon::Fcs_phonon(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
@@ -251,6 +298,7 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
     replicate_force_constants(maxorder);
     // Collective on every rank: DFC2FILE is known on rank 0 only, and a run
     // without it broadcasts zero rows.
+    nfc2_without_dfc2 = force_constant_with_cell[0].size();
     append_delta_fc2_rows(force_constant_with_cell[0]);
     print_stage_line("IFCs: replicate to the unit cell", stage_clock() - t_stage, run.my_rank, run.verbosity);
 
@@ -732,6 +780,8 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
     using namespace H5Easy;
     const File file(fname_fcs, File::ReadOnly);
 
+    if (order == 0) check_state_file_nonanalytic(file, nonanalytic, fname_fcs, "parse_fcs_from_h5");
+
     // FC2_TEMPERATURE: pick one temperature row of the renormalized FC2
     // stored in an SCPH/QHA state file instead of the base values. When
     // DFC2FILE is given, FC2_TEMPERATURE refers to that correction file
@@ -753,6 +803,7 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
                  "temperature-dependent force constants.");
         }
         temperature_index = h5_resolve_temperature_index(file, fc2_temperature, eps6, "/settings/temperatures");
+        warn_legacy_fc2_convention(file, "parse_fcs_from_h5");
 
         check_iteration_converged(file,
                                   temperature_index,
@@ -864,6 +915,8 @@ void Fcs_phonon::read_delta_fc2_from_scph(const std::string &fname_dfc2)
     const File file(fname_dfc2, File::ReadOnly);
 
     check_h5_schema(file, h5_schema_scph_state, h5_version_scph_state);
+    check_state_file_nonanalytic(file, nonanalytic, fname_dfc2, "read_delta_fc2_from_scph");
+    warn_legacy_fc2_convention(file, "read_delta_fc2_from_scph");
 
     if (fc2_temperature < 0.0) {
         exit("read_delta_fc2_from_scph", "FC2_TEMPERATURE must be given together with DFC2FILE.");

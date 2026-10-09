@@ -253,7 +253,7 @@ void load_delta_fc2(const std::string file_in, const double temp)
     ifs_in.ignore();
 
     while (getline(ifs_in, line_tmp)) {
-        if (line_tmp[0] == '#') {
+        if (line_tmp[0] == '#' && line_tmp.find("Temp") != std::string::npos) {
             boost::split(str_vec, line_tmp, boost::is_space());
             if (abs(boost::lexical_cast<double>(str_vec[3]) - temp) < eps) {
                 found_tag = true;

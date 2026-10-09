@@ -463,7 +463,9 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                                 evec,
                                                 kmesh_coarse.get(),
                                                 *kmap_b,
-                                                fcs_phonon->force_constant_with_cell[0]);
+                                                fcs_phonon->force_constant_with_cell[0],
+                                                *dielec,
+                                                *ewald);
         }
     }
 

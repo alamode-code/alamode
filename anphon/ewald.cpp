@@ -11,6 +11,7 @@
 
 #include "ewald.h"
 #include <Eigen/Cholesky>
+#include <algorithm>
 #include <boost/math/special_functions/erf.hpp>
 #include <complex>
 #include <fstream>
@@ -60,7 +61,7 @@ void Ewald::deallocate_variables()
     }
 }
 
-void Ewald::init(const Dielec &dielec, const std::vector<FcsArrayWithCell> &fc2)
+void Ewald::init(const Dielec &dielec, const std::vector<FcsArrayWithCell> &fc2, const std::size_t n_dfc2_begin)
 {
     MPI_Bcast(&is_longrange, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&prec_ewald, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -87,7 +88,7 @@ void Ewald::init(const Dielec &dielec, const std::vector<FcsArrayWithCell> &fc2)
 
         prepare_Ewald(dielec.get_dielec_tensor());
         prepare_G();
-        compute_ewald_fcs(fc2);
+        compute_ewald_fcs(fc2, std::min(n_dfc2_begin, fc2.size()));
     }
 }
 
@@ -361,7 +362,7 @@ void Ewald::get_pairs_of_minimum_distance(const int nat, const int nsize[3], con
     xcrd.clear();
 }
 
-void Ewald::compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2)
+void Ewald::compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2, const std::size_t n_dfc2_begin)
 {
     int j;
     int iat, jat;
@@ -407,7 +408,8 @@ void Ewald::compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2)
 
     fcs_total.setZero();
 
-    for (const auto &it: fc2) {
+    for (std::size_t i = 0; i < n_dfc2_begin; ++i) {
+        const auto &it = fc2[i];
         fcs_total(it.pairs[0].index, 3 * it.atoms_s[1] + it.coords[1]) += it.fcs_val;
     }
     fcs_other = fcs_total - fcs_ewald;
@@ -418,6 +420,7 @@ void Ewald::compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2)
     std::vector<unsigned int> atom_super(2);
 
     const auto cell_tmp = system->get_supercell(0);
+    const auto &xf_prim = system->get_primcell().x_fractional;
     NDArray<double, 2> xf_image;
     build_27cell_shift_table(xf_image);
 
@@ -440,13 +443,16 @@ void Ewald::compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2)
                 for (j = 0; j < 3; ++j) {
                     relvec_tmp2[j] = cell_tmp.x_fractional(jat, j) + xf_image[pairs_tmp[1].cell_s][j] -
                                      cell_tmp.x_fractional(atm_s, j);
-
-                    relvec_tmp[j] = cell_tmp.x_fractional(jat, j) + xf_image[pairs_tmp[1].cell_s][j] -
-                                    cell_tmp.x_fractional(map_p2s[map_s2p[jat].atom_num][0], j);
                 }
 
-                relvec_tmp = system->get_primcell().lattice_vector.inverse() * cell_tmp.lattice_vector * relvec_tmp;
                 relvec_tmp2 = system->get_primcell().lattice_vector.inverse() * cell_tmp.lattice_vector * relvec_tmp2;
+                // Bloch lattice vector measured from the primitive-cell positions, as in
+                // Fcs_phonon::replicate_force_constant: the supercell images map_p2s[.][0]
+                // may be wrapped by a lattice vector in a non-primitive &cell.
+                for (j = 0; j < 3; ++j) {
+                    relvec_tmp[j] =
+                        static_cast<double>(nint(relvec_tmp2[j] + xf_prim(iat, j) - xf_prim(map_s2p[jat].atom_num, j)));
+                }
 
                 relvecs.clear();
                 relvecs_vel.clear();
@@ -467,6 +473,8 @@ void Ewald::compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2)
             }
         }
     }
+    // DFC2FILE corrections: short range already (a correction to the full harmonic matrix)
+    fc2_without_dipole.insert(fc2_without_dipole.end(), fc2.begin() + n_dfc2_begin, fc2.end());
 
     if (run.my_rank == 0) {
         if (print_fc2_ewald) {
@@ -764,6 +772,30 @@ void Ewald::add_longrange_matrix(const double *xk_in, const double *kvec_in, std
 
         dymat_tmp_l.clear();
         dymat_tmp_g.clear();
+    }
+
+    // The sums above measure lattice vectors from the supercell images map_p2s[.][0];
+    // switch to the gauge of the IFCs (primitive-cell positions, see
+    // Fcs_phonon::replicate_force_constant). The two differ by a lattice vector
+    // T_i = x(map_p2s[i][0]) - x_prim(i) when an image is wrapped (non-primitive &cell).
+    const auto &scell = system->get_supercell(0);
+    const auto &xc_prim = system->get_primcell().x_cartesian;
+    std::vector<std::complex<double>> gauge(natmin);
+    for (iat = 0; iat < natmin; ++iat) {
+        const Eigen::Vector3d tvec =
+            scell.lattice_vector * scell.x_fractional.row(system->get_map_p2s(0)[iat][0]).transpose() -
+            xc_prim.row(iat).transpose();
+        gauge[iat] = std::exp(im * xk.dot(tvec));
+    }
+    for (iat = 0; iat < natmin; ++iat) {
+        for (jat = 0; jat < natmin; ++jat) {
+            const auto phase = std::conj(gauge[iat]) * gauge[jat];
+            for (icrd = 0; icrd < 3; ++icrd) {
+                for (jcrd = 0; jcrd < 3; ++jcrd) {
+                    dymat_k_out[3 * iat + icrd][3 * jat + jcrd] *= phase;
+                }
+            }
+        }
     }
 }
 

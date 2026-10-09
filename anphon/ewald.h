@@ -76,7 +76,11 @@ public:
 
     std::vector<FcsArrayWithCell> fc2_without_dipole;
 
-    void init(const Dielec &dielec, const std::vector<FcsArrayWithCell> &fc2);
+    // fc2[n_dfc2_begin:] are DFC2FILE corrections (on a possibly larger supercell): they
+    // are passed to fc2_without_dipole as they are, the dipole part is removed from the
+    // harmonic entries before them only.
+    void init(const Dielec &dielec, const std::vector<FcsArrayWithCell> &fc2,
+              std::size_t n_dfc2_begin = static_cast<std::size_t>(-1));
 
     void add_longrange_matrix(const double *, const double *, std::complex<double> **) const;
 
@@ -115,7 +119,7 @@ private:
 
     void prepare_G();
 
-    void compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2);
+    void compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2, std::size_t n_dfc2_begin);
 
     void get_pairs_of_minimum_distance(int, const int[3], const Eigen::MatrixXd &);
 

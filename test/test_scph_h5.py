@@ -357,6 +357,8 @@ def check_fresh_run(anphonbin, reference_dir):
             lines = fh.read().splitlines()
         natmin = f["PrimitiveCell/number_of_atoms"][()]
         idx = 5 + int(natmin)  # 3 lattice + 1 counts + 1 elements + natmin positions
+        if lines[idx].startswith("# Header"):  # NONANALYTIC / DELTA_BASELINE line
+            idx += 1
         if not lines[idx].startswith("# Temp"):
             print("unexpected .scph_dfc2 layout")
             return 1
