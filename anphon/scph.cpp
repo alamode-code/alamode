@@ -557,6 +557,13 @@ private:
             }
         }
 
+        // Converge the displaced solves far below the default DIIS residual: a
+        // warm start close to the fixed point can pass the frequency criterion
+        // within a few iterations at |r|/|x| ~ 1e-11, and the central difference
+        // amplifies that by 1/(2 step).
+        const auto resid_rel_tol_saved = scph_.scp_resid_rel_tol;
+        scph_.scp_resid_rel_tol = 1.0e-13;
+
         NDArray<std::complex<double>, 1> v1(ns), dv0(9);
         bool all_converged = true;
         const auto solve_at = [&](const RelaxationStructureState &state) {
@@ -642,6 +649,7 @@ private:
         }
         scph_.converged_scph_temp[iT] = converged_scph_saved;
         scph_.last_scp_repaired = repaired_saved;
+        scph_.scp_resid_rel_tol = resid_rel_tol_saved;
         ws_.structure_state = accepted_state;
         converged_prev_ = converged_prev_saved;
 
@@ -2268,11 +2276,11 @@ void Scph::compute_anharmonic_frequency_diis(double **omega2_out, std::complex<d
                                      dymat_harm_long);
 
     // ---- DIIS controls ----
-    const int diis_history = 6;          // depth of the DIIS subspace
-    const int diis_start = 3;            // number of plain simple-mixing iterations before DIIS
-    const double growth_tol = 2.0;       // residual-growth factor that triggers a history reset
-    const double psd_tol = 1.0e-6;       // relative tolerance of the PSD safeguard for extrapolated D
-    const double resid_rel_tol = 1.0e-6; // relative D-space residual required on top of the frequency criterion
+    const int diis_history = 6;    // depth of the DIIS subspace
+    const int diis_start = 3;      // number of plain simple-mixing iterations before DIIS
+    const double growth_tol = 2.0; // residual-growth factor that triggers a history reset
+    const double psd_tol = 1.0e-6; // relative tolerance of the PSD safeguard for extrapolated D
+    // the relative D-space residual required on top of the frequency criterion: scp_resid_rel_tol
 
     GDIIS gdiis(diis_history, mixalpha, static_cast<int>(verbosity));
 
@@ -2420,7 +2428,7 @@ void Scph::compute_anharmonic_frequency_diis(double **omega2_out, std::complex<d
         // nearly identical frequencies away from self-consistency, so the
         // fixed-point residual in D space is additionally required to be small.
         if (check_convergence(omega_now, omega_old, conv_tol, verbosity_iter, iloop, diff)) {
-            if (rnorm_rel < resid_rel_tol) {
+            if (rnorm_rel < scp_resid_rel_tol) {
                 if (verbosity_iter > 0) std::cout << "  DIFF < SCPH_TOL : break SCPH loop\n";
                 scp_converged = true;
                 last_scp_repaired = eval_repaired;
