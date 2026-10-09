@@ -1072,6 +1072,16 @@ Description of input variables
  :Description: This :math:`k` mesh is used for the QHA-based structural optimization. 
                Each value of ``KMESH_QHA`` must be equal to or a multiple of the number of ``KMESH_INTERPOLATE`` in the same direction.
 
+               Imaginary modes on this mesh are excluded from the vibrational free energy but not from
+               the stress and forces. When they appear, a WARNING is printed once per temperature with
+               their number and the most negative frequency: the free energy (absolute values and
+               differences) and the stress/forces at that temperature are then unreliable.
+
+               The free energy in ``PREFIX``.qha_thermo (and ``PREFIX``.scph_thermo) is evaluated on the
+               ``&kpoint`` mesh, while the structure is optimized for the free energy on ``KMESH_QHA``
+               (``KMESH_SCPH``). Use the same mesh for both when the reported free energy should be the
+               minimized one; a WARNING is printed when they differ with ``RELAX_STR`` > 0.
+
 ````
 
 .. _anphon_qha_relax_str:

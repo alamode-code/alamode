@@ -372,6 +372,19 @@ if (BUILD_Q0_CONTRACTION_TEST)
     target_link_libraries(test_q0_contraction ${openmplibrary})
 endif ()
 
+# Unit test for the projection of the real-space SCPH/QHA dymat corrections onto
+# a space group (dymat_projection.h): group check, idempotence, invariance,
+# anisotropic supercell, nonsymmorphic group. Eigen only; no MPI.
+option(BUILD_DYMAT_PROJECTION_TEST "Build the dymat projection unit test" ON)
+if (BUILD_DYMAT_PROJECTION_TEST)
+    add_executable(test_dymat_projection ${PROJECT_SOURCE_DIR}/../test/test_dymat_projection.cpp)
+    target_compile_options(test_dymat_projection PRIVATE -Wall -Wextra)
+    target_include_directories(test_dymat_projection PRIVATE ${PROJECT_SOURCE_DIR} ${eigen_includes})
+    if (eigen_target)
+        target_link_libraries(test_dymat_projection ${eigen_target})
+    endif ()
+endif ()
+
 # Unit test for the row-distributed V4 layout (v4_distributed.h): unit and
 # slice partitions and the row-local SCP self-energy accumulation against the
 # naive formula. Header-only dependencies plus Eigen and OpenMP; no MPI.

@@ -1467,6 +1467,43 @@ int Relaxation::spacegroup_of(const RelaxationStructureState &state, std::string
     return number;
 }
 
+std::vector<std::pair<Eigen::Matrix3i, Eigen::Vector3d>>
+Relaxation::symmetry_operations_of(const RelaxationStructureState &state) const
+{
+    Eigen::Matrix3d lavec;
+    std::vector<Eigen::Vector3d> xf;
+    distorted_cell_of(state, lavec, xf);
+    const auto &primcell = system->get_primcell();
+    const int natmin = primcell.number_of_atoms;
+    double aa[3][3];
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j) aa[i][j] = lavec(i, j);
+    double(*position)[3];
+    NDArray<int, 1> types;
+    allocate(position, natmin);
+    types.resize(natmin);
+    for (auto iat = 0; iat < natmin; ++iat) {
+        for (auto i = 0; i < 3; ++i) position[iat][i] = xf[iat](i);
+        types[iat] = primcell.kind[iat];
+    }
+    std::vector<std::pair<Eigen::Matrix3i, Eigen::Vector3d>> ops;
+    const auto spgdataset = spg_get_dataset(aa, position, types, natmin, symprec_);
+    if (spgdataset) {
+        for (auto n = 0; n < spgdataset->n_operations; ++n) {
+            Eigen::Matrix3i W;
+            Eigen::Vector3d t;
+            for (auto i = 0; i < 3; ++i) {
+                for (auto j = 0; j < 3; ++j) W(i, j) = spgdataset->rotations[n][i][j];
+                t(i) = spgdataset->translations[n][i];
+            }
+            ops.emplace_back(W, t);
+        }
+        spg_free_dataset(spgdataset);
+    }
+    deallocate(position);
+    return ops;
+}
+
 int Relaxation::detect_spacegroup(const Eigen::Matrix3d &lavec, const std::vector<Eigen::Vector3d> &xf,
                                   std::string &label) const
 {

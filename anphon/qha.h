@@ -71,6 +71,10 @@ private:
 
     void exec_perturbative_QHA(std::complex<double> ****, std::complex<double> ****);
 
+    // One WARNING line (rank 0) when the renormalized-harmonic frequencies of
+    // temperature temp on KMESH_QHA have imaginary modes.
+    void warn_imaginary_modes(double temp, const double *const *omega2) const;
+
     void calc_del_v0_del_umn_vib(std::complex<double> *, const DelVStrainData &, double);
 
 

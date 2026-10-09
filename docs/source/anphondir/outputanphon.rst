@@ -184,7 +184,10 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
    * - ``PREFIX``.scph.h5, ``PREFIX``.qha.h5
      - Always (default format)
      - Results at every temperature, used by later runs (``FC2_TEMPERATURE``, ``RELAXED_STRUCTURE``) and for restarting.
-       See :ref:`label_hdf5_scph`, and :ref:`label_hdf5_scph_nonanalytic` for the force constants with ``NONANALYTIC > 0``
+       The FC2 corrections of each temperature are projected onto the space group of the structure
+       of that temperature (the spglib group of the relaxed structure with ``RELAX_STR`` > 0, at the
+       run's ``TOLERANCE``; the operations of the run otherwise). See :ref:`label_hdf5_scph`, and
+       :ref:`label_hdf5_scph_nonanalytic` for the force constants with ``NONANALYTIC > 0``
    * - ``PREFIX``.scph_eval, .qha_eval
      - *KPMODE* = 0
      - Frequencies vs. temperature at the given :math:`k` points
@@ -196,7 +199,14 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
      - DOS vs. temperature
    * - ``PREFIX``.scph_thermo, .qha_thermo
      - *KPMODE* = 2
-     - Heat capacity, entropy, and free energy vs. temperature
+     - Heat capacity, entropy, and free energy vs. temperature. For a temperature whose SCPH or
+       structural iterations did not converge, Cv, F and S are written as NaN (``Phi0`` is kept),
+       and so are the anharmonic Cv correction (also at the neighbouring temperatures, which use it
+       in a central difference) and the rows of that temperature in ``.scph_dos`` / ``.qha_dos``,
+       the MSD and ucorr files, and their ``+bubble`` versions. The log names what the arrays of that
+       temperature hold: the last SCP iterate, or after a failed structural optimization a copy of
+       the last converged temperature or the harmonic data. ``ALLOW_UNCONVERGED = 1`` prints the
+       values computed from those data instead
    * - ``PREFIX``.scph_hessian
      - ``BUBBLE = 4`` (MODE = SCPH, ``RELAX_STR > 0``)
      - Curvature of the SCP free energy at each converged temperature: frequencies of the SCPH
@@ -209,7 +219,9 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
        point of the mesh (:math:`\Gamma` for ``KMESH_SCPH = 1 1 1``) added to the renormalized
        FC2. Use it with ``DFC2FILE`` (or ``FC2FILE``) and ``FC2_TEMPERATURE`` for dispersions and
        DOS interpolated like the SCPH ones; exact at the points of the mesh. Temperatures without
-       a curvature are flagged unconverged
+       a curvature are flagged unconverged. Like the SCPH correction in ``PREFIX``.scph.h5, the sum
+       is projected onto the space group of the relaxed structure of each temperature, so it can
+       differ from ``.scph_hessian`` / ``.scph_hessian_q`` at the level of numerical noise
    * - ``PREFIX``.scph_hessian_q
      - ``BUBBLE = 4`` on a k-mesh
      - Curvature of the SCP free energy at the irreducible :math:`\boldsymbol{Q}`-points of the mesh

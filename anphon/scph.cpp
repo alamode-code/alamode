@@ -943,6 +943,12 @@ void Scph::exec_scph()
             converged_scph_temp.clear();
             converged_str_temp.clear();
 
+            // Project as a fresh run would before anything is written. The
+            // legacy files carry no relaxed structure, so with RELAX_STR != 0
+            // the group of a temperature is unknown and the data are left
+            // as they are (symmetrize_delta_dymat skips them).
+            symmetrize_delta_dymat(delta_dymat_scph, NT);
+
             // One-way migration of the legacy state into the unified file;
             // the text files themselves are left untouched.
             if (use_h5_io && run.my_rank == 0) {
@@ -972,6 +978,10 @@ void Scph::exec_scph()
             // Run coupled SCPH + cell/coordinate relaxation loop.
             exec_scph_relax_cell_coordinate_main(delta_dymat_scph, delta_harmonic_dymat_renormalize);
         }
+
+        // Project out the symmetry noise before anything is written.
+        symmetrize_delta_dymat(delta_dymat_scph, NT);
+        if (relax_mode != RelaxationStrMode::None) symmetrize_delta_dymat(delta_harmonic_dymat_renormalize, NT);
 
         if (run.my_rank == 0) {
             const auto with_relax = relax_mode != RelaxationStrMode::None;
@@ -1036,6 +1046,8 @@ void Scph::exec_scph()
         delta_dymat_scph_plus_bubble.resize(NT, ns, ns, kmesh_coarse->nk);
         // Add bubble self-energy to SCPH dynamical-matrix correction.
         bubble_correction(delta_dymat_scph, delta_dymat_scph_plus_bubble);
+        // same per-temperature projection as the SCPH correction
+        symmetrize_delta_dymat(delta_dymat_scph_plus_bubble, NT);
         if (run.my_rank == 0) {
             // Output FC2 after including bubble self-energy contribution.
             write_anharmonic_correction_fc2(delta_dymat_scph_plus_bubble,

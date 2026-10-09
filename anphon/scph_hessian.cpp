@@ -962,6 +962,10 @@ void Scph::write_fe_state_h5(const NDArray<std::complex<double>, 4> &delta_dymat
             missing += " " + std::to_string(system->Tmin + system->dT * iT);
         }
     }
+    // delta_dymat_scph is already projected onto the space group of each
+    // temperature (symmetrize_delta_dymat); project the sum as well, so that
+    // the file holds P(H) rather than H + (P(A) - A). Rank 0 only.
+    symmetrize_delta_dymat(delta_fe.ptr(), NT, false);
     const auto with_relax = to_relaxation_str_mode(relaxation->relax_str) != RelaxationStrMode::None;
     write_scph_state_h5(run.job_title + ".scph_fe.h5",
                         "SCPH",

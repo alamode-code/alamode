@@ -310,6 +310,88 @@ def check_structure_group(prefix, statefile, logfile=None, fcsfile=None):
     return 0
 
 
+def fc2_c4v_asymmetry(statefile):
+    """Max |R Phi R^T - Phi(R pair)| / max |Phi| of the temperature-dependent FC2
+    rows of a cubic-reference perovskite under C4v about z, and Ti (atom 1)
+    on-site (zz - xx) / max |Phi|, per temperature."""
+    with h5py.File(statefile, "r") as f:
+        fc = f["ForceConstants/Order2"]
+        ai, ci = fc["atom_indices"][...], fc["coord_indices"][...]
+        sv = fc["shift_vectors"][...]
+        vals = f["ForceConstants/Order2_temperature_dependent/force_constant_values"][
+            ...
+        ]
+        lav = f["PrimitiveCell/lattice_vector"][...]
+        xf = f["PrimitiveCell/fractional_coordinate"][...]
+    return c4v_asymmetry(ai, ci, sv, vals, xf, lav[0, 0])
+
+
+def dfc2_text_c4v_asymmetry(fname):
+    """The same for a text PREFIX.*_dfc2 file (cubic cell)."""
+    with open(fname) as f:
+        lines = f.read().splitlines()
+    a0 = float(lines[0].split()[0])
+    nat = int(lines[3].split()[0])
+    xf = np.array([[float(x) for x in lines[5 + i].split()[:3]] for i in range(nat)])
+    rows, vals = [], []
+    for line in lines[5 + nat :]:
+        if line.startswith("# Temp"):
+            vals.append([])
+        elif line.strip():
+            w = line.split()
+            if len(vals) == 1:
+                rows.append([int(x) for x in w[:7]])
+            vals[-1].append(float(w[7]))
+    rows = np.array(rows)
+    ai, ci = rows[:, [3, 5]], rows[:, [4, 6]]
+    sv = (rows[:, :3] + xf[ai[:, 1]] - xf[ai[:, 0]]) * a0
+    return c4v_asymmetry(ai, ci, sv, np.array(vals), xf, a0)
+
+
+def c4v_asymmetry(ai, ci, sv, vals, xf, a0):
+    xc = xf * a0
+    ops = []
+    for perm in ((0, 1), (1, 0)):
+        for sx in (1, -1):
+            for sy in (1, -1):
+                r = np.zeros((3, 3))
+                r[0, perm[0]], r[1, perm[1]], r[2, 2] = sx, sy, 1
+                ops.append(r)
+
+    def amap(r, i):
+        x = r @ xc[i]
+        for j in range(len(xc)):
+            d = (x - xc[j]) / a0
+            if np.allclose(d, np.round(d), atol=1e-4):
+                return j
+        raise RuntimeError("atom not mapped")
+
+    blocks = {}
+    for row in range(len(ai)):
+        key = (ai[row, 0], ai[row, 1], *np.round(sv[row] * 1e4).astype(int))
+        blocks.setdefault(key, {})[(ci[row, 0], ci[row, 1])] = row
+    out = []
+    for v in vals:
+        scale = np.abs(v).max()
+        worst = 0.0
+        for (i, j, *rv), d in blocks.items():
+            phi = np.zeros((3, 3))
+            for (a, b), row in d.items():
+                phi[a, b] = v[row]
+            for r in ops:
+                rv2 = np.round(r @ np.array(rv)).astype(int)
+                d2 = blocks.get((amap(r, i), amap(r, j), *rv2))
+                if d2 is None:
+                    raise RuntimeError("image of an FC2 block not found")
+                phi2 = np.zeros((3, 3))
+                for (a, b), row in d2.items():
+                    phi2[a, b] = v[row]
+                worst = max(worst, np.abs(r @ phi @ r.T - phi2).max())
+        ti = blocks[(1, 1, 0, 0, 0)]
+        out.append((worst / scale, (v[ti[(2, 2)]] - v[ti[(0, 0)]]) / scale))
+    return out
+
+
 def check_fresh_run(anphonbin, reference_dir):
     if run_anphon(anphonbin, "BTO_scph_thermo.in", "fresh.log") != 0:
         print("fresh SCPH run failed")
@@ -318,6 +400,25 @@ def check_fresh_run(anphonbin, reference_dir):
     # Physical text outputs must match the references (same checks as test_batio3).
     if check_consistency_anphon(reference_dir, abs_tol=1.0e-8, rel_tol=1.0e-9) != 0:
         return 1
+
+    # The stored FC2 is projected onto the space group of the relaxed structure
+    # within the operations of the run (P4mm): exactly C4v-symmetric, and the
+    # tetragonal 280 K row is not projected onto the cubic reference group (Ti
+    # on-site zz != xx; 290 and 300 K are cubic within TOLERANCE).
+    with h5py.File(PREFIX + ".scph.h5", "r") as f:
+        labels = [x.decode() for x in f["structure/spg_label"][...]]
+    if not labels[0].startswith("P4mm"):
+        print("the 280 K structure is %s, not P4mm" % labels[0])
+        return 1
+    for iT, (asym, tetragonality) in enumerate(fc2_c4v_asymmetry(PREFIX + ".scph.h5")):
+        if asym > 1e-12 or (
+            labels[iT].startswith("P4mm") and abs(tetragonality) < 1e-4
+        ):
+            print(
+                "FC2 at index %d: C4v asymmetry %.2e, Ti zz - xx %.2e"
+                % (iT, asym, tetragonality)
+            )
+            return 1
 
     # Legacy restart files must not be written in h5 mode (.V0 is kept as a
     # human-readable output).
@@ -562,6 +663,55 @@ def check_kappa_on_scph(anphonbin):
     return 0
 
 
+def check_unconverged_bubble_rows(anphonbin, src):
+    # BUBBLE = 1 recomputes DOS and MSD in a second pass: masked as well. With
+    # ALLOW_UNCONVERGED = 1 every row is printed.
+    src = (
+        src.replace("PREFIX = ucbto", "PREFIX = ucbb")
+        .replace("MAXITER = 1", "MAXITER = 1\n  BUBBLE = 1")
+        .replace("  2\n  8 8 8", "  2\n  4 4 4")
+    )
+    src += "&analysis\n  PRINTMSD = 1\n/\n"
+    files = [
+        "ucbb.scph_dos",
+        "ucbb.scph_msd",
+        "ucbb.scph+bubble(0)_dos",
+        "ucbb.scph+bubble(0)_msd",
+    ]
+    for allow in (0, 1):
+        text = src
+        if allow:
+            text = text.replace(
+                "FCSFILE = cBTO222.h5", "FCSFILE = cBTO222.h5\n  ALLOW_UNCONVERGED = 1"
+            )
+        for stale in ["ucbb.scph.h5"] + files:
+            if os.path.exists(stale):
+                os.remove(stale)
+        with open("ucbb.in", "w") as f:
+            f.write(text)
+        if run_anphon(anphonbin, "ucbb.in", "ucbb_%d.log" % allow) != 0:
+            print("unconverged BUBBLE = 1 run failed")
+            return 1
+        thermo = np.loadtxt("ucbb.scph_thermo", ndmin=2)
+        columns = [thermo[0, [1, 2, 3, 5, 6]]]
+        columns += [np.loadtxt(name, ndmin=2)[:, 1:] for name in files]
+        if allow and not all(np.isfinite(c).all() for c in columns):
+            print("ALLOW_UNCONVERGED = 1 did not print the unconverged rows")
+            return 1
+        if not allow and not all(np.isnan(c).all() for c in columns):
+            print(
+                "an unconverged row (thermo, DOS, MSD or their bubble versions) is not NaN"
+            )
+            return 1
+        with open("ucbb_%d.log" % allow) as f:
+            log = f.read()
+        needle = "ALLOW_UNCONVERGED = 1: the outputs" if allow else "are written as NaN"
+        if needle not in log:
+            print("the unconverged-row warning does not say %r" % needle)
+            return 1
+    return 0
+
+
 def check_convergence_guard(anphonbin):
     # An intentionally unconverged run (MAXITER = 1, MAX_STR_ITER = 1, tiny
     # tolerance) must be flagged in /convergence and refused downstream
@@ -589,6 +739,23 @@ def check_convergence_guard(anphonbin):
         if not np.isnan(f["convergence/data_temperature"][...]).all():
             print("/convergence/data_temperature of a harmonic fallback is not NaN")
             return 1
+    # the thermodynamic functions of an unconverged temperature are NaN, not
+    # the last iterate; the free energy on the 8x8x8 &kpoint mesh is not the
+    # one minimized on KMESH_SCPH = 2 2 2, which is warned about
+    thermo = np.loadtxt("ucbto.scph_thermo", ndmin=2)
+    if not np.isnan(thermo[0, [1, 2, 3, 5, 6]]).all() or not np.isfinite(thermo[0, 4]):
+        print("the thermo row of an unconverged temperature is not NaN (Phi0 kept)")
+        return 1
+    with open("uc.log") as f:
+        log = f.read()
+    if "Not converged at T = 300 K (harmonic data)" not in log:
+        print("no warning about the NaN thermo rows naming the harmonic fallback")
+        return 1
+    if check_unconverged_bubble_rows(anphonbin, src):
+        return 1
+    if "The &kpoint mesh differs from KMESH_SCPH" not in log:
+        print("no warning about the &kpoint mesh differing from KMESH_SCPH")
+        return 1
 
     kpath = "&kpoint\n 1\n G 0.0 0.0 0.0 X 0.5 0.0 0.5 11\n/\n"
     with open("ucband.in", "w") as f:
@@ -608,6 +775,87 @@ def check_convergence_guard(anphonbin):
     with open("ucband_ok.log") as f:
         if "the stored data for 300 K are the harmonic ones" not in f.read():
             print("the ALLOW_UNCONVERGED warning does not name the harmonic fallback")
+            return 1
+    return 0
+
+
+def check_qha_imaginary_warning(anphonbin):
+    # Cubic BaTiO3 within QHA has imaginary modes: one WARNING per temperature
+    # naming their number and the most negative frequency.
+    with open("BTO_scph_thermo.in") as f:
+        src = f.read()
+    src = (
+        src.replace("PREFIX = cBTO222_scph", "PREFIX = qbto")
+        .replace("MODE = SCPH", "MODE = QHA")
+        .replace("TMIN = 280", "TMIN = 300")
+        .replace("MAX_STR_ITER = 1000", "MAX_STR_ITER = 2")
+        .replace("  2\n  8 8 8", "  2\n  4 4 4")
+    )
+    src = re.sub(
+        r"&scph.*?/\n",
+        "&qha\n  KMESH_INTERPOLATE = 2 2 2\n  KMESH_QHA = 4 4 4\n  RELAX_STR = 2\n/\n",
+        src,
+        flags=re.S,
+    )
+    with open("qbto.in", "w") as f:
+        f.write(src)
+    if run_anphon(anphonbin, "qbto.in", "qbto.log") != 0:
+        print("BaTiO3 QHA run failed to execute")
+        return 1
+    with open("qbto.log") as f:
+        log = f.read()
+    warnings = re.findall(
+        r"WARNING: (\d+) imaginary mode\(s\) at T = 300\.00 K \(most negative omega = (-[\d.]+) cm",
+        log,
+    )
+    if (
+        len(warnings) != 1
+        or int(warnings[0][0]) == 0
+        or "absolute values and differences" not in log
+    ):
+        print("expected one imaginary-mode WARNING for T = 300 K, found %r" % warnings)
+        return 1
+    if "The &kpoint mesh differs" in log:
+        print("&kpoint mesh warning although it equals KMESH_QHA")
+        return 1
+    # the most negative frequency is at Gamma; a phonon run on the FC2 the QHA
+    # run stored must give the same value there
+    if "at k = (0.0000, 0.0000, 0.0000)" not in log:
+        print("the most negative frequency is not reported at Gamma")
+        return 1
+    with open("qbtoph.in", "w") as f:
+        f.write(
+            "&general\n PREFIX = qbtoph; MODE = phonons; FCSFILE = qbto.qha.h5;"
+            " FC2_TEMPERATURE = 300; ALLOW_UNCONVERGED = 1\n/\n&kpoint\n 0\n 0.0 0.0 0.0\n/\n"
+        )
+    if run_anphon(anphonbin, "qbtoph.in", "qbtoph.log") != 0:
+        print("phonon run on the QHA state file failed")
+        return 1
+    with open("qbtoph.log") as f:
+        freqs = [
+            float(x)
+            for x in re.findall(r"^\s+\d+\s+(-?[\d.]+) cm\^-1", f.read(), flags=re.M)
+        ]
+    if not freqs or abs(min(freqs) - float(warnings[0][1])) > 0.01:
+        print(
+            "most negative omega %s differs from the phonon run %s"
+            % (warnings[0][1], min(freqs or [0]))
+        )
+        return 1
+    if shutil.which("mpirun") is not None:
+        os.remove(
+            "qbto.qha.h5"
+        )  # a leftover state file would turn the run into a restart
+        with open("qbto_np2.log", "w") as f:
+            ret = subprocess.run(
+                ["mpirun", "-np", "2", anphonbin, "qbto.in"],
+                stdout=f,
+                stderr=subprocess.STDOUT,
+            )
+        with open("qbto_np2.log") as f:
+            n = f.read().count("imaginary mode(s) at T = 300.00 K")
+        if ret.returncode or n != 1:
+            print("2-rank QHA run: %d imaginary-mode warnings (expected 1)" % n)
             return 1
     return 0
 
@@ -678,6 +926,22 @@ def check_failed_temperature_provenance(anphonbin):
     if any(not np.array_equal(r[0], r[1]) for r in rows):
         print("the copied 100 K row differs from its 300 K source")
         return 1
+    # the failed 100 K row of the thermo/DOS files is NaN, 300 K is not, and the
+    # warning names the copied source
+    thermo = np.loadtxt("cpbto.scph_thermo", ndmin=2)
+    dos = np.loadtxt("cpbto.scph_dos", ndmin=2)
+    if (
+        not np.isnan(thermo[0, [1, 2, 3, 5, 6]]).all()
+        or not np.isfinite(thermo[1, 1:]).all()
+        or not np.isnan(dos[:, 1]).all()
+        or not np.isfinite(dos[:, 2]).all()
+    ):
+        print("the failed 100 K row is not NaN, or the converged 300 K one is")
+        return 1
+    with open("cp.log") as f:
+        if "Not converged at T = 100 K (copy of the data at 300 K)" not in f.read():
+            print("the NaN-row warning does not name the copied source temperature")
+            return 1
 
     kpath = "&kpoint\n 1\n G 0.0 0.0 0.0 X 0.5 0.0 0.5 3\n/\n"
 
@@ -795,6 +1059,14 @@ def check_bubble_on_relaxed(anphonbin):
     with open("bub.log") as f:
         if "the cubic IFCs are deformed to the relaxed structure" not in f.read():
             print("the bubble step did not deform the cubic IFCs")
+            return 1
+    # the SCPH + bubble FC2 is projected onto the group of each temperature
+    # like the SCPH one
+    for iT, (asym, _) in enumerate(
+        dfc2_text_c4v_asymmetry("bub_scph.scph+bubble(w)_dfc2")
+    ):
+        if asym > 1e-12:
+            print("SCPH + bubble FC2 at index %d: C4v asymmetry %.2e" % (iT, asym))
             return 1
     bubble = parse_bubble_log("bub.log")
 
@@ -1012,6 +1284,10 @@ def runtest_scph_h5(anphonbin, project_root):
     if check_convergence_guard(anphonbin):
         return 1
     print("Convergence flags + ALLOW_UNCONVERGED guard --> pass")
+
+    if check_qha_imaginary_warning(anphonbin):
+        return 1
+    print("QHA imaginary-mode WARNING --> pass")
 
     if check_failed_temperature_provenance(anphonbin):
         return 1

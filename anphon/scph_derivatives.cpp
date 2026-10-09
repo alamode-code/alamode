@@ -464,6 +464,7 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
     // STRAIN_FC5: the occupation matrices of every k (row-major), see below
     std::vector<std::complex<double>> gall(dv4_fc5 ? nk * ns2 : 0);
     const auto &geff = coarse_occupation_matrices(cmat_convert, omega2_anharm_T, T_in, kmesh_dense_in);
+    int nnegative = 0;
     for (auto ik = 0; ik < nk; ik++) {
         scp_occupation_matrix(ik, cmat_convert[ik], omega2_anharm_T[ik], T_in, G, &is_acoustic_now);
         if (dv4_fc5) Map<MatrixXcdRowMajor>(gall.data() + ik * ns2, ns, ns) = G;
@@ -472,8 +473,7 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
                 continue;
             }
             if (omega2_anharm_T[ik][js] < 0.0 && std::sqrt(std::fabs(omega2_anharm_T[ik][js])) >= eps8) {
-                std::cout << "Warning in compute_anharmonic_del_v0_del_umn: squared SCP frequency is negative. ik = "
-                          << ik << '\n';
+                ++nnegative;
             }
         }
         if (!geff.empty()) continue;
@@ -481,6 +481,10 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
         for (auto i1 = 0; i1 < 9; i1++) {
             del_v0_del_umn_SCP[i1] += factor2 * del_v2_del_umn_renorm[i1 * nk + ik].cwiseProduct(GT).sum();
         }
+    }
+    if (nnegative > 0 && run.my_rank == 0) {
+        std::cout << " Warning in compute_anharmonic_del_v0_del_umn: " << nnegative
+                  << " mode(s) with a negative squared frequency; their |omega| enters the stress.\n";
     }
     // With interpolation, the vertices of the coarse points against the pulled-back
     // occupations (coarse_occupation_matrices).

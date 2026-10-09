@@ -10,15 +10,18 @@
 
 #include "scph_qha_common.h"
 #include <algorithm>
+#include <cmath>
 #include <complex>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <sstream>
 #include <vector>
 #include "constants.h"
 #include "dielec.h"
+#include "dymat_projection.h"
 #include "ewald.h"
 #include "ifc_derivative.h"
 #include "interpolation.h"
@@ -223,6 +226,85 @@ void ScphQhaCommon::setup_structural_data()
                                  system->get_primcell().x_fractional,
                                  symmetry->SymmListWithMap,
                                  mat_transform_sym);
+}
+
+void ScphQhaCommon::symmetrize_delta_dymat(std::complex<double> ****delta, const unsigned int NT,
+                                           const bool broadcast) const
+{
+    const auto ns = dynamical->neval;
+    const auto nk = kmesh_coarse->nk;
+
+    if (run.my_rank == 0) {
+        const int N[3] = {static_cast<int>(kmesh_coarse->nk_i[0]),
+                          static_cast<int>(kmesh_coarse->nk_i[1]),
+                          static_cast<int>(kmesh_coarse->nk_i[2])};
+        const auto &primcell = system->get_primcell();
+        const auto natmin = static_cast<unsigned int>(primcell.number_of_atoms);
+        const auto tol = symmetry->tolerance;
+        const auto with_relax = relaxation->relax_str != 0;
+
+        // The operations of the run (already restricted to those compatible
+        // with EFIELD) that map the coarse supercell onto itself.
+        std::vector<DymatSymOp> ops_all;
+        for (const auto &it: symmetry->SymmListWithMap) {
+            DymatSymOp op;
+            for (auto i = 0; i < 3; ++i) {
+                for (auto j = 0; j < 3; ++j) {
+                    op.S(i, j) = it.rot[3 * i + j];
+                    op.T(i, j) = nint(it.rot_real[3 * i + j]);
+                }
+                op.t(i) = it.shift[i];
+            }
+            if (!dymat_symop_keeps_grid(op, N)) continue;
+            if (!set_dymat_symop_mapping(op, primcell.x_fractional)) {
+                exit("symmetrize_delta_dymat", "A symmetry operation does not map the atoms onto each other.");
+            }
+            ops_all.push_back(std::move(op));
+        }
+
+        std::string skipped;
+        for (unsigned int iT = 0; iT < NT; ++iT) {
+            // The group of temperature iT: with RELAX_STR != 0, the operations
+            // spglib finds for the relaxed structure (the group of its spg_label,
+            // same tolerance) that are also operations of the run.
+            std::vector<const DymatSymOp *> ops;
+            if (!with_relax) {
+                for (const auto &op: ops_all) ops.push_back(&op);
+            } else {
+                if (relaxed_structure_recorded.size() != NT || !relaxed_structure_recorded[iT]) continue;
+                RelaxationStructureState state;
+                state.resize(ns);
+                for (auto i = 0; i < 3; ++i) {
+                    for (auto j = 0; j < 3; ++j) state.u_tensor[i][j] = relaxed_structure.u_tensor[9 * iT + 3 * i + j];
+                }
+                for (unsigned int is = 0; is < ns; ++is) state.u0[is] = relaxed_structure.u0[iT * ns + is];
+                const auto ops_relaxed = relaxation->symmetry_operations_of(state);
+                for (const auto &op: ops_all) {
+                    for (const auto &[W, t]: ops_relaxed) {
+                        Eigen::Vector3d d = t - op.t;
+                        d -= d.array().round().matrix();
+                        if (W == op.T && (primcell.lattice_vector * d).norm() < 2.0 * tol) {
+                            ops.push_back(&op);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!dymat_symops_form_group(ops)) {
+                skipped += " " + std::to_string(system->Tmin + system->dT * iT);
+                continue;
+            }
+            project_dymat_r(delta[iT], natmin, N, ops);
+        }
+        if (!skipped.empty()) {
+            warn("symmetrize_delta_dymat",
+                 ("The symmetry operations kept at T =" + skipped +
+                  " K do not form a group;\n the dynamical-matrix corrections of these temperatures are not"
+                  " symmetrized.")
+                     .c_str());
+        }
+    }
+    if (broadcast) mpi_bcast_complex(delta, NT, nk, ns);
 }
 
 void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)
@@ -549,6 +631,90 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
         NDArray<double, 2> domega_dt;
 
         if (dos->kmesh_dos.get()) {
+            // The thermodynamic functions below are evaluated on the &kpoint mesh;
+            // the structural optimization minimized F on KMESH_SCPH / KMESH_QHA.
+            if (relaxation->relax_str != 0 &&
+                !std::equal(dos->kmesh_dos->nk_i, dos->kmesh_dos->nk_i + 3, kmesh_dense->nk_i))
+            {
+                const std::string mesh = is_qha ? "KMESH_QHA" : "KMESH_SCPH";
+                warn("postprocess",
+                     ("The &kpoint mesh differs from " + mesh +
+                      ". The free energy in the thermo file is evaluated\n"
+                      " on the &kpoint mesh, while the structure was optimized for the free energy on " +
+                      mesh +
+                      ",\n so the reported F is not the function that was minimized (its gradient at the"
+                      " relaxed\n structure is not zero). Use the same mesh for both to get the consistent F.")
+                         .c_str());
+            }
+            // Temperatures whose SCP or structural iterations failed hold no
+            // solution: the last SCP iterate, or (failed structural optimization)
+            // a copy of the last converged temperature or the harmonic data. A
+            // stiff SCP at 0 K once gave F = 73 Ry this way. Their rows are NaN
+            // unless ALLOW_UNCONVERGED = 1.
+            std::vector<char> masked(NT, 0);
+            std::string bad_temps;
+            for (unsigned int iT = 0; iT < NT; ++iT) {
+                const auto bad_str =
+                    relaxation->relax_str != 0 && converged_str_temp.size() == NT && !converged_str_temp[iT];
+                const auto bad_scp = converged_scph_temp.size() == NT && !converged_scph_temp[iT];
+                if (!(bad_str || bad_scp)) continue;
+                masked[iT] = !run.allow_unconverged;
+                std::ostringstream ss;
+                ss << ' ' << Tmin + dT * static_cast<double>(iT) << " K (";
+                if (bad_str && data_temperature.size() == NT) {
+                    if (std::isnan(data_temperature[iT])) {
+                        ss << "harmonic data";
+                    } else {
+                        ss << "copy of the data at " << data_temperature[iT] << " K";
+                    }
+                } else {
+                    ss << (bad_str ? "last structural iterate" : "last SCP iterate");
+                }
+                ss << ')';
+                bad_temps += ss.str();
+            }
+            if (!bad_temps.empty()) {
+                const std::string what = "Not converged at T =" + bad_temps + ".\n";
+                if (run.allow_unconverged) {
+                    warn("postprocess",
+                         (what + " ALLOW_UNCONVERGED = 1: the outputs of these temperatures are computed from the"
+                                 " data in\n parentheses and are not a solution at that temperature.")
+                             .c_str());
+                } else {
+                    warn("postprocess",
+                         (what + " Their Cv, F and S (Phi0 is kept), the anharmonic Cv correction (also at the\n"
+                                 " neighbouring temperatures), DOS, MSD and ucorr are written as NaN. Set\n"
+                                 " ALLOW_UNCONVERGED = 1 to print the values computed from the data in parentheses.")
+                             .c_str());
+                }
+            }
+            const auto mask_unconverged_rows = [&](const bool thermo) {
+                const auto nan = std::numeric_limits<double>::quiet_NaN();
+                for (unsigned int iT = 0; iT < NT; ++iT) {
+                    if (!masked[iT]) continue;
+                    if (thermo) {
+                        heat_capacity[iT] = FE_QHA[iT] = dFE_scph[iT] = FE_total[iT] = entropy[iT] = nan;
+                        if (compute_Cv_anharmonic) {
+                            // the central difference also uses the neighbours
+                            for (auto jT = iT == 0 ? 0 : iT - 1; jT <= std::min(iT + 1, NT - 1); ++jT) {
+                                heat_capacity_correction[jT] = nan;
+                            }
+                        }
+                    }
+                    if (dos->compute_dos) {
+                        for (unsigned int ie = 0; ie < dos->n_energy; ++ie) dos_update[iT][ie] = nan;
+                    }
+                    if (writes->getPrintMSD()) {
+                        for (unsigned int is = 0; is < ns; ++is) msd_update[iT][is] = nan;
+                    }
+                    if (writes->getPrintUcorr()) {
+                        for (unsigned int is = 0; is < ns; ++is) {
+                            for (unsigned int js = 0; js < ns; ++js) ucorr_update[iT][is][js] = nan;
+                        }
+                    }
+                }
+            };
+
             eval_update.resize(NT, dos->kmesh_dos->nk, ns);
             evec_tmp.resize(dos->kmesh_dos->nk, ns, ns);
             if (!is_qha) {
@@ -800,6 +966,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             print_stage_value("post: SCPH free-energy correction", t_fe);
             print_stage_value("post: Cv, F, S, MSD, ucorr", t_rest);
 
+            mask_unconverged_rows(true);
+
             if (dos->compute_dos) {
                 writes->writePhononDos(dos_update, is_qha, 0);
             }
@@ -933,6 +1101,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                     }
                 }
                 if (run.verbosity > 0) std::cout << "\n\n";
+                mask_unconverged_rows(false);
 
                 if (dos->compute_dos) {
                     writes->writePhononDos(dos_update, false, bubble_in);

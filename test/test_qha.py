@@ -506,6 +506,14 @@ def log_contains(logfile, needle):
         return needle in f.read()
 
 
+def has_unexpected_warning(logfile):
+    # The fixtures evaluate the thermo file on a finer &kpoint mesh than
+    # KMESH_QHA, which is warned about on purpose.
+    expected = "MESSAGE: The &kpoint mesh differs from KMESH_QHA"
+    with open(logfile, errors="replace") as f:
+        return any("WARNING" in line and expected not in line for line in f)
+
+
 def stage_cell_override(anphonbin):
     tight = [
         ("COORD_CONV_TOL = 1.0e-5", "COORD_CONV_TOL = 1.0e-10"),
@@ -567,7 +575,7 @@ def stage_cell_override(anphonbin):
         if not log_contains("qha_cell2.log", needle):
             print("cell-override: %r not found in qha_cell2.log" % needle)
             info += 1
-    if log_contains("qha_cell2.log", "WARNING"):
+    if has_unexpected_warning("qha_cell2.log"):
         print("cell-override: unexpected WARNING in qha_cell2.log")
         info += 1
     # strain is intensive; V0 and the per-cell thermodynamic quantities double;
@@ -698,10 +706,12 @@ def stage_strainfile(anphonbin, refdir):
         if not log_contains("qha_h5.log", needle):
             print("strainfile: %r not found in qha_h5.log" % needle)
             info += 1
-    for needle in ["WARNING", "This route is deprecated"]:
-        if log_contains("qha_h5.log", needle):
-            print("strainfile: unexpected %r in qha_h5.log" % needle)
-            info += 1
+    if has_unexpected_warning("qha_h5.log"):
+        print("strainfile: unexpected WARNING in qha_h5.log")
+        info += 1
+    if log_contains("qha_h5.log", "This route is deprecated"):
+        print("strainfile: unexpected 'This route is deprecated' in qha_h5.log")
+        info += 1
     if os.path.exists("qha_fresh.log") and not log_contains(
         "qha_fresh.log", "This route is deprecated"
     ):
@@ -817,7 +827,7 @@ def stage_strainfile_cell2(anphonbin):
     if not log_contains("qha_h5c2.log", "V(current) / V(reference) = 2.0000"):
         print("strainfile-cell2: the volume ratio 2 was not reported")
         info += 1
-    if log_contains("qha_h5c2.log", "WARNING"):
+    if has_unexpected_warning("qha_h5c2.log"):
         print("strainfile-cell2: unexpected WARNING in qha_h5c2.log")
         info += 1
     info += compare_files(

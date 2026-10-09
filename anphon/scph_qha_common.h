@@ -191,6 +191,17 @@ protected:
 
     void setup_structural_data();
 
+    // Project the dymat corrections delta[iT][is][js][icell] (real space on the
+    // KMESH_INTERPOLATE supercell, as stored in the state file) in place onto the
+    // space group of temperature iT: the run's operations (SymmListWithMap)
+    // that are also operations spglib finds for the relaxed structure of iT
+    // (RELAX_STR != 0), or all of them (RELAX_STR = 0); a temperature whose
+    // operations do not form a group is skipped with a warning. Removes the ~1e-8 symmetry noise of the
+    // eigenvector reconstruction before the state file / .scph_dfc2 are
+    // written, so restart dymats and exported FC2 agree. Rank 0 computes;
+    // collective (all ranks receive) when broadcast is true.
+    void symmetrize_delta_dymat(std::complex<double> ****delta, unsigned int NT, bool broadcast = true) const;
+
     void setup_pp_interaction(const bool prepare_v3);
 
     void zerofill_harmonic_dymat_renormalize(std::complex<double> ****delta_harmonic_dymat_renormalize,

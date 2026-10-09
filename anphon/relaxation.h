@@ -343,6 +343,12 @@ public:
     // label is non-null it also receives the symbol, e.g. "P4mm (#99)".
     int spacegroup_of(const RelaxationStructureState &state, std::string *label = nullptr) const;
 
+    // spglib operations (fractional rotation W, translation t; basis and
+    // origin of the reference cell) of the structure of a state, with the
+    // tolerance of spacegroup_of. Empty when detection fails.
+    std::vector<std::pair<Eigen::Matrix3i, Eigen::Vector3d>>
+    symmetry_operations_of(const RelaxationStructureState &state) const;
+
     std::string print_structure_and_symmetry(const RelaxationStructureState &structure_state,
                                              const std::complex<double> *del_v0_del_umn_atT) const;
 

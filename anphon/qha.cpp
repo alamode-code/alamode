@@ -207,8 +207,9 @@ public:
         }
     }
 
-    void finalize_temperature(const unsigned int iT, double, bool, bool &) override
+    void finalize_temperature(const unsigned int iT, const double temp, bool, bool &) override
     {
+        qha_.warn_imaginary_modes(temp, omega2_harm_renorm_[iT]);
         // Same point in run_structural_optimization_loop as the SCPH hook:
         // after calculate_u0 has refreshed structure_state.u0, so the record
         // is the structure the .atom_disp / .umn_tensor outputs report.
@@ -395,6 +396,10 @@ void Qha::exec_qha_optimization()
         {
             exec_perturbative_QHA(delta_dymat_qha, delta_harmonic_dymat_renormalize);
         }
+
+        // Project out the symmetry noise before anything is written.
+        symmetrize_delta_dymat(delta_dymat_qha, NT);
+        symmetrize_delta_dymat(delta_harmonic_dymat_renormalize, NT);
 
         if (run.my_rank == 0) {
             const auto with_relax = relax_mode != RelaxationStrMode::None;
@@ -857,6 +862,39 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
 }
 
 
+void Qha::warn_imaginary_modes(const double temp, const double *const *omega2) const
+{
+    if (run.my_rank != 0) return;
+    const auto nk = kmesh_dense->nk;
+    const auto ns = dynamical->neval;
+    unsigned int nmodes = 0, nkpts = 0, ik_min = 0;
+    double omega2_min = 0.0;
+    for (unsigned int ik = 0; ik < nk; ++ik) {
+        auto found = false;
+        for (unsigned int is = 0; is < ns; ++is) {
+            // ignore the acoustic-sum-rule noise at Gamma (< 0.01 cm^-1)
+            if (omega2[ik][is] >= 0.0 || in_kayser(std::sqrt(-omega2[ik][is])) < 0.01) continue;
+            ++nmodes;
+            found = true;
+            if (omega2[ik][is] < omega2_min) {
+                omega2_min = omega2[ik][is];
+                ik_min = ik;
+            }
+        }
+        if (found) ++nkpts;
+    }
+    if (nmodes == 0) return;
+    const auto &xk = kmesh_dense->xk[ik_min];
+    std::cout << "\n WARNING: " << nmodes << " imaginary mode(s) at T = " << std::fixed << std::setprecision(2) << temp
+              << " K (most negative omega = " << -in_kayser(std::sqrt(-omega2_min)) << " cm^-1 at k = ("
+              << std::setprecision(4) << xk[0] << ", " << xk[1] << ", " << xk[2] << "); " << nkpts << " of " << nk
+              << " k points of KMESH_QHA).\n"
+              << "   They are excluded from the vibrational free energy but not from the stress/forces, so the\n"
+              << "   free energy (absolute values and differences) and the stress/forces derived at this\n"
+              << "   temperature are unreliable.\n";
+    std::cout.unsetf(std::ios::fixed);
+}
+
 void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                 std::complex<double> ****delta_harmonic_dymat_renormalize)
 {
@@ -1208,6 +1246,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                 fcs_phonon->force_constant_with_cell[0],
                                                 *dielec,
                                                 *ewald);
+
+            warn_imaginary_modes(temp, omega2_harm_renorm[iT]);
 
             // copy delta_harmonic_dymat_renormalize to dymat_anharm
             for (is1 = 0; is1 < ns; is1++) {
