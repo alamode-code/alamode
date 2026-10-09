@@ -229,6 +229,7 @@ void KappaResultIOText::load_gamma_blocks(std::fstream &fs_result, const std::st
     double vel_dummy[3];
     bool truncate_tail = false;
     std::streampos truncate_pos = std::streampos(0);
+    std::vector<std::streampos> block_starts;
 
     fs_result.clear();
     fs_result.seekg(0, std::ios::beg);
@@ -281,12 +282,37 @@ void KappaResultIOText::load_gamma_blocks(std::fstream &fs_result, const std::st
             damping[nks_tmp][i] = damping_tmp[i];
         }
         vks_done_out.push_back(nks_tmp);
+        block_starts.push_back(block_start);
     }
 
     if (truncate_tail) {
         const auto message =
             std::string("Ignoring an incomplete ") + label + " #GAMMA_EACH block at the end of " + file_result + ".";
         warn("prepare_restart", message.c_str());
+    }
+
+    if (allow_truncate) {
+        // A restart keeps only whole irreducible k points of the in-order prefix: the saved
+        // rows are averaged over the degenerate modes of their k (write_result_gamma), so a
+        // partially written k could otherwise mix averaged rows with raw recomputed partners.
+        // The rows of a partial trailing k (and anything after a gap) are cut from the file
+        // and recomputed.
+        size_t nprefix = 0;
+        while (nprefix < vks_done_out.size() && vks_done_out[nprefix] == static_cast<int>(nprefix)) ++nprefix;
+        const auto nkeep = (nprefix / ns) * ns;
+        if (nkeep < vks_done_out.size()) {
+            const auto pos = block_starts[nkeep];
+            if (!truncate_tail || static_cast<std::streamoff>(pos) < static_cast<std::streamoff>(truncate_pos)) {
+                truncate_pos = pos;
+            }
+            truncate_tail = true;
+            std::cout << "\n " << vks_done_out.size() - nkeep << " " << label << " modes of an incomplete k point in "
+                      << file_result << " will be recomputed.\n";
+            vks_done_out.resize(nkeep);
+        }
+    }
+
+    if (truncate_tail) {
 
         // When the caller only imports the data (h5 migration), the legacy
         // file must stay byte-identical; the incomplete tail is simply
@@ -307,6 +333,9 @@ void KappaResultIOText::load_gamma_blocks(std::fstream &fs_result, const std::st
         if (!fs_result) {
             exit("prepare_restart", "Could not reopen restart file after truncating incomplete block.");
         }
+        // The cut is made where the previous #END GAMMA_EACH token ends, before its newline.
+        fs_result.seekp(0, std::ios::end);
+        fs_result << '\n' << std::flush;
     }
 }
 

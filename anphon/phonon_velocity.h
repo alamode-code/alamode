@@ -77,10 +77,11 @@ public:
                            const Dielec &dielec, const Ewald &ewald, Eigen::MatrixXcd (&m_out)[3],
                            const double *kvec_fixed = nullptr) const;
 
-    // velmat_out[i][j][mu] = <e_i| M^mu |e_j> / (2 sqrt(w_i w_j)), zero where a frequency vanishes.
+    // velmat_out[i][j][mu] = <e_i| M^mu |e_j> / (2 sqrt(w_i w_j)), zero where a frequency vanishes
+    // and, at k = 0 (xk_in fractional), in the rows and columns of the uniform translations.
     void project_velocity_operator(const Eigen::MatrixXcd (&m)[3], const double *omega_in,
-                                   const std::complex<double> *const *evec_in,
-                                   std::complex<double> ***velmat_out) const;
+                                   const std::complex<double> *const *evec_in, std::complex<double> ***velmat_out,
+                                   const double *xk_in) const;
 
     // Little group of the mesh point xk_in (fractional), with the time-reversal partners.
     std::vector<velocity_symmetry::LittleGroupOp> little_group(const double *xk_in) const;
@@ -99,6 +100,12 @@ private:
     void symmetrize_mode_velocities(const double *xk_in, const Dynamical &dynamical,
                                     const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec,
                                     const Ewald &ewald, double **vel) const;
+
+    std::vector<int> translational_modes(const Eigen::MatrixXcd &evec) const;
+
+    void zero_translational_velocities(const double *xk_in, const Dynamical &dynamical,
+                                       const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec,
+                                       const Ewald &ewald, double **vel) const;
 
     void deallocate_variables();
 

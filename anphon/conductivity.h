@@ -115,6 +115,9 @@ private:
     NDArray<double, 4> velblock;
     unsigned int nk_3ph, ns;
     int nshift_restart, nshift_restart4;
+    // Rows already written to the result file (write_result_gamma flushes whole k points).
+    unsigned int nrows_flushed3 = 0, nrows_flushed4 = 0;
+    std::vector<const double *> flush_rows;
     std::vector<int> vks_l, vks_done, vks_done4;
     std::set<int> vks_job, vks_job4;
     std::string file_coherent_elems;

@@ -352,6 +352,42 @@ int main()
 {
     std::mt19937 rng(20261009);
 
+    // Uniform translations at Gamma: D = (1 - P_T) H (1 - P_T) + 1e-14 (an acoustic-sum-rule
+    // residual), with H positive definite. Its three lowest modes span the mass-weighted
+    // translations; translational_modes must find them after the columns are shuffled.
+    {
+        const int nat = 4, ns = 3 * nat;
+        std::uniform_real_distribution<double> um(1.0, 200.0);
+        std::vector<double> mass(nat);
+        for (auto &m: mass) m = um(rng);
+        auto msum = 0.0;
+        for (const auto m: mass) msum += m;
+        MatrixXcd t = MatrixXcd::Zero(ns, 3);
+        for (auto k = 0; k < nat; ++k) {
+            for (auto a = 0; a < 3; ++a) t(3 * k + a, a) = std::sqrt(mass[k] / msum);
+        }
+        const MatrixXcd q = MatrixXcd::Identity(ns, ns) - t * t.adjoint();
+        const MatrixXcd h = random_hermitian(ns, rng);
+        MatrixXcd d = q * (h * h.adjoint() + MatrixXcd::Identity(ns, ns)) * q;
+        d += 1.0e-14 * MatrixXcd::Identity(ns, ns);
+        Eigen::SelfAdjointEigenSolver<MatrixXcd> es(d);
+        std::vector<int> perm = {7, 2, 11, 0, 5, 9, 1, 3, 10, 4, 8, 6};
+        MatrixXcd e(ns, ns);
+        for (auto n = 0; n < ns; ++n) e.col(perm[n]) = es.eigenvectors().col(n);
+        auto leak = 1.0;
+        const auto idx = translational_modes(e, mass, &leak);
+        check(std::abs(leak) < 1.0e-10, "translational_modes: no leak for separate translations", leak);
+        // Mix a translation with an optical mode (as a degeneracy would allow): leak ~ 1/2.
+        MatrixXcd e2 = e;
+        e2.col(2) = (e.col(2) + e.col(5)) / std::sqrt(2.0);
+        e2.col(5) = (e.col(2) - e.col(5)) / std::sqrt(2.0);
+        translational_modes(e2, mass, &leak);
+        check(leak > 0.4, "translational_modes: leak detected for a mixed basis", leak);
+        check(idx == std::vector<int>({2, 7, 11}), "translational_modes picks the uniform translations", idx.size());
+        const double g0[3] = {0.0, 0.0, 0.0}, g1[3] = {1.0, -2.0, 0.0}, k1[3] = {0.25, 0.0, 0.0};
+        check(is_gamma(g0) && is_gamma(g1) && !is_gamma(k1), "is_gamma", 0.0);
+    }
+
     // Symmorphic: hexagonal lattice, point group 3m, A at the origin and B, B' on the
     // threefold axes through K (nontrivial cell phases at K).
     {

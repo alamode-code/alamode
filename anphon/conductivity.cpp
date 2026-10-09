@@ -393,6 +393,10 @@ void Conductivity::compute_damping4_interpolated(const KpointMeshUniform *kmesh_
     calc_anharmonic_imagself4();
 
     if (run.my_rank == 0) {
+        // Average over degenerate modes first, as compute_kappa does, so that the diagonal does
+        // not depend on the eigenvector basis and a restart (which loads the averaged rows
+        // written by write_result_gamma) gives the same result as a fresh run.
+        average_self_energy_at_degenerate_point(ntemp, kmesh_4ph.get(), dymat_4ph->get_eigenvalues(), damping4);
         interpolate_data(kmesh_4ph.get(), kmesh_dense_in, damping4, damping4_dense_out);
     }
 
@@ -796,12 +800,20 @@ void Conductivity::load_computed_modes_h5(const std::string &tag, double **dampi
     while (nprefix < rows_done.size() && rows_done[nprefix] == static_cast<int>(nprefix)) {
         ++nprefix;
     }
-    vks_done_out.assign(rows_done.begin(), rows_done.begin() + nprefix);
+    // Keep whole irreducible k points only: the saved rows are averaged over the degenerate
+    // modes of their k (write_result_gamma), so a partial k (a legacy file, or an imported
+    // text file) would mix averaged and raw rows. Its modes are recomputed and overwritten.
+    const auto nkeep = (nprefix / ns) * ns;
+    vks_done_out.assign(rows_done.begin(), rows_done.begin() + nkeep);
 
     if (nprefix < rows_done.size()) {
         if (run.verbosity > 0)
             std::cout << "\n " << rows_done.size() - nprefix << " " << tag
                       << " modes recorded after an incomplete batch in " << file_kappa_h5 << " will be recomputed.\n";
+    }
+    if (nkeep < nprefix && run.verbosity > 0) {
+        std::cout << "\n " << nprefix - nkeep << " " << tag << " modes of an incomplete k point in " << file_kappa_h5
+                  << " will be recomputed.\n";
     }
     if (!vks_done_out.empty()) {
         if (run.verbosity > 0)
@@ -926,6 +938,7 @@ void Conductivity::calc_anharmonic_imagself3()
     }
 
     damping3_loc.resize(ntemp);
+    nrows_flushed3 = nshift_restart;
 
     auto startTime = std::chrono::system_clock::now();
     auto lastUpdate = startTime;
@@ -1060,6 +1073,7 @@ void Conductivity::calc_anharmonic_imagself4()
     }
 
     damping4_loc.resize(ntemp);
+    nrows_flushed4 = nshift_restart4;
 
     auto startTime = std::chrono::system_clock::now();
     auto lastUpdate = startTime;
@@ -1144,44 +1158,49 @@ void Conductivity::calc_anharmonic_imagself()
 void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int nshift, double ***vel_in,
                                       double **damp_in, int mode)
 {
-    const unsigned int np = run.nprocs;
+    // The saved per-mode linewidths are averaged over the degenerate modes of their k point
+    // (average_over_degenerate_modes, as compute_kappa does before transport), because a
+    // single mode of a degenerate subspace depends on the arbitrary eigenvector basis there;
+    // only the block trace does not. Rows are therefore flushed per whole irreducible k, and
+    // the rows of a k still being computed wait for a later batch (and are recomputed after a
+    // crash). damp_in itself stays raw: compute_kappa averages it, so transport is unchanged.
+    const auto *kmesh = (mode == 1) ? dos->kmesh_dos.get() : kmesh_4ph.get();
+    const auto eval = (mode == 1) ? dos->dymat_dos->get_eigenvalues() : dymat_4ph->get_eigenvalues();
+    auto &flushed = (mode == 1) ? nrows_flushed3 : nrows_flushed4;
+    const unsigned int nrows_total = kmesh->nk_irred * ns;
+    const auto avail = std::min(nrows_total, nshift + (ik + 1) * static_cast<unsigned int>(run.nprocs));
+    const auto end = (avail / ns) * ns;
+    if (end <= flushed) return;
+
+    // A legacy restart file may end inside a k point: its loaded rows enter the average
+    // but are not rewritten.
+    const auto row0 = (flushed / ns) * ns;
+    NDArray<double, 2> buf(end - row0, ntemp);
+    // Row pointers indexed by the global row, as the writers expect; only [row0, end) is used.
+    if (flush_rows.size() < nrows_total) flush_rows.resize(nrows_total, nullptr);
+    for (auto r = row0; r < end; ++r) {
+        for (unsigned int it = 0; it < ntemp; ++it) buf[r - row0][it] = damp_in[r][it];
+        flush_rows[r] = buf[r - row0];
+    }
+    for (auto r = row0; r < end; r += ns) {
+        average_over_degenerate_modes(ns, eval[kmesh->kpoint_irred_all[r / ns][0].knum], ntemp, buf[r - row0]);
+    }
+
     if (use_h5_io) {
-        // The gathered batch occupies consecutive rows; frequencies and
-        // velocities were stored once at channel creation.
-        const unsigned int nrows_total = ((mode == 1) ? dos->kmesh_dos->nk_irred : kmesh_4ph->nk_irred) * ns;
-        const unsigned int first_row = ik * np + nshift;
-        if (first_row >= nrows_total) return;
-        const auto nrow = std::min(np, nrows_total - first_row);
-        result_io_h5->store_gamma_batch((mode == 1) ? "3ph" : "4ph", first_row, nrow, damp_in);
-        return;
-    }
-
-    if (mode == 1) {
-        // damping 3
-        KappaResultIOText::write_gamma_batch(fs_result3,
-                                             ik,
-                                             nshift,
-                                             np,
-                                             dos->kmesh_dos.get(),
+        result_io_h5->store_gamma_batch((mode == 1) ? "3ph" : "4ph", flushed, end - flushed, flush_rows.data());
+    } else {
+        KappaResultIOText::write_gamma_batch((mode == 1) ? fs_result3 : fs_result4,
+                                             0,
+                                             flushed,
+                                             end - flushed,
+                                             kmesh,
                                              ns,
                                              ntemp,
                                              vel_in,
-                                             damp_in,
-                                             "3-phonon");
-
-    } else if (mode == -1) {
-        // damping 4
-        KappaResultIOText::write_gamma_batch(fs_result4,
-                                             ik,
-                                             nshift,
-                                             np,
-                                             kmesh_4ph.get(),
-                                             ns,
-                                             ntemp,
-                                             vel_in,
-                                             damp_in,
-                                             "4-phonon");
+                                             flush_rows.data(),
+                                             (mode == 1) ? "3-phonon" : "4-phonon");
     }
+    flushed = end;
 }
 
 

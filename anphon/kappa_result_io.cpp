@@ -34,8 +34,15 @@ constexpr int kappa_version_tdep = 2;
 // Velocity treatment behind the /iterativebte results (IBTE, VBTE, DBTE), stamped on the
 // group. Files without the attribute predate the little-group symmetrization of the mesh
 // velocities (block mean of the finite differences, projected onto the invariant vectors);
-// their stored kappa and dF are discarded and recomputed rather than mixed.
-const std::string ibte_velocity_treatment = "fd_blockmean_lgsym";
+// their stored kappa and dF are discarded and recomputed rather than mixed. "_v2": the
+// translational modes at Gamma get zero velocity and the 4ph rates on the diagonal are
+// averaged over degenerate modes; results stamped "fd_blockmean_lgsym" are recomputed.
+const std::string ibte_velocity_treatment = "fd_blockmean_lgsym_v2";
+
+// Convention of the saved per-mode linewidths: averaged over the modes of each irreducible k
+// whose frequencies agree within 1e-7 Ry (Conductivity::write_result_gamma), the same
+// average the conductivity uses. Raw basis-dependent rates are not stored.
+const std::string gamma_averaging = "degenerate_modes_mean_1e-7Ry";
 
 auto channel_path(const std::string &tag) -> std::string
 {
@@ -273,6 +280,7 @@ struct KappaResultIOH5::Impl
                 .createAttribute("unit", std::string("m/s"));
             auto dset_gamma = h5_create_dataset_prealloc<double>(fh, path + "/gamma", {nrows, nt});
             dset_gamma.createAttribute("unit", std::string("cm^-1"));
+            dset_gamma.createAttribute("averaging", gamma_averaging);
             h5_create_dataset_prealloc<unsigned char>(fh, path + "/gamma_computed", {nrows, nt});
         } else {
             dump(fh, path + "/frequencies", cmeta.frequencies);
@@ -283,6 +291,7 @@ struct KappaResultIOH5::Impl
 
             auto dset_gamma = h5_create_dataset_prealloc<double>(fh, path + "/gamma", {nrows, nt});
             dset_gamma.createAttribute("unit", std::string("cm^-1"));
+            dset_gamma.createAttribute("averaging", gamma_averaging);
             h5_create_dataset_prealloc<unsigned char>(fh, path + "/gamma_computed", {nrows});
         }
 

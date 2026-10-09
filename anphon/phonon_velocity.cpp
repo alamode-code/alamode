@@ -109,7 +109,7 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(const Kpoint
         for (auto is = 0u; is < ns; ++is) eval_k[is] = dynamical.freq(eval_k[is]);
 
         velocity_operator(kpoint_bs_in->xk[ik], fc2_vel, dynamical, dielec, ewald, m_op, kpoint_bs_in->kvec_na[ik]);
-        project_velocity_operator(m_op, eval_k, evec_k, velmat_k);
+        project_velocity_operator(m_op, eval_k, evec_k, velmat_k, kpoint_bs_in->xk[ik]);
 
         for (auto is = 0u; is < ns; ++is) {
             double v[3];
@@ -221,6 +221,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
 
         for (unsigned int j = 0; j < ns; ++j) rotvec(vel[j], vel[j], lavec_p);
         symmetrize_mode_velocities(&kmesh_in.xk[klist_proc[i]][0], dynamical, fc2_in, dielec, ewald, vel);
+        zero_translational_velocities(&kmesh_in.xk[klist_proc[i]][0], dynamical, fc2_in, dielec, ewald, vel);
         for (unsigned int j = 0; j < ns; ++j) {
             for (unsigned int k = 0; k < 3; ++k) {
                 vel[j][k] /= 2.0 * pi;
@@ -326,7 +327,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh_velmat(const KpointMeshUnifo
 
         velocity_operator(kmesh_in.xk[ik], fc2_vel, dynamical, dielec, ewald, m_op);
         velocity_symmetry::symmetrize_vector_operator(little_group(kmesh_in.xk[ik]), m_op);
-        project_velocity_operator(m_op, eval_k, evec_k, velmat_k);
+        project_velocity_operator(m_op, eval_k, evec_k, velmat_k, kmesh_in.xk[ik]);
 
         for (auto is = 0u; is < ns; ++is) {
             for (auto j = 0; j < 3; ++j) phvel3_out[ik][is][j] = velmat_k[is][is][j].real() / (2.0 * pi);
@@ -437,7 +438,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(const KpointMeshUniform &kmesh_in, 
         // built from the same decomposition.
         velocity_operator(kmesh_in.xk[knum], fc2_vel, dynamical, dielec, ewald, m_op);
         velocity_symmetry::symmetrize_vector_operator(little_group(kmesh_in.xk[knum]), m_op);
-        project_velocity_operator(m_op, eval_all[knum], evec_all[knum], vk);
+        project_velocity_operator(m_op, eval_all[knum], evec_all[knum], vk, kmesh_in.xk[knum]);
 
         for (auto j = 0u; j < ns; ++j) {
             for (auto k = 0u; k < ns; ++k) {
@@ -782,21 +783,26 @@ void PhononVelocity::velocity_operator(const double *xk_in, const std::vector<Fc
 
 void PhononVelocity::project_velocity_operator(const Eigen::MatrixXcd (&m)[3], const double *omega_in,
                                                const std::complex<double> *const *evec_in,
-                                               std::complex<double> ***velmat_out) const
+                                               std::complex<double> ***velmat_out, const double *xk_in) const
 {
-    // v_ij = <e_i| M |e_j> / (2 sqrt(w_i w_j)); zero where either frequency vanishes.
+    // v_ij = <e_i| M |e_j> / (2 sqrt(w_i w_j)); zero where either frequency vanishes, and
+    // at k = 0 in the rows and columns of the uniform translations (translational_modes).
     const auto nmode = system->get_num_modes();
     Eigen::MatrixXcd E(nmode, nmode);
     for (auto i = 0u; i < nmode; ++i) {
         for (auto j = 0u; j < nmode; ++j) E(j, i) = evec_in[i][j]; // column i = eigenvector i
     }
+    std::vector<char> zero(nmode, 0);
+    for (auto i = 0u; i < nmode; ++i) zero[i] = omega_in[i] < eps8;
+    if (velocity_symmetry::is_gamma(xk_in)) {
+        for (const auto n: translational_modes(E)) zero[n] = 1;
+    }
     for (auto k = 0; k < 3; ++k) {
         const Eigen::MatrixXcd vk = E.adjoint() * (m[k] * E);
         for (auto i = 0u; i < nmode; ++i) {
             for (auto j = 0u; j < nmode; ++j) {
-                velmat_out[i][j][k] = (omega_in[i] < eps8 || omega_in[j] < eps8)
-                                          ? std::complex<double>(0.0, 0.0)
-                                          : vk(i, j) * (0.5 / std::sqrt(omega_in[i] * omega_in[j]));
+                velmat_out[i][j][k] = (zero[i] || zero[j]) ? std::complex<double>(0.0, 0.0)
+                                                           : vk(i, j) * (0.5 / std::sqrt(omega_in[i] * omega_in[j]));
             }
         }
     }
@@ -852,6 +858,53 @@ void PhononVelocity::symmetrize_mode_velocities(const double *xk_in, const Dynam
             for (auto j = 0; j < 3; ++j) vel[is][j] = v[j];
         }
     }
+}
+
+// At k = 0, zero the finite-difference velocities of the three uniform translations
+// (velocity_symmetry::translational_modes), as project_velocity_operator does for the
+// velocity matrix. Their central difference is ~0 by time reversal anyway; this makes it
+// exact and independent of an acoustic-sum-rule residual. Sorted branch n of the
+// differences is eigenvector n at k = 0. No-op elsewhere.
+void PhononVelocity::zero_translational_velocities(const double *xk_in, const Dynamical &dynamical,
+                                                   const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec,
+                                                   const Ewald &ewald, double **vel) const
+{
+    if (!velocity_symmetry::is_gamma(xk_in)) return;
+    const auto ns = system->get_num_modes();
+    NDArray<double, 1> eval_k(ns);
+    NDArray<std::complex<double>, 2> evec_k(ns, ns);
+    const double kvec[3] = {0.0, 0.0, 0.0};
+    if (dynamical.nonanalytic == 3) {
+        dynamical.eval_k_ewald(xk_in, kvec, ewald.fc2_without_dipole, ewald, eval_k, evec_k, true);
+    } else {
+        dynamical.eval_k(xk_in, kvec, fc2_in, dielec, eval_k, evec_k, true);
+    }
+    Eigen::MatrixXcd E(ns, ns);
+    for (auto i = 0u; i < ns; ++i) {
+        for (auto j = 0u; j < ns; ++j) E(j, i) = evec_k[i][j];
+    }
+    for (const auto n: translational_modes(E)) {
+        for (auto j = 0; j < 3; ++j) vel[n][j] = 0.0;
+    }
+}
+
+// velocity_symmetry::translational_modes with a one-time warning when the uniform
+// translations are not carried by three eigenvectors (an optical mode degenerate with them).
+std::vector<int> PhononVelocity::translational_modes(const Eigen::MatrixXcd &evec) const
+{
+    auto leak = 0.0;
+    auto idx = velocity_symmetry::translational_modes(evec, system->get_mass_prim(), &leak);
+    if (leak > 1.0e-3) {
+        static auto warned = false;
+        if (!warned) {
+            warned = true;
+            warn("translational_modes",
+                 "At Gamma the uniform translations mix with a degenerate (near-zero) optical mode;\n"
+                 " the three modes with the largest translational weight get zero velocity, a choice\n"
+                 " that depends on the eigenvector basis. Check the acoustic sum rule and the stability.");
+        }
+    }
+    return idx;
 }
 
 std::vector<velocity_symmetry::LittleGroupOp> PhononVelocity::little_group(const double *xk_in) const

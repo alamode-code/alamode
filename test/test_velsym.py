@@ -18,7 +18,12 @@ Checks (one SCPH run and three short kappa runs):
   - NONANALYTIC = 3, where the velocities are already symmetric: kappa equal to the
     value of the unsymmetrized code (NONANALYTIC = 0 is covered by test_si.py and
     test_kappa_restart.py, whose Si references did not move);
-  - NONANALYTIC = 2 on 2 MPI ranks (when mpirun is available) equals the serial run.
+  - NONANALYTIC = 2 on 2 MPI ranks (when mpirun is available) equals the serial run;
+  - polar P4mm (Ti shifted along z) with NONANALYTIC = 3, KAPPA_COHERENT = 1 and a small
+    acoustic-sum-rule violation in the FC2 (Gamma acoustic modes at ~0.002-0.005 cm^-1,
+    above the frequency cutoff): the velocity matrix rows and columns of the uniform
+    translations at Gamma must be zeroed. Before, their 0/0 velocities gave a coherent
+    kxx of 3e8 W/mK and kxy/kxx = 2.6e-6; now kxy/kxx = 1e-9, the floor of the NA = 3 runs.
 The algebra of the average itself (idempotence, invariance, gauge invariance of the
 block traces) is covered by the C++ unit test test_velocity_symmetry.
 
@@ -28,6 +33,7 @@ Run from the build directory: python3 ../test/test_velsym.py
 import bz2
 import itertools
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -137,6 +143,107 @@ def check_cubic(label, k, kxx_ref=None, tol=1.0e-10):
     return ok
 
 
+def make_p4mm(xml_in, h5_in, xml_out, h5_out, shift=0.005):
+    """P4mm SrTiO3: Ti moved by shift (supercell fraction) along z in the FCS and DFC2
+    files, the FC2 values kept (cubic, hence also P4mm symmetric), and an on-site term
+    on Sr that violates the acoustic sum rule slightly but keeps the P4mm symmetry."""
+    with open(xml_in) as f_in, open(xml_out, "w") as f_out:
+        for line in f_in:
+            m = re.match(
+                r'(\s*<pos index="\d+" element="Ti">)\s*(\S+)\s+(\S+)\s+(\S+)(</pos>.*)',
+                line,
+            )
+            if m:
+                x, y, z = (float(m.group(i)) for i in (2, 3, 4))
+                line = "%s %.15e %.15e %.15e%s\n" % (
+                    m.group(1),
+                    x,
+                    y,
+                    z + shift,
+                    m.group(5),
+                )
+            f_out.write(line)
+    shutil.copy(h5_in, h5_out)
+    with h5py.File(h5_out, "r+") as f:
+        for grp, d in (("PrimitiveCell", 2 * shift), ("SuperCell", shift)):
+            x = f[grp + "/fractional_coordinate"][...]
+            x[f[grp + "/atomic_kinds"][...] == 1, 2] += d  # kind 1 = Ti
+            f[grp + "/fractional_coordinate"][...] = x
+        g = f["ForceConstants/Order2"]
+        ai, ci, sv = (
+            g[n][...] for n in ("atom_indices", "coord_indices", "shift_vectors")
+        )
+        ti = f["SuperCell/atomic_kinds"][...][g["atom_indices_supercell"][...]] == 1
+        sv[:, 2] += (
+            shift
+            * f["SuperCell/lattice_vector"][2, 2]
+            * (ti[:, 1].astype(float) - ti[:, 0])
+        )
+        g["shift_vectors"][...] = sv
+        v = f["ForceConstants/Order2_temperature_dependent/force_constant_values"]
+        fc = v[...]
+        onsite = (
+            (ai[:, 0] == 0)
+            & (ai[:, 1] == 0)
+            & (ci[:, 0] == ci[:, 1])
+            & (np.abs(sv).sum(1) < 1e-8)
+        )
+        for row in np.where(onsite)[0]:
+            fc[0, row] += 0.5e-10 if ci[row, 0] == 2 else 3.5e-10  # Ry/bohr^2
+        v[...] = fc
+
+
+def check_p4mm(prefix):
+    """Tetragonal kappa (kxx = kyy, no off-diagonal) and a finite coherent term."""
+    ok = True
+    for name, tol in (("kappa_peierls", 1.0e-8), ("kappa_coherent", 1.0e-7)):
+        k = read_tensor(prefix, name)
+        kxx = k[0, 0]
+        good = bool(np.all(np.isfinite(k))) and 0.0 < kxx < 100.0
+        off = max(abs(k[i, j]) for i in range(3) for j in range(3) if i != j) / kxx
+        dia = abs(k[1, 1] - kxx) / kxx
+        good = good and off < tol and dia < tol
+        print(
+            "  %s: kxx = %.10f, kzz = %.10f, max|k_ij|/kxx = %.2e, |kyy - kxx|/kxx = %.2e%s"
+            % (name, kxx, k[2, 2], off, dia, "" if good else "  <-- FAILED")
+        )
+        ok &= good
+    return ok
+
+
+def check_gamma_translations(prefix):
+    """At Gamma the three translational modes (the lowest three here) have zero
+    velocity-matrix rows and columns: their coherent elements (KAPPA_COHERENT = 2
+    record) and Peierls diad vanish, while optical elements survive."""
+    kc = np.loadtxt(prefix + ".kc_elem")
+    g = kc[kc[:, 5] == 1]  # ik_irred = 1 is Gamma
+    trans = np.minimum(g[:, 3], g[:, 4]) <= 3
+    worst = np.abs(g[trans][:, 8:10]).max()
+    optical = np.abs(g[~trans][:, 8]).max()
+    with h5py.File(prefix + ".kappa.h5", "r") as f:
+        knum = np.array(f["scattering/3ph/equiv_knum"]).ravel()
+        diad = np.array(f["scattering/3ph/velocity_diad"])
+    diad = diad.reshape(len(knum), -1, 9)[list(knum).index(0)]
+    ok = (
+        worst == 0.0
+        and optical > 0.0
+        and np.abs(diad[:3]).max() == 0.0
+        and np.abs(diad[3:]).max() > 0.0
+    )
+    print(
+        "  Gamma: max |coherent element| with a translational mode = %.1e (optical-optical max %.1e), "
+        "translational diad max %.1e, optical diad max %.1e%s"
+        % (
+            worst,
+            optical,
+            np.abs(diad[:3]).max(),
+            np.abs(diad[3:]).max(),
+            "" if ok else "  <-- FAILED",
+        )
+    )
+    return ok
+
+
 def cubic_ops():
     ops = []
     for p in itertools.permutations(range(3)):
@@ -217,6 +324,20 @@ if __name__ == "__main__":
             REF_KXX[na],
             tol=1.0e-8,
         )
+
+    print("P4mm, NONANALYTIC = 3, acoustic-sum-rule residual at Gamma:")
+    make_p4mm("STO_anharm.xml", "sto_scph.scph.h5", "STO_p4mm.xml", "sto_p4mm.scph.h5")
+    p4mm_input = (
+        kappa_input("p4mm", 3, True)
+        .replace("KAPPA_COHERENT = 1", "KAPPA_COHERENT = 2")
+        .replace("STO_anharm.xml", "STO_p4mm.xml")
+        .replace("sto_scph.scph.h5", "sto_p4mm.scph.h5")
+    )
+    if run(serial, "p4mm", p4mm_input, env):
+        ok = False
+    else:
+        ok &= check_p4mm("p4mm")
+        ok &= check_gamma_translations("p4mm")
 
     mpirun = shutil.which("mpirun")
     if mpirun is None:

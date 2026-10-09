@@ -28,6 +28,8 @@ class Calculator:
             file_result_4ph (str): File path to the 4-phonon results (PREFIX.4ph.result).
             file_isotope (str): File path to the isotope self-energy (PREFIX.self_isotope).
             average_gamma (bool): If True, averages the gamma values at degenerate phonon modes (default: True).
+                Files written by current anphon already hold averaged values (gamma attribute
+                'averaging'), so False cannot recover the raw basis-dependent rates.
             tolerance (float): Tolerance for symmetry detection (default: 1.0e-3).
             file_kappa_h5 (str): File path to the unified PREFIX.kappa.h5 file (FILE_FORMAT = h5).
                 It replaces file_result_3ph and, when the file contains the four-phonon channel,
@@ -149,10 +151,13 @@ class Calculator:
                         what,
                         np.asarray(result.temperatures).tolist(),
                         np.asarray(self.temperatures).tolist(),
-                    )
+                    ),
+                    stacklevel=2,
                 )
         if abs(result.volume - self.volume) > 1.0e-6 * max(1.0, abs(self.volume)):
-            warnings.warn("{}: cell volume differs from the 3ph data".format(what))
+            warnings.warn(
+                "{}: cell volume differs from the 3ph data".format(what), stacklevel=2
+            )
 
     def set_variables_3ph(self):
         """
@@ -178,7 +183,8 @@ class Calculator:
                 "the file's kappa was assembled with the '{}' velocity formulation but it holds no "
                 "velocity_diad dataset, so kappa recomputed here (cumulative kappa etc.) follows the legacy "
                 "finite-difference formulation and will not match kappa_total; a restart with the current "
-                "anphon adds the dataset".format(self.formulation)
+                "anphon adds the dataset".format(self.formulation),
+                stacklevel=2,
             )
         self.volume = result.volume
         self.qpoint_weight = result.multiplicity
@@ -223,7 +229,8 @@ class Calculator:
                         self.file_result_4ph
                         if self.file_result_4ph is not None
                         else self.file_kappa_h5
-                    )
+                    ),
+                    stacklevel=2,
                 )
                 kinds = np.ones(len(result.x_fractional), dtype=int)
             cell = (result.lattice_vector.T, result.x_fractional, kinds)
@@ -255,7 +262,8 @@ class Calculator:
             if self._gamma_iso_h5 is None:
                 warnings.warn(
                     "{} has no usable isotope linewidths (missing or not finalized); isotope "
-                    "scattering is ignored".format(self.file_kappa_h5)
+                    "scattering is ignored".format(self.file_kappa_h5),
+                    stacklevel=2,
                 )
                 self.has_isotope_h5 = False
                 self.gamma_iso = np.zeros(self.omega.shape, dtype=float)
@@ -299,7 +307,8 @@ class Calculator:
                 "The temperature grid of the 4ph data {} differs from that of the 3ph data {}; "
                 "for each 3ph temperature the nearest 4ph temperature is used".format(
                     t4.tolist(), t3.tolist()
-                )
+                ),
+                stacklevel=2,
             )
         self.gamma4_interpolated = np.zeros(self.gamma3.shape, dtype=float)
         for i, xq in enumerate(self.qpoints):
@@ -411,7 +420,8 @@ class Calculator:
                 "The data exactly at {} K was not found. "
                 "Returning the values at {} K instead".format(
                     temperature, self.temperatures[index[0]]
-                )
+                ),
+                stacklevel=2,
             )
         # Copy so that accumulating other contributions does not mutate self.gamma3
         # (integer indexing of the last axis returns a view).
@@ -440,7 +450,8 @@ class Calculator:
                 "The data exactly at {} K was not found. "
                 "Returning the values at {} K instead".format(
                     temperature, self.temperatures[index[0]]
-                )
+                ),
+                stacklevel=2,
             )
         gamma3 = self.gamma3[:, :, index[0]]
         if four_phonon:
@@ -593,7 +604,8 @@ class Calculator:
         ):
             warnings.warn(
                 "{} phonon modes have no computed linewidth (incomplete run); they are "
-                "excluded from the transport sums".format(int(np.sum(np.isnan(gamma))))
+                "excluded from the transport sums".format(int(np.sum(np.isnan(gamma)))),
+                stacklevel=2,
             )
             self._warned_missing = True
         tau[bad] = 0.0
@@ -965,7 +977,8 @@ class Calculator:
         if np.any(np.isnan(mfp)):
             warnings.warn(
                 "{} modes have no linewidth (incomplete run) and are excluded from the "
-                "cumulative thermal conductivity".format(int(np.sum(np.isnan(mfp))))
+                "cumulative thermal conductivity".format(int(np.sum(np.isnan(mfp)))),
+                stacklevel=2,
             )
         finite = np.isfinite(mfp) & (mfp > 1.0e-6)
         if not np.any(finite):

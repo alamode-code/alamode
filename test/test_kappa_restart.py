@@ -59,6 +59,43 @@ def log_contains(logfile, text):
         return text in f.read()
 
 
+def degenerate_spread(freq_cm, gamma):
+    """Largest relative spread of gamma inside a group of degenerate modes."""
+    freq_cm = freq_cm.reshape(-1, freq_cm.shape[-1])
+    ns = freq_cm.shape[1]
+    gamma = gamma.reshape(freq_cm.shape[0], ns, -1)
+    tol = 1.0e-7 * 109737.31568  # 1e-7 Ry in cm^-1
+    worst = 0.0
+    for k in range(freq_cm.shape[0]):
+        i = 0
+        while i < ns:
+            j = i
+            while j + 1 < ns and abs(freq_cm[k, j + 1] - freq_cm[k, i]) < tol:
+                j += 1
+            blk = gamma[k, i : j + 1]
+            scale = max(np.abs(blk).max(), 1.0e-30)
+            worst = max(worst, (blk.max(0) - blk.min(0)).max() / scale)
+            i = j + 1
+    return worst
+
+
+def truncate_text_result_mid_k(fname, keep, ns):
+    """Keep the first keep #GAMMA_EACH blocks of a text .result file (keep ending
+    inside a k point) and give the blocks of that partial k unequal raw rates."""
+    text = open(fname).read()
+    parts = text.split("#GAMMA_EACH\n")
+    head, blocks = parts[0], parts[1 : keep + 1]
+    for ib in range((keep // ns) * ns, keep):
+        lines = blocks[ib].split("\n")
+        mult = int(lines[1])
+        iend = lines.index("#END GAMMA_EACH")
+        for il in range(2 + mult, iend):
+            lines[il] = "%15.6e" % float(ib + 1)
+        blocks[ib] = "\n".join(lines)
+    with open(fname, "w") as f:
+        f.write(head + "".join("#GAMMA_EACH\n" + b for b in blocks))
+
+
 def check_fresh_run(anphonbin):
     for fname in (PREFIX + ".kappa.h5", PREFIX + ".result", PREFIX + ".kl"):
         if os.path.exists(fname):
@@ -122,6 +159,14 @@ def check_fresh_run(anphonbin):
             )
             return 1
         kappa_h5 = f["kappa/kappa_peierls"][...]
+        # The saved per-mode linewidths are averaged over degenerate modes
+        # (frequencies within 1e-7 Ry), so degenerate partners carry equal values.
+        if g["gamma"].attrs.get("averaging") != "degenerate_modes_mean_1e-7Ry":
+            print("gamma lacks the averaging attribute")
+            return 1
+        if degenerate_spread(g["frequencies"][...], g["gamma"][...]) > 1.0e-12:
+            print("saved gamma differs between degenerate modes")
+            return 1
 
     kl = np.loadtxt(PREFIX + ".kl")
     if not np.allclose(kappa_h5[:, [0, 1, 2], [0, 1, 2]], kl[:, [1, 5, 9]], atol=1e-3):
@@ -149,15 +194,24 @@ def check_noop_restart(anphonbin):
 
 def check_partial_restart(anphonbin):
     # Simulate a run interrupted mid-way: clear the completion flags of the
-    # last nmodes-keep rows and scribble their gamma values. Only those
-    # modes must be recomputed, and the final result must be unchanged.
+    # last nmodes-keep rows and scribble their gamma values. keep ends inside
+    # an irreducible k, whose flagged rows hold unequal raw rates (as a legacy
+    # file would); the saved rates are averaged over degenerate modes, so the
+    # whole partial k must be dropped and recomputed, and the final result
+    # must be unchanged.
     with h5py.File(PREFIX + ".kappa.h5", "r+") as f:
         g = f["scattering/3ph"]
         gamma_ref = g["gamma"][...]
         nmodes = g["gamma_computed"].shape[0]
+        ns = g.attrs["nbranches"]
         keep = nmodes // 3
+        kstart = (keep // ns) * ns
+        if keep == kstart:
+            print("test setup: keep must end inside a k point")
+            return 1
         g["gamma_computed"][keep:] = 0
         g["gamma"][keep:, :] = -12345.0
+        g["gamma"][kstart:keep, :] = np.arange(1, keep - kstart + 1)[:, None]
 
     kl_before = np.loadtxt(PREFIX + ".kl")
     if run_anphon(anphonbin, "RTA.in", "restart_partial.log") != 0:
@@ -165,9 +219,11 @@ def check_partial_restart(anphonbin):
         return 1
     if not log_contains(
         "restart_partial.log",
-        "Total Number of phonon modes to be calculated : %d" % (nmodes - keep),
+        "Total Number of phonon modes to be calculated : %d" % (nmodes - kstart),
     ):
-        print("partial restart did not recompute exactly the missing modes")
+        print(
+            "partial restart did not recompute exactly the modes from the partial k on"
+        )
         return 1
     with h5py.File(PREFIX + ".kappa.h5", "r") as f:
         g = f["scattering/3ph"]
@@ -194,13 +250,20 @@ def check_partial_restart(anphonbin):
         return 1
     if not log_contains(
         "restart_gap.log",
-        "Total Number of phonon modes to be calculated : %d" % (nmodes - 10),
+        "Total Number of phonon modes to be calculated : %d"
+        % (nmodes - (10 // ns) * ns),
     ):
-        print("gap restart did not recompute from the gap onwards")
+        print("gap restart did not recompute from the k point of the gap onwards")
         return 1
     if not np.allclose(kl_before, np.loadtxt(PREFIX + ".kl"), rtol=1e-8):
         print(".kl differs after gap restart")
         return 1
+    with h5py.File(PREFIX + ".kappa.h5", "r") as f:
+        if not np.allclose(
+            f["scattering/3ph/gamma"][...], gamma_ref, rtol=1e-10, atol=1e-12
+        ):
+            print("gamma rows differ from the original run after the repeated restart")
+            return 1
     return 0
 
 
@@ -259,6 +322,33 @@ def check_legacy_text_roundtrip(anphonbin):
         return 1
     if not np.allclose(kl_ref, np.loadtxt(PREFIX + ".kl"), rtol=1e-8):
         print(".kl differs in text mode")
+        return 1
+
+    # 1b) A text file cut inside a k point, whose remaining rows of that k hold
+    #     unequal raw rates: the partial k is cut from the file and recomputed,
+    #     and a repeated restart recomputes nothing.
+    nblocks = open(PREFIX + ".result").read().count("#GAMMA_EACH\n")
+    ns = 6
+    keep = nblocks // 3 + 1
+    if keep % ns == 0:
+        keep += 1
+    truncate_text_result_mid_k(PREFIX + ".result", keep, ns)
+    for log in ("text_midk.log", "text_midk2.log"):
+        if run_anphon(anphonbin, "RTA_text.in", log) != 0:
+            print("text-mode mid-k restart failed")
+            return 1
+        expect = nblocks - (keep // ns) * ns if log == "text_midk.log" else 0
+        if not log_contains(
+            log, "Total Number of phonon modes to be calculated : %d" % expect
+        ):
+            print("text-mode mid-k restart (%s) did not recompute the partial k" % log)
+            return 1
+        # gamma loaded from the text file has ~7 significant digits
+        if not np.allclose(kl_ref, np.loadtxt(PREFIX + ".kl"), rtol=1e-5):
+            print(".kl differs after the text-mode mid-k restart (%s)" % log)
+            return 1
+    if open(PREFIX + ".result").read().count("#GAMMA_EACH\n") != nblocks:
+        print("text .result has the wrong number of blocks after the mid-k restart")
         return 1
 
     # 2) The next default-format run imports the text file, leaves it
@@ -394,7 +484,7 @@ def check_ibte_h5(anphonbin):
     # A file from before the little-group symmetrization of the transport velocities has
     # no velocities stamp on /iterativebte: its results must be recomputed, not restored.
     with h5py.File(IBTE_PREFIX + ".kappa.h5", "r+") as f:
-        if f["iterativebte"].attrs.get("velocities") != "fd_blockmean_lgsym":
+        if f["iterativebte"].attrs.get("velocities") != "fd_blockmean_lgsym_v2":
             print("/iterativebte is missing the velocity-treatment stamp")
             return 1
         del f["iterativebte"].attrs["velocities"]
@@ -412,7 +502,7 @@ def check_ibte_h5(anphonbin):
         print(".kl_iter differs after recomputing the unstamped IBTE results")
         return 1
     with h5py.File(IBTE_PREFIX + ".kappa.h5", "r") as f:
-        if f["iterativebte"].attrs.get("velocities") != "fd_blockmean_lgsym":
+        if f["iterativebte"].attrs.get("velocities") != "fd_blockmean_lgsym_v2":
             print("velocity-treatment stamp not restored")
             return 1
 

@@ -26,6 +26,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <vector>
@@ -134,6 +135,49 @@ inline void symmetrize_scalar_operator(const std::vector<LittleGroupOp> &ops, Ei
         acc += op.antiunitary ? Eigen::MatrixXcd(x.conjugate()) : x;
     }
     d = acc / static_cast<double>(ops.size());
+}
+
+// True if xk (fractional reciprocal coordinates) is a reciprocal lattice vector.
+inline bool is_gamma(const double xk[3], const double tol = 1.0e-8)
+{
+    for (auto i = 0; i < 3; ++i) {
+        if (std::abs(xk[i] - std::round(xk[i])) > tol) return false;
+    }
+    return true;
+}
+
+// The three modes that span the uniform translations at k = 0: the eigenvectors (columns
+// of evec, atomic Cartesian basis 3 kappa + i) with the largest weight
+// sum_alpha |<t_alpha|e_n>|^2 in the span of the mass-weighted translations
+// t_alpha(3 kappa + i) = sqrt(m_kappa / sum m) delta_{i alpha}. The projector has trace 3,
+// so the weights sum to 3 and are ~1 for these modes whatever their frequencies (an
+// acoustic-sum-rule residual leaves them slightly finite). Their velocity <n|M|n> / 2w is
+// 0/0 there; callers set it, and their velocity-matrix rows and columns, to zero.
+// Selection by weight assumes no optical mode is degenerate with them, true unless an
+// optical frequency is also ~0: then the translations can mix with that mode and the choice
+// depends on the basis. *leak (if given) receives 3 minus the weight of the chosen modes,
+// ~0 normally and of order 1 in that case, so that callers can warn.
+inline std::vector<int> translational_modes(const Eigen::MatrixXcd &evec, const std::vector<double> &mass,
+                                            double *leak = nullptr)
+{
+    if (leak) *leak = 0.0;
+    const auto nmode = evec.rows();
+    const auto natmin = static_cast<Eigen::Index>(mass.size());
+    if (nmode != 3 * natmin || nmode < 3) return {};
+    auto msum = 0.0;
+    for (const auto m: mass) msum += m;
+    Eigen::MatrixXcd t = Eigen::MatrixXcd::Zero(nmode, 3);
+    for (Eigen::Index k = 0; k < natmin; ++k) {
+        for (auto a = 0; a < 3; ++a) t(3 * k + a, a) = std::sqrt(mass[k] / msum);
+    }
+    const Eigen::VectorXd w = (t.adjoint() * evec).cwiseAbs2().colwise().sum().transpose();
+    std::vector<int> idx(nmode);
+    for (Eigen::Index n = 0; n < nmode; ++n) idx[n] = static_cast<int>(n);
+    std::partial_sort(idx.begin(), idx.begin() + 3, idx.end(), [&w](const int a, const int b) { return w[a] > w[b]; });
+    idx.resize(3);
+    if (leak) *leak = 3.0 - (w[idx[0]] + w[idx[1]] + w[idx[2]]);
+    std::sort(idx.begin(), idx.end());
+    return idx;
 }
 
 // Projector onto the Cartesian vectors invariant under the little group:

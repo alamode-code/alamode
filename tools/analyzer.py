@@ -101,7 +101,7 @@ def get_optparse_options():
         action="store_false",
         dest="average_gamma",
         default=True,
-        help="do not average the damping functionat degenerate points",
+        help="do not average the damping function at degenerate points (no effect on files written by current anphon, which saves the linewidths already averaged)",
     )
 
     parser.add_option(

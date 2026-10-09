@@ -202,6 +202,18 @@ latter corrupts even the diagonal velocities. At :math:`\Gamma` the non-analytic
 directional convention and is set to zero. On a band path the derivative uses the same direction vector as the eigenproblem
 for that segment.
 
+At exactly :math:`\boldsymbol{q}=0` the three acoustic modes are uniform translations whose frequencies vanish by the acoustic
+sum rule, and :math:`v_{\boldsymbol{q}jj'}^{\mu}` with :math:`j` or :math:`j'` among them is :math:`0/0`. Velocity-matrix elements
+are set to zero wherever a frequency is below :math:`10^{-8}` Ry, but a small sum-rule residual can leave these modes just above it,
+and their elements are then amplified without bound (in polar crystals without inversion, e.g. P4mm SrTiO\ :sub:`3` with
+``NONANALYTIC = 3``, they produced a spurious :math:`\kappa_{xy}` and a diverging coherent term). The translational modes are
+therefore identified at :math:`\Gamma` as the three eigenvectors with the largest weight in the span of the mass-weighted
+uniform translations :math:`t_{\alpha}(\kappa i)\propto\sqrt{m_{\kappa}}\,\delta_{i\alpha}`, independently of their frequencies,
+and their rows and columns of the velocity matrix are set to zero, including the coherent elements with optical modes; their
+finite-difference velocities (zero by time reversal up to roundoff) are set to zero as well. This applies to the transport terms
+and to ``PRINTVEL``. It is a convention for the single point :math:`\boldsymbol{q}=0`, not a sound velocity: sound velocities follow
+from :math:`\boldsymbol{q}\neq0`. The adaptive smearing widths are left unchanged.
+
 Inside a degenerate multiplet :math:`\mathcal{B}` the eigenvectors are fixed only up to a unitary rotation, so the individual
 :math:`v_{\boldsymbol{q}jj}^{\mu}` are not defined; only block traces such as
 :math:`\sum_{j,j'\in\mathcal{B}} v_{\boldsymbol{q}jj'}^{\mu}v_{\boldsymbol{q}j'j}^{\nu}` are. How the transport terms use this is described
@@ -625,6 +637,18 @@ largest such ratio among the merged multiplets and warns when it exceeds 0.1.
 
 Because :math:`W` is contracted for each :math:`\boldsymbol{q}` as soon as the velocity matrix at that point is formed, the full matrix
 (of size :math:`N_{q}(3N_{\kappa})^{2}\times3`) is never stored unless the coherent term is requested.
+
+The per-mode linewidths written to ``PREFIX.kappa.h5`` (``/scattering/3ph/gamma``, ``/scattering/4ph/gamma``) and to the
+text ``.result`` files are averaged over the same frequency-degeneracy groups before they are written, as the isotope linewidths
+already were. A single mode of a degenerate multiplet has no basis-independent linewidth: rotating the eigenvectors inside the
+multiplet (a perturbation of :math:`10^{-7}` of the force constants suffices) changes individual values by up to 80 %, while their
+mean is unchanged. Since the RTA conductivity uses the averaged values anyway, it is unaffected; the four-phonon rates that the
+iterative solvers add to the diagonal of the collision operator are now averaged in the same way. The written values are complete
+for each irreducible :math:`\boldsymbol{q}` only, and a restart keeps only complete :math:`\boldsymbol{q}`: the modes of a
+partially written one (in an interrupted or older file, ``.kappa.h5`` or text) are recomputed. The ``gamma`` datasets carry the
+attribute ``averaging = degenerate_modes_mean_1e-7Ry``; raw per-mode rates are no longer stored, so the ``--noavg`` option of
+``tools/analyzer.py`` has no effect on such files. Results of the iterative solvers stored by earlier versions (velocity
+stamp ``fd_blockmean_lgsym``) are recomputed on restart, while the stored linewidths are reused.
 
 The phonon lifetime is estimated using the Matthiessen's rule as
 
