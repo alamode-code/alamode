@@ -417,3 +417,17 @@ if (BUILD_V4_INDEX_TRANSFORM_TEST)
         target_link_libraries(test_v4_index_transform ${eigen_target})
     endif ()
 endif ()
+
+# Unit test for the minimum-image search beyond the 27 neighboring cells
+# (images_beyond_27 in cell_shift_table.h) on orthogonal, hexagonal and skewed
+# supercells against a brute-force search. Eigen only; no MPI.
+option(BUILD_CELL_IMAGES_TEST "Build the minimum-image search unit test" ON)
+if (BUILD_CELL_IMAGES_TEST)
+    add_executable(test_cell_images ${PROJECT_SOURCE_DIR}/../test/test_cell_images.cpp)
+    target_compile_options(test_cell_images PRIVATE -Wall -Wextra)
+    target_include_directories(test_cell_images PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/../include
+                                                        ${eigen_includes})
+    if (eigen_target)
+        target_link_libraries(test_cell_images ${eigen_target})
+    endif ()
+endif ()

@@ -9,10 +9,12 @@
 */
 
 #include "dielec.h"
+#include <cmath>
 #include <complex>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <vector>
 #include "constants.h"
 #include "dynamical.h"
@@ -144,20 +146,54 @@ void Dielec::load_born(const unsigned int flag_symmborn, const std::vector<Symme
     ifs_born.open(file_born.c_str(), std::ios::in);
     if (!ifs_born) exit("load_born", "cannot open file_born");
 
+    // The file must hold exactly eps_inf (9 numbers) and one Z* (9 numbers) per atom of the
+    // primitive cell (&cell); a file written for another cell would otherwise be read silently.
+    std::vector<double> values;
+    std::string token;
+    while (ifs_born >> token) {
+        std::size_t pos = 0;
+        double val = 0.0;
+        try {
+            val = std::stod(token, &pos);
+        } catch (const std::exception &) {
+            pos = 0;
+        }
+        if (pos != token.size() || !std::isfinite(val)) {
+            exit("load_born",
+                 ("Entry '" + token + "' in BORNINFO file " + file_born + " is not a finite number.").c_str());
+        }
+        values.push_back(val);
+    }
+    ifs_born.close();
+
+    if (values.size() != 9 * (natmin_tmp + 1)) {
+        std::string str_error = "BORNINFO file " + file_born + " has " + std::to_string(values.size()) +
+                                " numbers, but the dielectric tensor plus one Born effective charge tensor per atom\n"
+                                " of the primitive cell (" +
+                                std::to_string(natmin_tmp) + " atoms) need " + std::to_string(9 * (natmin_tmp + 1)) +
+                                ".";
+        if (values.size() >= 9 && values.size() % 9 == 0) {
+            str_error +=
+                " The file holds " + std::to_string(values.size() / 9 - 1) + " Born effective charge tensors; ";
+            str_error += values.size() < 9 * (natmin_tmp + 1) ? "too few." : "too many.";
+        }
+        str_error += "\n List one Z* tensor per atom of the &cell, in the order of the primitive cell atoms.";
+        exit("load_born", str_error.c_str());
+    }
+
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
-            ifs_born >> dielec_tensor(i, j);
+            dielec_tensor(i, j) = values[3 * i + j];
         }
     }
 
     for (i = 0; i < natmin_tmp; ++i) {
         for (j = 0; j < 3; ++j) {
             for (k = 0; k < 3; ++k) {
-                ifs_born >> borncharge[i][j][k];
+                borncharge[i][j][k] = values[9 + 9 * i + 3 * j + k];
             }
         }
     }
-    ifs_born.close();
 
     if (verbosity > 0) {
         std::cout << "  Dielectric constants and Born effective charges are read from " << file_born << ".\n\n";

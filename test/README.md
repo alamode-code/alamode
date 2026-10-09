@@ -44,6 +44,9 @@ Silicon ANPHON --> pass
   integer supercell of the primitive cell (BaTiO3 1x1x2 cell, 2 2 1 meshes):
   the folded correction must reproduce a primitive-cell SCPH with the same q
   sampling (2 2 2 / 2 2 2).
+- `test_cell_images` (C++, built with anphon) covers the minimum-image search of
+  `System::get_minimum_distances` beyond the 27 neighboring cells (`images_beyond_27`)
+  on orthogonal, hexagonal and skewed supercells against a brute-force search.
 - Known gap: the SCP-failure rescue path in the SCPH structural loop
   (`Relaxation::rescue_step_after_scp_failure`, called from the driver in
   scph.cpp) is not exercised by any fixture; none of the test systems fails

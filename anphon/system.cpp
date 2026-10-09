@@ -11,6 +11,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "system.h"
 #include <Eigen/Geometry>
 #include <Eigen/LU>
+#include <array>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -20,6 +21,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <map>
 #include <sstream>
 #include <string>
+#include "cell_shift_table.h"
 #include "constants.h"
 #include "error.h"
 #include "hdf5_parser.h"
@@ -791,6 +793,17 @@ void System::update_primitive_lattice()
         primcell.volume = volume(primcell.lattice_vector, Direct);
 
         const auto ndiv = nint(1.0 / transmat_to_prim.determinant());
+        // The &cell itself is right-handed (checked by the parser).
+        if (ndiv < 0) {
+            exit("update_primitive_lattice",
+                 "The supercell lattice of FCSFILE is left-handed, opposite to the right-handed &cell.\n"
+                 " Regenerate the IFCs with a right-handed supercell.");
+        }
+        if (ndiv == 0) {
+            exit("update_primitive_lattice",
+                 "The &cell is larger than the supercell of FCSFILE; it must be a sub-lattice of that supercell\n"
+                 " (the primitive cell or a cell that the supercell is an integer multiple of).");
+        }
         if (supercell[0].number_of_atoms % ndiv != 0) {
             exit("update_primitive_lattice",
                  "The input primitive cell lattice vector is incommensurate \n "
@@ -1476,10 +1489,23 @@ void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumD
         }
     }
 
+    // Same tie tolerance (bohr) as ALM's PairDistances and prepare_mindist_list. A tighter one
+    // splits exact ties by input round-off (e.g. a 1e-9 relative lattice-scale mismatch), keeping
+    // one image for an atom but the opposite one for its translational partner.
+    constexpr double tol_dist = 1.0e-3;
+
+    // Supercell of the interpolation mesh; for a skewed &cell basis the {-1,0,1}^3 images of it can
+    // miss the minimum image or its equidistant partners, so the search is extended below.
+    Eigen::Matrix3d lat_super = primcell.lattice_vector;
+    lat_super.col(0) *= nkx;
+    lat_super.col(1) *= nky;
+    lat_super.col(2) *= nkz;
+    const Eigen::Matrix3d rfac_super = lattice_r_factor(lat_super);
+
     double dist;
     std::vector<DistList> dist_tmp;
+    std::vector<std::pair<double, std::array<int, 3>>> images; // (distance, supercell shift)
     ShiftCell shift_tmp{};
-    std::vector<int> vec_tmp;
 
     for (iat = 0; iat < natmin_tmp; ++iat) {
         for (unsigned int jat = 0; jat < natmin_tmp; ++jat) {
@@ -1492,21 +1518,33 @@ void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumD
                 }
                 std::sort(dist_tmp.begin(), dist_tmp.end());
 
-                const auto dist_min = dist_tmp[0].dist;
+                images.clear();
+                for (i = 0; i < ncell_s; ++i) {
+                    const auto *n = shift_cell_super[dist_tmp[i].cell_s];
+                    images.push_back({dist_tmp[i].dist, {n[0], n[1], n[2]}});
+                }
+
+                // Images outside {-1,0,1}^3 within tol_dist of the 27-image minimum (none for orthogonal
+                // and near-orthogonal cells, which keeps their lists exactly as before).
+                const double dx[3] = {(xf_p(jat, 0) + shift_cell[icell][0] - xf_p(iat, 0)) / nkx,
+                                      (xf_p(jat, 1) + shift_cell[icell][1] - xf_p(iat, 1)) / nky,
+                                      (xf_p(jat, 2) + shift_cell[icell][2] - xf_p(iat, 2)) / nkz};
+                const auto extra = images_beyond_27(rfac_super, dx, dist_tmp[0].dist + tol_dist);
+                if (!extra.empty()) {
+                    images.insert(images.end(), extra.begin(), extra.end());
+                    std::stable_sort(images.begin(), images.end(), [](const auto &a, const auto &b) {
+                        return a.first < b.first;
+                    });
+                }
+
+                const auto dist_min = images[0].first;
                 mindist_list_out[iat][jat][icell].dist = dist_min;
 
-                for (i = 0; i < ncell_s; ++i) {
-                    dist = dist_tmp[i].dist;
-
-                    // Same tie tolerance (bohr) as ALM's PairDistances and prepare_mindist_list. A tighter one
-                    // splits exact ties by input round-off (e.g. a 1e-9 relative lattice-scale mismatch), keeping
-                    // one image for an atom but the opposite one for its translational partner.
-                    if (std::abs(dist_min - dist) < 1.0e-3) {
-
-                        shift_tmp.sx = shift_cell[icell][0] + nkx * shift_cell_super[dist_tmp[i].cell_s][0];
-                        shift_tmp.sy = shift_cell[icell][1] + nky * shift_cell_super[dist_tmp[i].cell_s][1];
-                        shift_tmp.sz = shift_cell[icell][2] + nkz * shift_cell_super[dist_tmp[i].cell_s][2];
-
+                for (const auto &[d, n]: images) {
+                    if (std::abs(dist_min - d) < tol_dist) {
+                        shift_tmp.sx = shift_cell[icell][0] + nkx * n[0];
+                        shift_tmp.sy = shift_cell[icell][1] + nky * n[1];
+                        shift_tmp.sz = shift_cell[icell][2] + nkz * n[2];
                         mindist_list_out[iat][jat][icell].shift.push_back(shift_tmp);
                     }
                 }

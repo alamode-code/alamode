@@ -22,8 +22,11 @@ Stages:
                 -E . sum Z* u0 from PREFIX.atom_disp / .umn_tensor.
   T6 errors   : missing BORNINFO, RELAX_STR = 3, malformed
                 EFIELD, a restart with a different (or absent) EFIELD or Born charges, and a
-                legacy-text restart are rejected; a restart with the same
-                EFIELD is accepted.
+                legacy-text restart, a BORNINFO with one Z* too few or too
+                many or a nan entry, a left-handed &cell and a left-handed
+                FCSFILE supercell under a right-handed &cell (needs a python
+                with h5py) are rejected; a restart with the same EFIELD is
+                accepted.
   seed        : tools/efield_seed.py output restarts the sweep from the
                 relaxed structure (&displace / &strain).
 
@@ -613,7 +616,71 @@ def test_t6(anphonbin):
             ),
             "legacy text restart files",
         ),
+        # BORNINFO with one Z* too few / too many for the 5-atom cell
+        (
+            "t6_born_short",
+            bto_input("t6_born_short", efield="0 0 0.01").replace(
+                "= BORNINFO", "= BORNINFO_short"
+            ),
+            "4 Born effective charge tensors; too few",
+        ),
+        (
+            "t6_born_long",
+            bto_input("t6_born_long", efield="0 0 0.01").replace(
+                "= BORNINFO", "= BORNINFO_long"
+            ),
+            "6 Born effective charge tensors; too many",
+        ),
+        # left-handed &cell basis (a2 and a3 swapped)
+        (
+            "t6_lefthanded",
+            bto_input("t6_lefthanded", efield="0 0 0.01").replace(
+                "&kpoint", "&cell\n  7.6\n  1 0 0\n  0 0 1\n  0 1 0\n/\n&kpoint"
+            ),
+            "left-handed",
+        ),
+        # BORNINFO with a non-finite entry
+        (
+            "t6_born_nan",
+            bto_input("t6_born_nan", efield="0 0 0.01").replace(
+                "= BORNINFO", "= BORNINFO_nan"
+            ),
+            "is not a finite number",
+        ),
     ]
+    born_nan = np.loadtxt("BORNINFO")
+    born_nan[3, 0] = np.nan
+    np.savetxt("BORNINFO_nan", born_nan, fmt="%16.8f")
+    # FCSFILE supercell with a3 reversed (left-handed) under a right-handed &cell
+    py = find_h5py_python()
+    if py is None:
+        print("  skip   T6: left-handed FCSFILE supercell (no python with h5py)")
+    else:
+        shutil.copy("cBTO222.h5", "cBTO222_lh.h5")
+        subprocess.run(
+            [
+                py,
+                "-c",
+                "import h5py\n"
+                "with h5py.File('cBTO222_lh.h5', 'r+') as f:\n"
+                "    lat = f['SuperCell/lattice_vector']; v = lat[()]; v[2, 2] = -v[2, 2]; lat[...] = v\n"
+                "    xf = f['SuperCell/fractional_coordinate']; x = xf[()]\n"
+                "    x[:, 2] = (1.0 - x[:, 2]) % 1.0; xf[...] = x\n",
+            ],
+            check=True,
+        )
+        cases.append(
+            (
+                "t6_lh_fcs",
+                bto_input("t6_lh_fcs", efield="0 0 0.01")
+                .replace("= cBTO222.h5", "= cBTO222_lh.h5")
+                .replace(
+                    "&kpoint",
+                    "&cell\n  7.53159676409\n  1 0 0\n  0 1 0\n  0 0 1\n/\n&kpoint",
+                ),
+                "supercell lattice of FCSFILE is left-handed",
+            )
+        )
     # diag(-d, 0, +d) added to Ti and subtracted from Ba: the acoustic sum rule
     # and any linear checksum weighted by the flat index are unchanged
     born = np.loadtxt("BORNINFO")
@@ -623,6 +690,8 @@ def test_t6(anphonbin):
     born[3, 0] += d
     born[5, 2] -= d
     np.savetxt("BORNINFO_mod", born, fmt="%16.8f")
+    np.savetxt("BORNINFO_short", born[:-3], fmt="%16.8f")
+    np.savetxt("BORNINFO_long", np.vstack([born, born[-3:]]), fmt="%16.8f")
     info = 0
     for name, text, message in cases:
         rc, log = run_anphon(anphonbin, name.split()[0], text)

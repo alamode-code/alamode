@@ -296,17 +296,35 @@ void Dynamical::prepare_mindist_list(std::vector<int> **mindist_out) const
 
     // Construct pairs of minimum distance.
 
+    bool missed = false;
+    const Eigen::Matrix3d rfac = lattice_r_factor(scell_tmp.lattice_vector);
     for (i = 0; i < natmin; ++i) {
+        const auto iat = system->get_map_p2s(0)[i][0];
         for (j = 0; j < nat; ++j) {
             mindist_out[i][j].clear();
 
             const auto dist_min = distall[i][j][0].dist;
+            const double dx[3] = {scell_tmp.x_fractional(j, 0) - scell_tmp.x_fractional(iat, 0),
+                                  scell_tmp.x_fractional(j, 1) - scell_tmp.x_fractional(iat, 1),
+                                  scell_tmp.x_fractional(j, 2) - scell_tmp.x_fractional(iat, 2)};
+            if (!missed && !images_beyond_27(rfac, dx, dist_min + 1.0e-3).empty()) missed = true;
             for (auto it = distall[i][j].begin(); it != distall[i][j].end(); ++it) {
                 if (std::abs((*it).dist - dist_min) < 1.0e-3) {
                     mindist_out[i][j].push_back((*it).cell);
                 }
             }
         }
+    }
+
+    // The images follow ALM's {-1,0,1}^3 convention (cell_s of the FCSFILE); only NONANALYTIC = 2
+    // averages phases over them, so only that mode is stopped.
+    if (missed && nonanalytic == 2) {
+        exit(
+            "prepare_mindist_list",
+            "The FC2 supercell is too skewed for the 27-image convention of the FCSFILE: some\n"
+            " minimum-distance images lie beyond the 26 neighboring supercells, so\n"
+            " NONANALYTIC = 2 (mixed-space phases) would use an incomplete image set. Rebuild the IFCs with a reduced (near-orthogonal)\n"
+            " supercell in ALM, or use NONANALYTIC = 1 or 3.");
     }
 
     distall.clear();

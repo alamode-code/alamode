@@ -107,6 +107,92 @@ def check_consistency_anphon(reference_dir, abs_tol=0.01, rel_tol=1.0e-9):
     return 0
 
 
+# Skewed &cell basis (1,0,0), (2,1,0), (0,0,1) of the cubic cell: the supercells of the 2x2x2 and
+# 4x4x4 interpolation meshes are the cubic ones, but their {-1,0,1}^3 images miss equidistant images
+# (2x2x2) and minimum images (4x4x4). System::get_minimum_distances must find them: the real-space
+# SCPH correction (.scph_dfc2, one entry per minimum image) must then be the same set of Cartesian
+# pair vectors and values as with the orthogonal basis. Positions in both bases are identical
+# (only their fractional coordinates differ), so equal entries mean equal image lists.
+SKEW_TEMPLATE = """&general
+  PREFIX = {prefix}
+  MODE = SCPH
+  FCSFILE = cBTO222.h5
+  NONANALYTIC = 0
+  TMIN = 300; TMAX = 300
+/
+&cell
+  7.53159676409
+{basis}
+/
+&scph
+  SELF_OFFDIAG = 1
+  MAXITER = 500
+  MIXALPHA = 0.2
+  KMESH_INTERPOLATE = {kint}
+  KMESH_SCPH = 4 4 4
+/
+&kpoint
+  0
+  0 0 0
+/
+"""
+
+
+def read_dfc2_cartesian(fname):
+    """{(rounded Cartesian R_j + shift - R_i, i, a, j, b): value} from a .scph_dfc2 file."""
+    lines = open(fname).read().splitlines()
+    lat = np.array([[float(x) for x in lines[i].split()] for i in range(3)])  # rows
+    nat = int(lines[3].split()[0])
+    xf = np.array([[float(x) for x in lines[5 + i].split()[:3]] for i in range(nat)])
+    xc = xf @ lat
+    out = {}
+    for line in lines[5 + nat :]:
+        if line.startswith("#") or not line.strip():
+            continue
+        w = line.split()
+        shift = np.array([int(x) for x in w[:3]]) @ lat
+        i, a, j, b = (int(x) for x in w[3:7])
+        r = np.round(shift + xc[j] - xc[i], 3) + 0.0
+        out[(tuple(r), i, a, j, b)] = float(w[7])
+    return out
+
+
+def check_skewed_cell(anphonbin):
+    bases = {"orth": "  1 0 0\n  0 1 0\n  0 0 1", "skew": "  1 0 0\n  2 1 0\n  0 0 1"}
+    info = 0
+    for kint in ("2 2 2", "4 4 4"):
+        dfc2 = {}
+        for name, basis in bases.items():
+            prefix = "skew_%s_%s" % (name, kint[0])
+            with open(prefix + ".in", "w") as f:
+                f.write(SKEW_TEMPLATE.format(prefix=prefix, basis=basis, kint=kint))
+            with open(prefix + ".log", "w") as f:
+                proc = subprocess.run([anphonbin, prefix + ".in"], stdout=f)
+            if proc.returncode != 0:
+                print("Failed to run %s" % prefix)
+                return 1
+            dfc2[name] = read_dfc2_cartesian(prefix + ".scph_dfc2")
+        same_keys = dfc2["orth"].keys() == dfc2["skew"].keys()
+        dmax = (
+            max(abs(v - dfc2["skew"][k]) for k, v in dfc2["orth"].items())
+            if same_keys
+            else float("inf")
+        )
+        ok = same_keys and dmax < 1.0e-10
+        print(
+            "Skewed &cell, KMESH_INTERPOLATE = %s: %d vs %d image entries, max |dPhi| = %.1e --> %s"
+            % (
+                kint,
+                len(dfc2["skew"]),
+                len(dfc2["orth"]),
+                dmax,
+                "pass" if ok else "failed",
+            )
+        )
+        info += 0 if ok else 1
+    return info
+
+
 def copy_input_files(workdir, scph_example_dir, fc_reference_dir):
     reference_dir = os.path.join(scph_example_dir, "reference_for_test")
     source_and_dest = [
@@ -178,6 +264,9 @@ if __name__ == "__main__":
 
     if args.jobs in ["all", "compare"]:
         info = check_consistency_anphon(reference_dir, abs_tol=1.0e-8, rel_tol=1.0e-9)
+
+    if args.jobs in ["all", "run"] and info == 0:
+        info = check_skewed_cell(anphonbin)
 
     if info == 0:
         print("BaTiO3 ANPHON --> pass")

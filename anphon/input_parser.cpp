@@ -1566,6 +1566,17 @@ void InputParser::parse_cell_parameter(PHON *phon)
         }
     }
 
+    // anphon assumes a right-handed &cell (positive cell volume, e.g. the atom count derived from
+    // det(L_super^-1 L_prim)); a left-handed basis otherwise fails later with a misleading error.
+    const auto det = lavec[0][0] * (lavec[1][1] * lavec[2][2] - lavec[1][2] * lavec[2][1]) -
+                     lavec[0][1] * (lavec[1][0] * lavec[2][2] - lavec[1][2] * lavec[2][0]) +
+                     lavec[0][2] * (lavec[1][0] * lavec[2][1] - lavec[1][1] * lavec[2][0]);
+    if (det <= 0.0) {
+        exit("parse_cell_parameter",
+             "The lattice vectors of the &cell field form a left-handed (or degenerate) basis:\n"
+             " a1 . (a2 x a3) <= 0. Swap two of the vectors (or reverse one) to make the basis right-handed.");
+    }
+
     input_setter->set_cell_parameter(phon, lavec);
 }
 

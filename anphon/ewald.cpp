@@ -329,9 +329,17 @@ void Ewald::get_pairs_of_minimum_distance(const int nat, const int nsize[3], con
         }
     }
     double dist_hold = -1.0;
+    bool missed = false;
+    const Eigen::Matrix3d rfac = lattice_r_factor(system->get_supercell(0).lattice_vector);
     for (iat = 0; iat < nat; ++iat) {
         for (jat = 0; jat < nat; ++jat) {
             multiplicity[iat][jat] = 0;
+            const double dx[3] = {xf(jat, 0) - xf(iat, 0), xf(jat, 1) - xf(iat, 1), xf(jat, 2) - xf(iat, 2)};
+            if (!missed && nsize[0] == 1 && nsize[1] == 1 && nsize[2] == 1 &&
+                !images_beyond_27(rfac, dx, distall_ewald[iat][jat][0].dist + 1.0e-3).empty())
+            {
+                missed = true;
+            }
 
             for (auto it = distall_ewald[iat][jat].begin(); it != distall_ewald[iat][jat].end(); ++it) {
                 if (it == distall_ewald[iat][jat].begin()) dist_hold = (*it).dist;
@@ -339,6 +347,16 @@ void Ewald::get_pairs_of_minimum_distance(const int nat, const int nsize[3], con
                 if (std::abs(dist_tmp - dist_hold) < 1.0e-3) multiplicity[iat][jat] += 1;
             }
         }
+    }
+    // The images follow ALM's {-1,0,1}^3 convention (cell_s of the FCSFILE); the pairs are built for
+    // NONANALYTIC = 3 only (is_longrange), which spreads the short-range FC2 over them.
+    if (missed) {
+        exit(
+            "Ewald::get_pairs_of_minimum_distance",
+            "The FC2 supercell is too skewed for the 27-image convention of the FCSFILE: some\n"
+            " minimum-distance images lie beyond the 26 neighboring supercells, so\n"
+            " NONANALYTIC = 3 (Ewald dipole subtraction) would use an incomplete image set. Rebuild the IFCs with a reduced (near-orthogonal)\n"
+            " supercell in ALM, or use NONANALYTIC = 1.");
     }
     xcrd.clear();
 }
