@@ -337,7 +337,7 @@ def dfc2_text_c4v_asymmetry(fname):
     for line in lines[5 + nat :]:
         if line.startswith("# Temp"):
             vals.append([])
-        elif line.strip():
+        elif line.strip() and not line.startswith("#"):
             w = line.split()
             if len(vals) == 1:
                 rows.append([int(x) for x in w[:7]])
