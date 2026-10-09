@@ -73,7 +73,7 @@ def write_input(
     )
     src = re.sub(r"KMESH_SCPH\s*=.*", "KMESH_SCPH = " + mesh, src, count=1)
     src = re.sub(
-        r"MAXITER\s*=\s*\S+", "MAXITER = 5000\n  TOL_SCPH = 1.0e-12", src, count=1
+        r"MAXITER\s*=\s*\S+", "MAXITER = 20000\n  TOL_SCPH = 1.0e-12", src, count=1
     )
     src = re.sub(
         r"RELAX_STR\s*=\s*\S+", "RELAX_STR = 2\n  BUBBLE = 4\n" + extra, src, count=1
@@ -237,8 +237,9 @@ def main():
             m = re.search(
                 r"real-space quartic ladder vs V4 service: .*? = (\S+)", f.read()
             )
-        # the coupling blocks relative to themselves only where they are sizeable
-        # (1 1 3: ~1e-2 of J; 1 1 2: ~1e-5, checked relative to the whole J)
+        # the coupling blocks relative to themselves at 1 1 3 (~5e-6 of J; this
+        # relies on the tightly converged displaced solves of BUBBLE_FD_CHECK),
+        # at 1 1 2 relative to the whole J
         own = mesh == "1 1 3"
         blocks = {
             b: fd_mismatch(prefix + ".log", b, relative=own or b in ("qq", "uu"))
@@ -391,7 +392,7 @@ def main():
     src = src.replace("RELAX_STR = 2", "RELAX_STR = 4\n  LOWER_TEMP = 1", 1)
     # the SCP solve at 30 K is stiff (~2e4 iterations from the 300 K solution);
     # within one structure step, so that it does not hinge on the platform
-    src = src.replace("MAXITER = 5000", "MAXITER = 30000", 1)
+    src = src.replace("MAXITER = 20000", "MAXITER = 30000", 1)
     src = re.sub(r"TMAX\s*=\s*\S+", "TMAX = 300", src, count=1)
     src = re.sub(r"DT\s*=\s*\S+", "DT = 270", src, count=1)
     src = re.sub(

@@ -166,6 +166,9 @@ private:
     // (either branch of diagonalize_and_symmetrize); such a fixed point is not
     // differentiable in the sense BUBBLE = 4 needs.
     bool last_scp_repaired = false;
+    // relative D-space residual the DIIS solver requires on top of the frequency
+    // criterion; BUBBLE_FD_CHECK tightens it for its displaced solves
+    double scp_resid_rel_tol = 1.0e-6;
     // BUBBLE = 4: the correction H - A of the dynamical matrix (Cartesian,
     // mass weighted, like delta_dymat_scph) per temperature and coarse k-point
     // (J - A at Gamma, the finite-Q curvature elsewhere on a mesh); empty where
