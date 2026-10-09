@@ -31,6 +31,12 @@ const std::string str_scattering = "/scattering/";
 // completion flags become per (mode, temperature).
 constexpr int kappa_version_tdep = 2;
 
+// Velocity treatment behind the /iterativebte results (IBTE, VBTE, DBTE), stamped on the
+// group. Files without the attribute predate the little-group symmetrization of the mesh
+// velocities (block mean of the finite differences, projected onto the invariant vectors);
+// their stored kappa and dF are discarded and recomputed rather than mixed.
+const std::string ibte_velocity_treatment = "fd_blockmean_lgsym";
+
 auto channel_path(const std::string &tag) -> std::string
 {
     return str_scattering + tag;
@@ -489,6 +495,7 @@ struct KappaResultIOH5::Impl
         group.createAttribute("kmesh", kmesh);
         group.createAttribute("nk_irred", imeta.nk_irred);
         group.createAttribute("nbranches", imeta.ns);
+        group.createAttribute("velocities", ibte_velocity_treatment);
 
         h5_create_dataset_prealloc<double>(fh, "/iterativebte/Q", {nt, imeta.nk_irred, imeta.ns})
             .createAttribute("description",
@@ -1050,7 +1057,7 @@ void KappaResultIOH5::ensure_channel(const KappaChannelMetaH5 &channel, const bo
 
 bool KappaResultIOH5::open_or_create_for_ibte(const KappaFileMetaH5 &fmeta, const IbteMetaH5 &imeta, const bool reset)
 {
-    impl->formulation = "legacy"; // IBTE uses finite-difference velocities throughout
+    impl->formulation = "legacy"; // IBTE stores no /kappa; its velocity treatment is stamped on /iterativebte
     transport_formulation = "legacy";
     impl->fmeta = fmeta;
     impl->ntemp = fmeta.temperatures.size();
@@ -1076,7 +1083,19 @@ bool KappaResultIOH5::open_or_create_for_ibte(const KappaFileMetaH5 &fmeta, cons
         impl->validate_metadata(oldfile);
 
         if (oldfile.exist("/iterativebte")) {
-            if (!impl->ibte_group_matches(oldfile) || reset) {
+            std::string vel_treatment{"fd_unsymmetrized"};
+            const auto grp = oldfile.getGroup("/iterativebte");
+            if (grp.hasAttribute("velocities")) grp.getAttribute("velocities").read(vel_treatment);
+            const auto vel_match = vel_treatment == ibte_velocity_treatment;
+            if (!vel_match && !reset) {
+                warn("kappa_result_io",
+                     ("The /iterativebte results in the existing kappa.h5 file were computed with velocity "
+                      "treatment '" +
+                      vel_treatment + "' instead of '" + ibte_velocity_treatment +
+                      "'. They are discarded and all temperatures are recomputed.")
+                         .c_str());
+            }
+            if (!vel_match || !impl->ibte_group_matches(oldfile) || reset) {
                 drop_ibte = true;
                 need_rebuild = true;
             }

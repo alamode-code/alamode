@@ -805,7 +805,6 @@ void Writes::writePhononVel() const
     // the conductivity, which treats degenerate multiplets as blocks having no per-mode
     // velocity. Printed values at a degeneracy remain one admissible basis choice.
     phon->phonon_velocity->get_phonon_group_velocity_bandstructure_velmat(phon->kpoint->kpoint_bs.get(),
-                                                                          phon->system->get_primcell().lattice_vector,
                                                                           *phon->dynamical,
                                                                           phon->fcs_phonon->force_constant_with_cell[0],
                                                                           *phon->dielec,
@@ -864,7 +863,6 @@ void Writes::writePhononVelAll() const
     phvel_xyz.resize(nk, ns, 3);
 
     phon->phonon_velocity->get_phonon_group_velocity_mesh_velmat(*phon->dos->kmesh_dos.get(),
-                                                                 phon->system->get_primcell().lattice_vector,
                                                                  *phon->dynamical,
                                                                  phon->fcs_phonon->force_constant_with_cell[0],
                                                                  *phon->dielec,

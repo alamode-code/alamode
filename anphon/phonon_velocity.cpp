@@ -27,6 +27,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "system.h"
+#include "velocity_symmetry.h"
 
 using namespace PHON_NS;
 
@@ -48,21 +49,37 @@ void PhononVelocity::set_default_variables()
 void PhononVelocity::deallocate_variables()
 {}
 
-// Transport uses the unsymmetrized velocity matrix with nonanalytic
-// connection, block-trace Peierls weights, cross-block coherent pairs,
-// block boundary speeds, and matrix-diagonal PRINTVEL.
-void PhononVelocity::setup_velocity()
+// Transport uses the velocity matrix with nonanalytic connection, averaged over the
+// little group of k in the atomic basis (velocity_symmetry.h), block-trace Peierls weights,
+// cross-block coherent pairs, block boundary speeds, and matrix-diagonal PRINTVEL.
+void PhononVelocity::setup_velocity(const std::vector<SymmetryOperationWithMapping> &symmlist,
+                                    const bool time_reversal_in)
 {
     MPI_Bcast(&print_velocity, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+
+    // SymmListWithMap (the group that reduces the k mesh) is built on every rank.
+    rot_frac.clear();
+    atom_mapping.clear();
+    for (const auto &op: symmlist) {
+        Eigen::Matrix3d r;
+        for (auto i = 0; i < 3; ++i) {
+            for (auto j = 0; j < 3; ++j) r(i, j) = op.rot_real[3 * i + j];
+        }
+        rot_frac.push_back(r);
+        atom_mapping.push_back(op.mapping);
+    }
+    time_reversal = time_reversal_in;
 }
 
 // Project the velocity-matrix diagonal onto the band-path direction,
 // avoiding finite differences across sorted-band crossings. Diagonals
 // within degenerate multiplets remain basis dependent; only block traces
 // are invariant.
-void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(
-    const KpointBandStructure *kpoint_bs_in, const Eigen::Matrix3d &lavec_p, const Dynamical &dynamical,
-    const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec, const Ewald &ewald, double **phvel_out) const
+void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(const KpointBandStructure *kpoint_bs_in,
+                                                                    const Dynamical &dynamical,
+                                                                    const std::vector<FcsArrayWithCell> &fc2_in,
+                                                                    const Dielec &dielec, const Ewald &ewald,
+                                                                    double **phvel_out) const
 {
     const auto nk = kpoint_bs_in->nk;
     const auto ns = system->get_num_modes();
@@ -73,6 +90,7 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(
     velmat_k.resize(ns, ns, 3);
     evec_k.resize(ns, ns);
     eval_k.resize(ns);
+    Eigen::MatrixXcd m_op[3];
 
     const auto &fc2_vel = (dynamical.nonanalytic == 3) ? ewald.fc2_without_dipole : fc2_in;
 
@@ -90,20 +108,12 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(
         }
         for (auto is = 0u; is < ns; ++is) eval_k[is] = dynamical.freq(eval_k[is]);
 
-        velocity_matrix_analytic(kpoint_bs_in->xk[ik], fc2_vel, eval_k, evec_k, velmat_k);
-        add_nonanalytic_velocity_matrix(kpoint_bs_in->xk[ik],
-                                        eval_k,
-                                        evec_k,
-                                        dynamical,
-                                        dielec,
-                                        ewald,
-                                        velmat_k,
-                                        kpoint_bs_in->kvec_na[ik]);
+        velocity_operator(kpoint_bs_in->xk[ik], fc2_vel, dynamical, dielec, ewald, m_op, kpoint_bs_in->kvec_na[ik]);
+        project_velocity_operator(m_op, eval_k, evec_k, velmat_k);
 
         for (auto is = 0u; is < ns; ++is) {
             double v[3];
-            for (auto j = 0; j < 3; ++j) v[j] = velmat_k[is][is][j].real();
-            rotvec(v, v, lavec_p);
+            for (auto j = 0; j < 3; ++j) v[j] = velmat_k[is][is][j].real(); // Cartesian
             auto vproj = 0.0;
             for (auto j = 0; j < 3; ++j) vproj += (v[j] / (2.0 * pi)) * kpoint_bs_in->kvec_na[ik][j];
             phvel_out[ik][is] = vproj;
@@ -119,7 +129,10 @@ void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kme
                                                     const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec,
                                                     const Ewald &ewald, double ***phvel3_out) const
 {
-    // This routine computes the group velocities for the given uniform k mesh.
+    // Raw finite-difference velocities on the uniform k mesh, for the adaptive smearing
+    // widths only (ISMEAR = 2). Deliberately NOT block-averaged: the width formulas use
+    // |v_i - v_j| and |v_i + v_j| per branch, where opposite slopes in a degenerate block
+    // broaden although their mean vanishes. Transport uses get_phonon_group_velocity_mesh_mpi.
     const auto nk = kmesh_in.nk;
     const auto ns = system->get_num_modes();
 
@@ -147,8 +160,10 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
                                                         const Dielec &dielec, const Ewald &ewald,
                                                         double ***phvel3_out) const
 {
-    // This routine computes the group velocities for the given uniform k mesh
-    // using MPI parallelization.
+    // Transport velocities on the uniform k mesh (MPI over k): finite differences, symmetrized
+    // over the little group by symmetrize_mode_velocities. Consumers: the IBTE/VBTE/DBTE
+    // drive term, kappa and boundary rate (Iterativebte::vel) and the velocities written by
+    // the RTA path. The RTA kappa itself uses the velocity-matrix block traces (velblock).
     const auto nk = kmesh_in.nk;
     const auto ns = system->get_num_modes();
 
@@ -204,8 +219,9 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     for (unsigned int i = 0; i < nk_loc; ++i) {
         phonon_vel_k(&kmesh_in.xk[klist_proc[i]][0], dynamical, fc2_in, dielec, ewald, vel);
 
+        for (unsigned int j = 0; j < ns; ++j) rotvec(vel[j], vel[j], lavec_p);
+        symmetrize_mode_velocities(&kmesh_in.xk[klist_proc[i]][0], dynamical, fc2_in, dielec, ewald, vel);
         for (unsigned int j = 0; j < ns; ++j) {
-            rotvec(vel[j], vel[j], lavec_p);
             for (unsigned int k = 0; k < 3; ++k) {
                 vel[j][k] /= 2.0 * pi;
                 phvel3_loc[i][j][k] = vel[j][k];
@@ -267,12 +283,12 @@ void PhononVelocity::gather_group_velocities_mesh(const KpointMeshUniform &kmesh
     }
 }
 
-// Fill PRINTVEL from the analytic velocity-matrix diagonal, without
-// elementwise symmetrization. Units match get_phonon_group_velocity_mesh
+// Fill PRINTVEL from the analytic velocity-matrix diagonal, averaged over the
+// little group of k like the transport velocities. Units match get_phonon_group_velocity_mesh
 // (Cartesian, divided by 2 pi, no SI factor). Compute the full matrix
 // but retain only its diagonal. Adaptive smearing keeps finite differences.
 void PhononVelocity::get_phonon_group_velocity_mesh_velmat(const KpointMeshUniform &kmesh_in,
-                                                           const Eigen::Matrix3d &lavec_p, const Dynamical &dynamical,
+                                                           const Dynamical &dynamical,
                                                            const std::vector<FcsArrayWithCell> &fc2_in,
                                                            const Dielec &dielec, const Ewald &ewald,
                                                            double ***phvel3_out) const
@@ -288,6 +304,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh_velmat(const KpointMeshUnifo
     velmat_k.resize(ns, ns, 3);
     evec_k.resize(ns, ns);
     eval_k.resize(ns);
+    Eigen::MatrixXcd m_op[3];
 
     const auto &fc2_vel = (dynamical.nonanalytic == 3) ? ewald.fc2_without_dipole : fc2_in;
 
@@ -307,14 +324,12 @@ void PhononVelocity::get_phonon_group_velocity_mesh_velmat(const KpointMeshUnifo
         }
         for (auto is = 0u; is < ns; ++is) eval_k[is] = dynamical.freq(eval_k[is]);
 
-        velocity_matrix_analytic(kmesh_in.xk[ik], fc2_vel, eval_k, evec_k, velmat_k);
-        add_nonanalytic_velocity_matrix(kmesh_in.xk[ik], eval_k, evec_k, dynamical, dielec, ewald, velmat_k);
+        velocity_operator(kmesh_in.xk[ik], fc2_vel, dynamical, dielec, ewald, m_op);
+        velocity_symmetry::symmetrize_vector_operator(little_group(kmesh_in.xk[ik]), m_op);
+        project_velocity_operator(m_op, eval_k, evec_k, velmat_k);
 
         for (auto is = 0u; is < ns; ++is) {
-            double v[3];
-            for (auto j = 0; j < 3; ++j) v[j] = velmat_k[is][is][j].real();
-            rotvec(v, v, lavec_p);
-            for (auto j = 0; j < 3; ++j) phvel3_out[ik][is][j] = v[j] / (2.0 * pi);
+            for (auto j = 0; j < 3; ++j) phvel3_out[ik][is][j] = velmat_k[is][is][j].real() / (2.0 * pi);
         }
     }
     velmat_k.clear();
@@ -404,6 +419,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(const KpointMeshUniform &kmesh_in, 
     NDArray<std::complex<double>, 4> velmat_loc; // only if the full matrix is wanted
     NDArray<double, 4> velblock_loc;
     vk.resize(ns, ns, 3);
+    Eigen::MatrixXcd m_op[3];
     if (velmat_out) velmat_loc.resize(std::max(nk_loc, 1), ns, ns, 3);
     if (velblock_out) velblock_loc.resize(std::max(nk_loc, 1), ns, 3, 3);
 
@@ -419,18 +435,12 @@ void PhononVelocity::calc_phonon_velmat_mesh(const KpointMeshUniform &kmesh_in, 
         // For NONANALYTIC = 3 the eigenproblem is solved with the dipole-free force
         // constants plus an Ewald long-range matrix, so the velocity matrix has to be
         // built from the same decomposition.
-        velocity_matrix_analytic(kmesh_in.xk[knum], fc2_vel, eval_all[knum], evec_all[knum], vk);
-        add_nonanalytic_velocity_matrix(kmesh_in.xk[knum],
-                                        eval_all[knum],
-                                        evec_all[knum],
-                                        dynamical,
-                                        dielec,
-                                        ewald,
-                                        vk);
+        velocity_operator(kmesh_in.xk[knum], fc2_vel, dynamical, dielec, ewald, m_op);
+        velocity_symmetry::symmetrize_vector_operator(little_group(kmesh_in.xk[knum]), m_op);
+        project_velocity_operator(m_op, eval_all[knum], evec_all[knum], vk);
 
         for (auto j = 0u; j < ns; ++j) {
             for (auto k = 0u; k < ns; ++k) {
-                rotvec(vk[j][k], vk[j][k], system->get_primcell().lattice_vector);
                 for (auto mu = 0; mu < 3; ++mu) vk[j][k][mu] *= factor;
             }
         }
@@ -603,11 +613,9 @@ double PhononVelocity::diff(const double *f, const unsigned int n, const double 
 // where t is the primitive fractional position. The connection term is
 // needed even for diagonal velocities: commutator cancellation applies
 // to the full dynamical matrix, not D_na alone.
-void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const double *omega_in,
-                                                     const std::complex<double> *const *evec_in,
-                                                     const Dynamical &dynamical, const Dielec &dielec,
-                                                     const Ewald &ewald, std::complex<double> ***velmat_inout,
-                                                     const double *kvec_fixed) const
+void PhononVelocity::add_nonanalytic_velocity_operator(const double *xk_in, const Dynamical &dynamical,
+                                                       const Dielec &dielec, const Ewald &ewald,
+                                                       Eigen::MatrixXcd (&m_frac)[3], const double *kvec_fixed) const
 {
     if (dynamical.nonanalytic == 0) return;
 
@@ -622,7 +630,7 @@ void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const 
             static auto warned_gamma = false;
             if (!warned_gamma) {
                 warned_gamma = true;
-                warn("add_nonanalytic_velocity_matrix",
+                warn("add_nonanalytic_velocity_operator",
                      "Velocity at Gamma with NONANALYTIC != 0 is convention dependent; "
                      "the nonanalytic contribution is set to zero there.");
             }
@@ -731,26 +739,10 @@ void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const 
     }
     dna0.clear();
 
-    // Project onto the eigenvectors at xk_in and apply Allen's normalisation.
     // ddna is d(D_na)/d(q_fractional) already, so no extra factor of i here.
-    // E^H ddna E per direction: O(ns^3).
-    {
-        Eigen::MatrixXcd E(nmode, nmode);
+    for (auto k = 0; k < 3; ++k) {
         for (auto i = 0u; i < nmode; ++i) {
-            for (auto j = 0u; j < nmode; ++j) E(j, i) = evec_in[i][j];
-        }
-        Eigen::MatrixXcd Dk(nmode, nmode);
-        for (auto k = 0; k < 3; ++k) {
-            for (auto i = 0u; i < nmode; ++i) {
-                for (auto j = 0u; j < nmode; ++j) Dk(i, j) = ddna[i][j][k];
-            }
-            const Eigen::MatrixXcd Vk = E.adjoint() * (Dk * E);
-            for (auto i = 0u; i < nmode; ++i) {
-                for (auto j = 0u; j < nmode; ++j) {
-                    if (omega_in[i] < eps8 || omega_in[j] < eps8) continue;
-                    velmat_inout[i][j][k] += Vk(i, j) * (0.5 / std::sqrt(omega_in[i] * omega_in[j]));
-                }
-            }
+            for (auto j = 0u; j < nmode; ++j) m_frac[k](i, j) += ddna[i][j][k];
         }
     }
 
@@ -759,75 +751,115 @@ void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const 
     ddna.clear();
 }
 
-void PhononVelocity::velocity_matrix_analytic(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
-                                              const double *omega_in, const std::complex<double> *const *evec_in,
-                                              std::complex<double> ***velmat_out) const
+void PhononVelocity::velocity_operator(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
+                                       const Dynamical &dynamical, const Dielec &dielec, const Ewald &ewald,
+                                       Eigen::MatrixXcd (&m_out)[3], const double *kvec_fixed) const
 {
-    // Use Allen's definition
-    // Only the analytic part of the dynamical matrix will be considered.
-    // Non-analytic part must be treated seperately.
-
-    unsigned int i, j, k;
-
+    // Allen's velocity operator dD~/dq in the atomic Cartesian basis (cell-phase gauge of the
+    // eigenvectors, displacement-aware derivative). For NONANALYTIC = 3, fc2_in must be the
+    // dipole-free force constants: the eigenproblem uses them plus an Ewald long-range matrix.
     const auto nmode = system->get_num_modes();
-
-    NDArray<std::complex<double>, 3> ddymat;
-
-    ddymat.resize(nmode, nmode, 3);
-
-    for (i = 0; i < nmode; ++i) {
-        for (j = 0; j < nmode; ++j) {
-            for (k = 0; k < 3; ++k) {
-                velmat_out[i][j][k] = std::complex<double>(0.0, 0.0);
-                ddymat[i][j][k] = std::complex<double>(0.0, 0.0);
-            }
-        }
-    }
+    Eigen::MatrixXcd m_frac[3];
+    for (auto &m: m_frac) m = Eigen::MatrixXcd::Zero(nmode, nmode);
 
     const auto invsqrt_mass = system->get_invsqrt_mass();
-
     for (const auto &it: fc2_in) {
         const auto phase =
             tpi * (it.relvecs[0][0] * xk_in[0] + it.relvecs[0][1] * xk_in[1] + it.relvecs[0][2] * xk_in[2]);
-
-        for (k = 0; k < 3; ++k) {
-            ddymat[it.pairs[0].index][it.pairs[1].index][k] +=
-                it.fcs_val * std::exp(im * phase) * tpi * it.relvecs_velocity[0][k] *
-                invsqrt_mass[it.pairs[0].index / 3] * invsqrt_mass[it.pairs[1].index / 3];
-        }
+        const auto val = it.fcs_val * std::exp(im * phase) * im * tpi * invsqrt_mass[it.pairs[0].index / 3] *
+                         invsqrt_mass[it.pairs[1].index / 3];
+        for (auto k = 0; k < 3; ++k) m_frac[k](it.pairs[0].index, it.pairs[1].index) += val * it.relvecs_velocity[0][k];
     }
 
-    // Project onto the eigenvectors as E^H (dD/dq) E with two matrix products per
-    // direction: O(ns^3), instead of the O(ns^4) explicit four-index sum.
-    {
-        Eigen::MatrixXcd E(nmode, nmode);
-        for (i = 0; i < nmode; ++i) {
-            for (j = 0; j < nmode; ++j) E(j, i) = evec_in[i][j]; // column i = eigenvector i
-        }
-        Eigen::MatrixXcd Dk(nmode, nmode);
-        for (k = 0; k < 3; ++k) {
-            for (i = 0; i < nmode; ++i) {
-                for (j = 0; j < nmode; ++j) Dk(i, j) = ddymat[i][j][k];
-            }
-            const Eigen::MatrixXcd Vk = E.adjoint() * (Dk * E);
-            for (i = 0; i < nmode; ++i) {
-                for (j = 0; j < nmode; ++j) velmat_out[i][j][k] = Vk(i, j);
-            }
-        }
-    }
+    add_nonanalytic_velocity_operator(xk_in, dynamical, dielec, ewald, m_frac, kvec_fixed);
 
-    for (i = 0; i < nmode; ++i) {
-        for (j = 0; j < nmode; ++j) {
-            if (omega_in[i] < eps8 || omega_in[j] < eps8) {
-                for (k = 0; k < 3; ++k) {
-                    velmat_out[i][j][k] = std::complex<double>(0.0, 0.0);
-                }
-                continue;
-            }
-            const auto inv_omega = 0.5 * im / std::sqrt(omega_in[i] * omega_in[j]);
-            for (k = 0; k < 3; ++k) {
-                velmat_out[i][j][k] *= inv_omega;
+    // d/dq_fractional -> Cartesian (the factor 1/(2 pi) is applied by the callers).
+    const auto &lavec = system->get_primcell().lattice_vector;
+    for (auto mu = 0; mu < 3; ++mu) {
+        m_out[mu] = lavec(mu, 0) * m_frac[0] + lavec(mu, 1) * m_frac[1] + lavec(mu, 2) * m_frac[2];
+    }
+}
+
+void PhononVelocity::project_velocity_operator(const Eigen::MatrixXcd (&m)[3], const double *omega_in,
+                                               const std::complex<double> *const *evec_in,
+                                               std::complex<double> ***velmat_out) const
+{
+    // v_ij = <e_i| M |e_j> / (2 sqrt(w_i w_j)); zero where either frequency vanishes.
+    const auto nmode = system->get_num_modes();
+    Eigen::MatrixXcd E(nmode, nmode);
+    for (auto i = 0u; i < nmode; ++i) {
+        for (auto j = 0u; j < nmode; ++j) E(j, i) = evec_in[i][j]; // column i = eigenvector i
+    }
+    for (auto k = 0; k < 3; ++k) {
+        const Eigen::MatrixXcd vk = E.adjoint() * (m[k] * E);
+        for (auto i = 0u; i < nmode; ++i) {
+            for (auto j = 0u; j < nmode; ++j) {
+                velmat_out[i][j][k] = (omega_in[i] < eps8 || omega_in[j] < eps8)
+                                          ? std::complex<double>(0.0, 0.0)
+                                          : vk(i, j) * (0.5 / std::sqrt(omega_in[i] * omega_in[j]));
             }
         }
     }
+}
+
+// Little-group symmetrization of the finite-difference velocities at one mesh point.
+// A central difference of sorted eigenvalues is a Cartesian vector only for a nondegenerate
+// branch; inside a degenerate block it pairs the sorted branches (for a block that splits
+// linearly, (e_i + e_{d+1-i}) / 2 per direction), which is basis free but not a vector.
+// At a k with a nontrivial little group each block (transport_block_bounds, the partition
+// of the velocity matrix) is therefore first replaced by its mean, Tr(P V P) / d up to the
+// difference error, which is a vector, and then projected onto the invariant vectors,
+// v <- (1/|G_k|) sum_R (+-R) v. For a nondegenerate branch this is the diagonal of the
+// symmetrized velocity operator up to the difference error.
+// The block mean is a trace approximation (it keeps Tr(P V P), not the per-branch
+// velocities), so it is used only where the velocity enters transport as a vector; the
+// adaptive smearing widths keep the raw differences (get_phonon_group_velocity_mesh).
+// At a k with a trivial little group nothing is done, so accidental degeneracies there
+// keep the sorted-branch pairing of the raw differences.
+void PhononVelocity::symmetrize_mode_velocities(const double *xk_in, const Dynamical &dynamical,
+                                                const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec,
+                                                const Ewald &ewald, double **vel) const
+{
+    const auto ops = little_group(xk_in);
+    if (ops.size() <= 1) return;
+
+    const auto ns = system->get_num_modes();
+    NDArray<double, 1> eval_k(ns);
+    NDArray<std::complex<double>, 2> evec_tmp(1, 1);
+    double kvec[3];
+    for (auto j = 0; j < 3; ++j) kvec[j] = xk_in[j];
+    rotvec(kvec, kvec, system->get_primcell().reciprocal_lattice_vector, 'T');
+    const auto norm = std::sqrt(kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2]);
+    if (norm > eps) {
+        for (auto &x: kvec) x /= norm;
+    }
+    if (dynamical.nonanalytic == 3) {
+        dynamical.eval_k_ewald(xk_in, kvec, ewald.fc2_without_dipole, ewald, eval_k, evec_tmp, false);
+    } else {
+        dynamical.eval_k(xk_in, kvec, fc2_in, dielec, eval_k, evec_tmp, false);
+    }
+    for (auto is = 0u; is < ns; ++is) eval_k[is] = dynamical.freq(eval_k[is]);
+    std::vector<int> blk_lo, blk_hi;
+    transport_block_bounds(ns, eval_k, transport_block_tol_cm(), blk_lo, blk_hi);
+
+    const Eigen::Matrix3d S = velocity_symmetry::vector_projector(ops);
+    for (auto lo = 0u; lo < ns; lo = blk_hi[lo]) {
+        Eigen::Vector3d v = Eigen::Vector3d::Zero();
+        for (auto is = lo; is < static_cast<unsigned int>(blk_hi[lo]); ++is)
+            v += Eigen::Vector3d(vel[is][0], vel[is][1], vel[is][2]);
+        v = S * v / static_cast<double>(blk_hi[lo] - static_cast<int>(lo));
+        for (auto is = lo; is < static_cast<unsigned int>(blk_hi[lo]); ++is) {
+            for (auto j = 0; j < 3; ++j) vel[is][j] = v[j];
+        }
+    }
+}
+
+std::vector<velocity_symmetry::LittleGroupOp> PhononVelocity::little_group(const double *xk_in) const
+{
+    return velocity_symmetry::little_group(xk_in,
+                                           rot_frac,
+                                           atom_mapping,
+                                           system->get_primcell().x_fractional,
+                                           system->get_primcell().lattice_vector,
+                                           time_reversal);
 }

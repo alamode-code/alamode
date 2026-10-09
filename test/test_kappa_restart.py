@@ -391,6 +391,31 @@ def check_ibte_h5(anphonbin):
         print(".kl_iter differs after the IBTE no-op restart")
         return 1
 
+    # A file from before the little-group symmetrization of the transport velocities has
+    # no velocities stamp on /iterativebte: its results must be recomputed, not restored.
+    with h5py.File(IBTE_PREFIX + ".kappa.h5", "r+") as f:
+        if f["iterativebte"].attrs.get("velocities") != "fd_blockmean_lgsym":
+            print("/iterativebte is missing the velocity-treatment stamp")
+            return 1
+        del f["iterativebte"].attrs["velocities"]
+    if run_anphon(anphonbin, "ibte.in", "ibte_oldvel.log"):
+        print("IBTE restart from an unstamped file failed")
+        return 1
+    if log_contains(
+        "ibte_oldvel.log", "restored from the kappa.h5 file"
+    ) or not log_contains(
+        "ibte_oldvel.log", "They are discarded and all temperatures are recomputed"
+    ):
+        print("IBTE restart reused results computed with the old velocity treatment")
+        return 1
+    if not kl_iter_matches(kl_fresh):
+        print(".kl_iter differs after recomputing the unstamped IBTE results")
+        return 1
+    with h5py.File(IBTE_PREFIX + ".kappa.h5", "r") as f:
+        if f["iterativebte"].attrs.get("velocities") != "fd_blockmean_lgsym":
+            print("velocity-treatment stamp not restored")
+            return 1
+
     # Partial restart: discard one temperature and scribble its kappa row;
     # only that temperature is recomputed and the result is unchanged.
     with h5py.File(IBTE_PREFIX + ".kappa.h5", "r+") as f:

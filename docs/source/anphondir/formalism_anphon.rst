@@ -207,6 +207,34 @@ Inside a degenerate multiplet :math:`\mathcal{B}` the eigenvectors are fixed onl
 :math:`\sum_{j,j'\in\mathcal{B}} v_{\boldsymbol{q}jj'}^{\mu}v_{\boldsymbol{q}j'j}^{\nu}` are. How the transport terms use this is described
 in :ref:`the Peierls-term section <kappa_peierls>`.
 
+On a uniform mesh the velocity operator is averaged over the little group :math:`G_{\boldsymbol{q}}` of
+:math:`\boldsymbol{q}` before it is projected onto the eigenvectors: over the operations :math:`R` of the space group used for
+the k-point reduction with :math:`R\boldsymbol{q}=\boldsymbol{q}+\boldsymbol{G}`, and, combined with time reversal, those with
+:math:`R\boldsymbol{q}=-\boldsymbol{q}+\boldsymbol{G}`. With :math:`M^{\mu}=\partial\tilde{D}/\partial q_{\mu}` in the atomic
+Cartesian basis and :math:`T(R)` the transformation of the displacement field (atom permutation, rotation and cell phase),
+
+.. math::
+
+    M^{\mu} \leftarrow \frac{1}{|G_{\boldsymbol{q}}|}\sum_{R\in G_{\boldsymbol{q}}}\sum_{\nu}R_{\mu\nu}\,
+    T(R)\,M^{\nu}\,T(R)^{\dagger},
+
+where an antiunitary element enters as :math:`-[T(R)M^{\nu}T(R)^{\dagger}]^{*}`. The :math:`T(R)` form a representation of
+:math:`G_{\boldsymbol{q}}` up to phases, which cancel, so this is an exact projector that does not involve the eigenvectors or
+the degeneracies, and it leaves an operator that already has the symmetry unchanged. It matters with ``NONANALYTIC = 1, 2``: their
+non-analytic term depends on the direction of :math:`\boldsymbol{q}` itself, so the dynamical matrix is not periodic, and on the
+zone boundary the velocities would depend on which of the equally short images :math:`\boldsymbol{q}+\boldsymbol{G}` the mesh
+keeps and break the crystal symmetry (e.g. a nonzero :math:`\kappa_{xy}` in a cubic crystal). The eigenvectors at such a point
+are those of the one image used and are not symmetrized.
+
+Two limitations remain. First, the average acts on each mesh point separately and does not make the velocities of different
+members of a star consistent with each other. Where all equally short images of :math:`\boldsymbol{q}` are related by
+:math:`G_{\boldsymbol{q}}` (simple cubic and tetragonal lattices) this follows; where they are not, as on the edges where two
+hexagonal faces of the fcc Brillouin zone meet, an anisotropy of order :math:`10^{-6}` of :math:`\kappa` can remain with
+``NONANALYTIC = 1, 2`` (e.g. zincblende BAs on a :math:`20\times20\times20` mesh). Second, the statement that the conductivity
+uses only block traces is exact only for exactly degenerate blocks: blocks are formed with a tolerance of
+:math:`10^{-6}` cm\ :sup:`-1`, the heat capacity is evaluated with each branch's own frequency, and the coherent term uses the
+individual frequencies of the pair.
+
 Finite difference
 ~~~~~~~~~~~~~~~~~
 
@@ -220,7 +248,17 @@ where :math:`j` is the index in the *sorted* eigenvalue list at each shifted poi
 index exchanges character between :math:`\boldsymbol{q}\pm\Delta\boldsymbol{q}` and the quotient connects two different branches.
 The option of driving the transport terms from this quotient of sorted eigenvalues has been removed. Finite-difference
 velocities are still used by the adaptive smearing widths (``ISMEAR = 2``) and by the iterative Boltzmann solvers, which
-have not been reformulated.
+have not been reformulated. At a mesh point with a nontrivial little group they are symmetrized as well: inside a
+degenerate block the central difference of sorted eigenvalues pairs the branches and is not a vector, so each block is first
+replaced by its mean, which approximates :math:`\mathrm{Tr}(P_{\mathcal{B}}v^{\mu}P_{\mathcal{B}})/d`, and the result is projected
+onto the invariant vectors, :math:`\boldsymbol{v}\leftarrow|G_{\boldsymbol{q}}|^{-1}\sum_{R}(\pm R)\boldsymbol{v}` (minus sign
+for the time-reversal partners). The block mean is a trace approximation and is used only where the velocity enters
+transport as a vector (the iterative and direct Boltzmann solvers and the velocities written to the result files). The
+adaptive smearing widths keep the unaveraged differences, because they are built from :math:`|\boldsymbol{v}_{j}\pm\boldsymbol{v}_{j'}|`
+per branch, and two opposite slopes in a block give a nonzero width although their mean vanishes; the 3ph linewidths are
+therefore unchanged. At a mesh point with a trivial little group nothing is done, so an accidental degeneracy there keeps the
+pairing of the sorted branches. A ``PREFIX.kappa.h5`` file whose ``/iterativebte`` results were computed before this
+symmetrization (no ``velocities`` attribute on the group) is not continued: those results are discarded and recomputed.
 
 If one needs to save the group velocities, please turn on the ``PRINTVEL``-tag; the printed values follow the same formulation as the
 conductivity in that run. At a degeneracy they are one admissible basis choice, not a unique value.

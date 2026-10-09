@@ -385,6 +385,19 @@ if (BUILD_DYMAT_PROJECTION_TEST)
     endif ()
 endif ()
 
+# Unit test for the little-group average of the velocity operator (velocity_symmetry.h):
+# conventions against a symmetric force-constant model, idempotence, invariance, tilted
+# blocks and gauge invariance of the block traces. Eigen only; no MPI.
+option(BUILD_VELOCITY_SYMMETRY_TEST "Build the velocity symmetrization unit test" ON)
+if (BUILD_VELOCITY_SYMMETRY_TEST)
+    add_executable(test_velocity_symmetry ${PROJECT_SOURCE_DIR}/../test/test_velocity_symmetry.cpp)
+    target_compile_options(test_velocity_symmetry PRIVATE -Wall -Wextra)
+    target_include_directories(test_velocity_symmetry PRIVATE ${PROJECT_SOURCE_DIR} ${eigen_includes})
+    if (eigen_target)
+        target_link_libraries(test_velocity_symmetry ${eigen_target})
+    endif ()
+endif ()
+
 # Unit test for the row-distributed V4 layout (v4_distributed.h): unit and
 # slice partitions and the row-local SCP self-energy accumulation against the
 # naive formula. Header-only dependencies plus Eigen and OpenMP; no MPI.

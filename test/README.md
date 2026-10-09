@@ -31,6 +31,13 @@ Silicon ANPHON --> pass
 - `test_kpmode0.py` covers SCPH postprocess on a general k-point list
   (KPMODE = 0) with the non-analytic correction enabled — the only fixture
   exercising the kpoint_general branch.
+- `test_velsym.py` covers the little-group symmetrization of the group velocities:
+  cubic SrTiO3 (FC2 renormalized by a 2x2x2 SCPH run at 300 K) on a 4x4x4 mesh must give
+  cubic Peierls and coherent kappa tensors with `NONANALYTIC = 2` (about 1e-2 off-diagonal
+  without it), invariant finite-difference velocities, an unchanged `NONANALYTIC = 3` kappa,
+  and the same result on 2 MPI ranks. `test_velocity_symmetry` (C++, built with anphon) covers
+  the average itself: conventions against a symmetric force-constant model, idempotence,
+  invariance, tilted degenerate blocks and gauge invariance of the block traces.
 - `test_scph_h5.py` also covers `BUBBLE > 0` with `RELAX_STR != 0` (BaTiO3, tetragonal
   at 280 K): the in-run on-shell bubble, restarted from the state file, must match
   `MODE = selfenergy` + `RELAXED_STRUCTURE = 1` mode by mode, differ from the undeformed

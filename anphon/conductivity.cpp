@@ -1190,7 +1190,7 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
 // must not be advertised.
 static std::string active_transport_formulation(const bool nonanalytic)
 {
-    std::string out = "velmat_blocktrace_nosym";
+    std::string out = "velmat_blocktrace_lgsym";
     if (nonanalytic) out += ",nonanalytic";
     return out;
 }
@@ -1750,9 +1750,10 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
         if (!ofs_dump) exit("check_velocity_matrix_consistency", "Could not open velmat_dump file");
 
         ofs_dump << "# Per-mode group velocity: finite difference vs analytic velocity-matrix diagonal\n";
-        ofs_dump << "# vFD    : central difference of sorted eigenvalues, no symmetrization at k\n";
+        ofs_dump << "# vFD    : central difference of sorted eigenvalues; where k has a nontrivial little group,\n"
+                    "#          averaged over each degenerate block and projected onto the invariant vectors\n";
         ofs_dump << "# reVmat : Re of the analytic velocity-matrix diagonal as used by the transport terms\n"
-                    "#          (unsymmetrized)\n";
+                    "#          (velocity operator averaged over the little group of k before the projection)\n";
         ofs_dump << "# velocities in m/s; omega and dw_min in cm^-1; xk in fractional coordinates\n";
         if (gap_max > 0.0) {
             ofs_dump << "# restricted to modes with dw_min < " << gap_max << " cm^-1\n";

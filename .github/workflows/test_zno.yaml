@@ -58,7 +58,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release ..
           # Bounded parallelism: unbounded "make -j" OOM-kills the 16 GB runner and the
           # job ends as "canceled" with no compiler diagnostics (see test_si.yaml).
-          make alm anphon -j4
+          make alm anphon test_velocity_symmetry -j4
           cd ..
       
       - name: Copy files
@@ -96,3 +96,10 @@ jobs:
       - name: Run SCPH KPMODE=0 regression test
         working-directory: ./test
         run: python test_kpmode0.py
+
+      - name: Run little-group velocity symmetrization unit test
+        run: ./_build/anphon/test_velocity_symmetry
+
+      - name: Run little-group velocity symmetrization test (NONANALYTIC = 2)
+        working-directory: ./test
+        run: python test_velsym.py

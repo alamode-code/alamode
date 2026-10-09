@@ -432,7 +432,7 @@ void PHON::setup_base() const
     // against the already-deformed cells, and the relative vectors that
     // came out would be neither the reference nor the deformed ones.
     if (!fcs_loaded_early) setup_fcs();
-    phonon_velocity->setup_velocity();
+    phonon_velocity->setup_velocity(symmetry->SymmListWithMap, symmetry->time_reversal_sym);
     integration->setup_integration(anharmonic_core->quartic_mode, run_info.my_rank, get_verbosity());
     dos->setup(*integration, dynamical->require_eigenvectors);
     thermodynamics->setup();
