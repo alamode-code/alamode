@@ -19,6 +19,11 @@ jobs:
       # 2-rank mpirun is refused without oversubscription (Open MPI 5 / 4).
       PRTE_MCA_rmaps_default_mapping_policy: ":oversubscribe"
       OMPI_MCA_rmaps_base_oversubscribe: "1"
+      # UCX fails on the Azure MANA NIC of some GitHub-hosted VMs; see tools_tests.yaml.
+      OMPI_MCA_pml: "ob1"
+      OMPI_MCA_mtl: "^ofi"
+      OMPI_MCA_btl: "^ofi"
+      OMPI_MCA_osc: "^ucx"
     defaults:
       run:
         shell: bash -l {0}

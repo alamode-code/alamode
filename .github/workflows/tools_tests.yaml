@@ -62,6 +62,13 @@ jobs:
           # runners may have fewer slots than OpenMPI counts as free cores
           OMPI_MCA_rmaps_base_oversubscribe: "1"  # OpenMPI 4
           PRTE_MCA_rmaps_default_mapping_policy: ":oversubscribe"  # OpenMPI 5
+          # Some GitHub-hosted VMs expose an Azure MANA NIC on which UCX fails to
+          # create its worker (uct_iface_open ... Address not valid), so MPI_Bcast
+          # aborts or hangs. A single-node run only needs shared memory and TCP.
+          OMPI_MCA_pml: "ob1"
+          OMPI_MCA_mtl: "^ofi"
+          OMPI_MCA_btl: "^ofi"
+          OMPI_MCA_osc: "^ucx"
         run: |
           which mpirun
           python -m pytest tests/test_anphon_api.py -v -rs -k mpi 2>&1 | tee pytest_mpi.log
