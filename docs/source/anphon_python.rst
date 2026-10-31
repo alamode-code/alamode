@@ -413,8 +413,7 @@ The following are not available in this version:
   ``alm`` go through a file (``ALM.save_fc``), which is then passed as
   ``FCSFILE``;
 * a persistent ``Phonon`` object: each ``frequencies`` call runs anphon anew;
-* sub-communicators: runs always use ``MPI_COMM_WORLD``;
-* pip wheels with MPI: the package is built from source.
+* sub-communicators: runs always use ``MPI_COMM_WORLD``.
 
 
 .. _anphon_python_stability:

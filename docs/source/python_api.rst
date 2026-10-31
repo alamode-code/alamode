@@ -16,6 +16,21 @@ directory of the source tree; see :ref:`alm_python_install` and
 :ref:`anphon_python_install`. The tutorial :ref:`label_tutorial_si_python` uses both
 packages on silicon.
 
+Wheels for Python 3.11 and later, on Linux (x86_64 and aarch64) and macOS (arm64,
+macOS 15 or later), are also published on PyPI, so the packages can be installed without
+a compiler::
+
+   % pip install "alamode[openmpi]"
+
+The ``openmpi`` extra installs Open MPI from PyPI, which ``anphon`` needs. In a conda
+environment, install ``openmpi`` from conda-forge instead and run ``pip install alamode``
+without the extra, since the Open MPI from PyPI would replace conda's ``mpirun`` and
+``libmpi``. On Cray systems, remove Cray's libfabric from ``LD_LIBRARY_PATH`` in the shell
+that runs ``anphon``, because the loader finds it before the libfabric that comes with
+the Open MPI from PyPI::
+
+   % export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v libfabric | paste -sd: -)
+
 .. grid:: 1 1 2 2
    :gutter: 3
 

@@ -15,15 +15,19 @@ dependencies = ["numpy", "h5py"]
 [project.optional-dependencies]
 # Needed only for alm.Fcsxml (the FCSXML writer).
 fcsxml = ["spglib"]
+# Open MPI from PyPI, which the anphon module of the wheels needs (with conda, install openmpi from
+# conda-forge instead).
+openmpi = ["openmpi>=5,<6"]
 
 [project.urls]
 Homepage = "https://alamode.readthedocs.io"
 Repository = "https://github.com/alamode-code/alamode"
 
 [tool.scikit-build]
-cmake.version = ">=3.17"
+cmake.version = ">=3.26"
 cmake.source-dir = "."
 wheel.packages = ["alm", "anphon"]
+wheel.py-api = "cp312"
 # Build type; Release for optimized fits.
 cmake.build-type = "Release"
 
@@ -37,3 +41,72 @@ cmake.build-type = "Release"
 # The options are those of the CLI build (../alm, ../anphon CMakeLists.txt), e.g. BOOST_ROOT, EIGEN3_ROOT,
 # USE_EIGEN_BLAS, BLA_VENDOR. The anphon module needs MPI; build ALM only with
 #     -C cmake.define.ALAMODE_PYTHON_ANPHON=OFF
+
+# Wheels for PyPI (.github/workflows/wheels.yml). anphon is built against the Open MPI of the
+# "openmpi" wheel, and libmpi is left out of the wheel so that the Open MPI found at run time is used.
+[tool.cibuildwheel]
+# The cp312 build gives the abi3 wheel, which cibuildwheel also tests on cp313 and cp314
+build = "cp311-* cp312-* cp313-* cp314-*"
+skip = "*-musllinux_*"
+# The Linux setup below uses EL8 package names (powertools)
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+before-build = "pip install openmpi==5.0.11"
+test-extras = ["openmpi"]
+test-requires = ["pytest", "ase", "lxml", "numba", "phonopy==4.7.2", "spglib", "scipy", "pyyaml", "mpi4py"]
+# As in tools_tests.yaml, a skipped test counts as a failure
+test-command = [
+    "set -o pipefail",
+    "python -c \"import alm, anphon; print(alm.__file__, anphon.__file__)\"",
+    "cd {project}/tools",
+    "python -m pytest tests -rs -k \"not mpi\" 2>&1 | tee /tmp/pytest.log",
+    "! grep -q SKIPPED /tmp/pytest.log",
+    "python -m pytest tests/test_anphon_api.py -rs -k mpi 2>&1 | tee /tmp/pytest_mpi.log",
+    "! grep -q SKIPPED /tmp/pytest_mpi.log",
+]
+
+[tool.cibuildwheel.test-environment]
+# As in tools_tests.yaml, test_alm_phonopy_compat.py must run phonopy's run_alm
+ALM_REQUIRE_PHONOPY = "1"
+# From tools_tests.yaml: keep Open MPI on shared memory and TCP on the GitHub runners
+OMPI_MCA_pml = "ob1"
+OMPI_MCA_mtl = "^ofi"
+OMPI_MCA_btl = "^ofi"
+OMPI_MCA_osc = "^ucx"
+OMPI_MCA_rmaps_base_oversubscribe = "1"
+PRTE_MCA_rmaps_default_mapping_policy = ":oversubscribe"
+# The Linux tests run mpirun as root in the container
+OMPI_ALLOW_RUN_AS_ROOT = "1"
+OMPI_ALLOW_RUN_AS_ROOT_CONFIRM = "1"
+
+[tool.cibuildwheel.linux]
+before-all = [
+    "dnf install -y --setopt=fastestmirror=True --setopt=max_parallel_downloads=10 epel-release dnf-plugins-core",
+    "dnf config-manager --set-enabled powertools",
+    "dnf install -y --setopt=fastestmirror=True --setopt=max_parallel_downloads=10 hdf5-devel openblas-devel",
+    # anphon does not compile with Eigen 3.3.4 from dnf on aarch64 (NEON complex packets)
+    "curl -fsSL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz | tar -xz -C /tmp",
+    "cmake -S /tmp/eigen-3.4.0 -B /tmp/eigen-3.4.0/build -DBUILD_TESTING=OFF && cmake --install /tmp/eigen-3.4.0/build",
+    # Boost 1.66 from dnf lacks boost/sort/block_indirect_sort, which alm and anphon use
+    "curl -fsSL https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.gz | tar -xz -C /tmp boost_1_86_0/boost",
+    "git clone --depth 1 --branch v2.5.0 https://github.com/spglib/spglib /tmp/spglib",
+    "cmake -S /tmp/spglib -B /tmp/spglib/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPGLIB_SHARED_LIBS=OFF -DSPGLIB_WITH_Fortran=OFF -DSPGLIB_WITH_TESTS=OFF",
+    "cmake --build /tmp/spglib/build -j4 && cmake --install /tmp/spglib/build",
+    # The alm and anphon CLIs, built once with the same compiler and libraries as the wheels, for the
+    # tests that compare the Python API with them
+    "/opt/python/cp312-cp312/bin/python -m venv /tmp/ompi && /tmp/ompi/bin/pip install openmpi==5.0.11",
+    "PATH=/tmp/ompi/bin:$PATH cmake -S {project} -B {project}/_build -DCMAKE_BUILD_TYPE=Release -DBOOST_ROOT=/tmp/boost_1_86_0",
+    "cmake --build {project}/_build --target alm anphon -j4",
+]
+environment = {BLA_VENDOR = "OpenBLAS", BOOST_ROOT = "/tmp/boost_1_86_0"}
+repair-wheel-command = "auditwheel repair --exclude 'libmpi.so*' -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.macos]
+before-all = [
+    "brew install boost eigen hdf5 libomp spglib",
+    "python3 -m venv /tmp/ompi && /tmp/ompi/bin/pip install openmpi==5.0.11",
+    "PATH=/tmp/ompi/bin:$PATH cmake -S {project} -B {project}/_build -DCMAKE_BUILD_TYPE=Release",
+    "cmake --build {project}/_build --target alm anphon -j4",
+]
+environment = {MACOSX_DEPLOYMENT_TARGET = "15.0", OpenMP_ROOT = "/opt/homebrew/opt/libomp"}
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} --exclude libmpi -w {dest_dir} -v {wheel}"
