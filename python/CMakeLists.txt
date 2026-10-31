@@ -26,11 +26,10 @@ if(DEFINED ENV{CONDA_PREFIX})
 endif()
 
 # ---- nanobind (provided by the build requirement; scikit-build-core exposes its CMake dir) ----
-# For an abi3/limited-API (STABLE_ABI) build on Python >= 3.12, also:
-#   (1) add OPTIONAL_COMPONENTS Development.SABIModule to find_package(Python ...)
-#   (2) pass STABLE_ABI to nanobind_add_module(...) below
-#   (3) set  [tool.scikit-build.wheel] py-api = "cp312"  in pyproject.toml
-find_package(Python 3.9 COMPONENTS Interpreter Development.Module REQUIRED)
+# STABLE_ABI (below) builds against the limited API on Python >= 3.12, which needs Development.SABIModule.
+# With wheel.py-api = "cp312" in pyproject.toml this gives one abi3 wheel for 3.12 and later. Older
+# Pythons get a regular build.
+find_package(Python 3.9 COMPONENTS Interpreter Development.Module OPTIONAL_COMPONENTS Development.SABIModule REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
 
 # ---- C++ libraries ----
@@ -85,13 +84,12 @@ if(ALAMODE_PYTHON_ANPHON)
 endif()
 
 # NB_STATIC: link the nanobind runtime statically into each module.
-# (Add STABLE_ABI to also produce an abi3/limited-API wheel on Python >= 3.12.)
-nanobind_add_module(_alm NB_STATIC src/_alm.cpp)
+nanobind_add_module(_alm NB_STATIC STABLE_ABI src/_alm.cpp)
 target_link_libraries(_alm PRIVATE almcxx_static)
 install(TARGETS _alm LIBRARY DESTINATION alm)
 
 if(ALAMODE_PYTHON_ANPHON)
-    nanobind_add_module(_anphon NB_STATIC src/_anphon.cpp)
+    nanobind_add_module(_anphon NB_STATIC STABLE_ABI src/_anphon.cpp)
     target_link_libraries(_anphon PRIVATE anphoncxx_static)
     install(TARGETS _anphon LIBRARY DESTINATION anphon)
 endif()
