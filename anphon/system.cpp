@@ -619,9 +619,11 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
 
     if (lspin_tmp) {
         spin_super_out.magmom.resize(nat_tmp, std::vector<double>(3));
+        // magmom_tmp holds the moments of the primitive cell (natmin_tmp
+        // atoms); each atom of the supercell takes that of its primitive atom.
         for (auto i = 0; i < nat_tmp; ++i) {
             for (auto j = 0; j < 3; ++j) {
-                spin_super_out.magmom[i][j] = magmom_tmp[i][j];
+                spin_super_out.magmom[i][j] = magmom_tmp[map_s2p_tmp[i].atom_num][j];
             }
         }
     }
