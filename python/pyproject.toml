@@ -38,6 +38,8 @@ Repository = "https://github.com/alamode-code/alamode"
 cmake.version = ">=3.26"
 cmake.source-dir = "."
 wheel.packages = ["alm", "anphon"]
+# LICENSES_bundled.txt: the licenses of the libraries that the PyPI wheels contain.
+wheel.license-files = ["LICENSE.txt", "LICENSES_bundled.txt"]
 wheel.py-api = "cp312"
 # Build type; Release for optimized fits.
 cmake.build-type = "Release"
