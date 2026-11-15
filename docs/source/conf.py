@@ -85,7 +85,7 @@ copyright = "2014, Terumasa Tadano"
 # The short X.Y version.
 version = "2.0"
 # The full version, including alpha/beta/rc tags.
-release = "2.0.0"
+release = "2.0.1"
 
 # The language the documentation is built in. The source content is written in
 # English; translations live as gettext catalogs under ``locale/<lang>/`` and

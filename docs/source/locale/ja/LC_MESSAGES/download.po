@@ -42,11 +42,11 @@ msgstr "リポジトリをクローンします ::"
 
 #: ../../source/download.rst:15
 msgid ""
-"The branch ``master`` holds the latest release. To use exactly the 2.0.0 "
-"release, run ``git checkout v2.0.0``."
+"The branch ``master`` holds the latest release. To use exactly the 2.0.1 "
+"release, run ``git checkout v2.0.1``."
 msgstr ""
-"ブランチ ``master`` には最新リリースが置かれています。2.0.0 リリースそのものを使うには、``git checkout "
-"v2.0.0`` を実行してください。"
+"ブランチ ``master`` には最新リリースが置かれています。2.0.1 リリースそのものを使うには、``git checkout "
+"v2.0.1`` を実行してください。"
 
 #: ../../source/download.rst:18
 msgid ""

@@ -2697,7 +2697,9 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                             }
 
 
-                                            // mu, nu
+                                            // sum_{jat} (Phi_{..nu}(..;jat) r_mu(jat) - Phi_{..mu}(..;jat) r_nu(jat))
+                                            // + (Levi-Civita terms of the "order-1"th order) = 0,
+                                            // see docs/source/almdir/formalism_alm.rst.
 
                                             interaction_index[order + 1] = 3 * jat + mu;
                                             for (int j = 0; j < order + 2; ++j)
@@ -2709,7 +2711,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                                 list_found.find(FcProperty(order + 2, 1.0, interaction_tmp.data(), 1));
                                             if (iter_found != list_found.end()) {
                                                 accumulate(nparams[order - 1] + iter_found->mother,
-                                                           iter_found->sign * vec_for_rot[nu]);
+                                                           -iter_found->sign * vec_for_rot[nu]);
                                             }
 
                                             // Exchange mu <--> nu and repeat again.
@@ -2724,7 +2726,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                                 list_found.find(FcProperty(order + 2, 1.0, &interaction_tmp[0], 1));
                                             if (iter_found != list_found.end()) {
                                                 accumulate(nparams[order - 1] + iter_found->mother,
-                                                           -iter_found->sign * vec_for_rot[mu]);
+                                                           iter_found->sign * vec_for_rot[mu]);
                                             }
                                         }
 

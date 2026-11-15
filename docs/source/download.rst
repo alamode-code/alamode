@@ -12,8 +12,8 @@ Clone the repository::
     $ git clone -b master https://github.com/alamode-code/alamode.git
     $ cd alamode
 
-The branch ``master`` holds the latest release. To use exactly the 2.0.0 release,
-run ``git checkout v2.0.0``.
+The branch ``master`` holds the latest release. To use exactly the 2.0.1 release,
+run ``git checkout v2.0.1``.
 
 To update to the latest version later, run ``git pull`` in the same directory.
 
