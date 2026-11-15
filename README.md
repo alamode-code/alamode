@@ -92,6 +92,11 @@ output files, please visit the following webpage.
 https://alamode-code.github.io/alamode/
 
 
+## Bug reports and pull requests
+If you find a bug, please report it by opening an [issue](https://github.com/alamode-code/alamode/issues)
+rather than a pull request. Pull requests are merged directly only when they are opened by one of the developers.
+
+
 ## Versioning
 Starting with 2.0.0, ALAMODE follows Semantic Versioning (MAJOR.MINOR.PATCH). Incompatible changes to input tags, file formats, or the Python API increase MAJOR; new features increase MINOR; bug fixes increase PATCH.
 
