@@ -6,9 +6,20 @@ build-backend = "scikit_build_core.build"
 name = "alamode"
 version = "2.0.1"
 description = "Python interfaces (nanobind) to ALAMODE 2.0: alm and anphon (experimental)"
+readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "Terumasa Tadano", email = "terumasa.tadano@gmail.com"}]
 requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
 # h5py: anphon.Result / anphon.Phonon read the HDF5 outputs (imported lazily).
 dependencies = ["numpy", "h5py"]
 
@@ -20,7 +31,7 @@ fcsxml = ["spglib"]
 openmpi = ["openmpi>=5,<6"]
 
 [project.urls]
-Homepage = "https://alamode.readthedocs.io"
+Homepage = "https://alamode-code.github.io/alamode/"
 Repository = "https://github.com/alamode-code/alamode"
 
 [tool.scikit-build]
