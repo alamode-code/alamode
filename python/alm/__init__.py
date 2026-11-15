@@ -10,7 +10,7 @@ __all__ = ["ALM", "Fcsxml", "optimizer_control_data_types"]
 try:
     __version__ = _dist_version("alamode-python")
 except PackageNotFoundError:  # running from a source checkout
-    __version__ = "2.0.1"
+    __version__ = "2.0.2"
 
 
 def __getattr__(name):

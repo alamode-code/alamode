@@ -36,4 +36,4 @@ __all__ = ["run", "Result", "Phonon", "format_input", "read_h5"]
 try:
     __version__ = _dist_version("alamode-python")
 except PackageNotFoundError:  # running from a source checkout
-    __version__ = "2.0.1"
+    __version__ = "2.0.2"
