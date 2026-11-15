@@ -24,8 +24,8 @@ msgid "Python API"
 msgstr "Python API"
 
 #: ../../source/python_api.rst:6
-msgid "One Python distribution, ``alamode``, provides two packages:"
-msgstr "1 つの Python ディストリビューション ``alamode`` が 2 つのパッケージを提供します。"
+msgid "One Python distribution, ``alamode-python``, provides two packages:"
+msgstr "1 つの Python ディストリビューション ``alamode-python`` が 2 つのパッケージを提供します。"
 
 #: ../../source/python_api.rst:8
 msgid ""

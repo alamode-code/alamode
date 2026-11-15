@@ -3,7 +3,7 @@
 Python API
 ==========
 
-One Python distribution, ``alamode``, provides two packages:
+One Python distribution, ``alamode-python``, provides two packages:
 
 * ``alm`` fits force constants from displacement--force data inside Python, with
   the built-in solvers or with any external regressor, and writes them to the
@@ -20,10 +20,10 @@ Wheels for Python 3.11 and later, on Linux (x86_64 and aarch64) and macOS (arm64
 macOS 15 or later), are also published on PyPI, so the packages can be installed without
 a compiler::
 
-   % pip install "alamode[openmpi]"
+   % pip install "alamode-python[openmpi]"
 
 The ``openmpi`` extra installs Open MPI from PyPI, which ``anphon`` needs. In a conda
-environment, install ``openmpi`` from conda-forge instead and run ``pip install alamode``
+environment, install ``openmpi`` from conda-forge instead and run ``pip install alamode-python``
 without the extra, since the Open MPI from PyPI would replace conda's ``mpirun`` and
 ``libmpi``. On Cray systems, remove Cray's libfabric from ``LD_LIBRARY_PATH`` in the shell
 that runs ``anphon``, because the loader finds it before the libfabric that comes with

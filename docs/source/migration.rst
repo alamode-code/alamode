@@ -528,7 +528,7 @@ to read YAML pattern files.
 Python
 ------
 
-* The Python interface is part of the source tree. The distribution ``alamode`` contains two packages, ``alm`` and ``anphon``.
+* The Python interface is part of the source tree. The distribution ``alamode-python`` contains two packages, ``alm`` and ``anphon``.
   Build it with ``pip install .`` in the ``python`` directory (:ref:`label_python_api`). It needs Python >= 3.9 and,
   for the ``anphon`` package, an MPI library; to build ``alm`` only, use
   ``pip install . -C cmake.define.ALAMODE_PYTHON_ANPHON=OFF``.

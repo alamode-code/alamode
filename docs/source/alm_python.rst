@@ -44,7 +44,7 @@ complete worked example using the scikit-learn regressors **ARD**,
 Installation
 ------------
 
-The Python interface is the distribution ``alamode``, which contains two
+The Python interface is the distribution ``alamode-python``, which contains two
 packages: ``alm`` and :ref:`anphon <anphon_python>`.  The build compiles
 the ALM and anphon C++ sources together with the bindings, so it needs the same
 dependencies as ALM itself (spglib, Boost, Eigen, HDF5, a BLAS/LAPACK backend,
@@ -103,7 +103,7 @@ Step 3. Verify
    print(alm.__file__)
    print(hasattr(alm.ALM, "get_matrix_elements"))   # -> True
 
-``pip show alamode`` shows the installed version.
+``pip show alamode-python`` shows the installed version.
 
 .. _alm_python_backend:
 

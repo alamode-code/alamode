@@ -1,4 +1,4 @@
-The binary wheels of ALAMODE on PyPI contain the software listed below in addition to
+The binary wheels of ALAMODE on PyPI (distribution alamode-python) contain the software listed below in addition to
 ALAMODE itself, which is distributed under the MIT license (LICENSE.txt). The libraries of the
 first group are copied into the wheels when they are built; the software of the second group
 is compiled into the extension modules. Builds from source and the conda-forge packages link
