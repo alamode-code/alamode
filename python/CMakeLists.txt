@@ -43,11 +43,11 @@ if(EIGEN3_INCLUDE_DIR AND NOT EIGEN3_INCLUDE) # spelling accepted by earlier ver
     set(EIGEN3_INCLUDE ${EIGEN3_INCLUDE_DIR})
 endif()
 
-# Boost: alm/ and anphon/ need only the headers (>= 1.66) and fall back to BOOST_INCLUDE when their
+# Boost: alm/ and anphon/ need only the headers (>= 1.67) and fall back to BOOST_INCLUDE when their
 # find_package(Boost) fails. Header-only installs (e.g. conda-forge "boost" without BoostConfig.cmake) are
 # located here by boost/version.hpp and handed down as BOOST_INCLUDE.
 if(NOT BOOST_INCLUDE)
-    find_package(Boost 1.66.0 QUIET CONFIG)
+    find_package(Boost 1.67.0 QUIET CONFIG)
     if(NOT Boost_FOUND)
         find_path(BOOST_VERSION_HPP_DIR boost/version.hpp HINTS ${BOOST_ROOT} ENV BOOST_ROOT PATH_SUFFIXES include)
         if(BOOST_VERSION_HPP_DIR)
@@ -56,9 +56,9 @@ if(NOT BOOST_INCLUDE)
             if(_boost_version_line MATCHES "BOOST_VERSION ([0-9]+)")
                 math(EXPR _boost_major "${CMAKE_MATCH_1} / 100000")
                 math(EXPR _boost_minor "${CMAKE_MATCH_1} / 100 % 1000")
-                if("${_boost_major}.${_boost_minor}" VERSION_LESS 1.66)
+                if("${_boost_major}.${_boost_minor}" VERSION_LESS 1.67)
                     message(FATAL_ERROR "Boost ${_boost_major}.${_boost_minor} found in ${BOOST_VERSION_HPP_DIR}; "
-                                        "ALAMODE requires Boost >= 1.66")
+                                        "ALAMODE requires Boost >= 1.67")
                 endif()
                 message(STATUS "Boost headers ${_boost_major}.${_boost_minor} in ${BOOST_VERSION_HPP_DIR}")
             endif()

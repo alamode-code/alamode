@@ -44,8 +44,8 @@ msgid "MPI library (OpenMPI, MPICH2, IntelMPI, etc.)"
 msgstr "MPIライブラリ (OpenMPI、MPICH2、IntelMPIなど)"
 
 #: ../../source/install.rst:13
-msgid "`Boost C++ library <http://www.boost.org>`_ (version >= 1.66)"
-msgstr "`Boost C++ライブラリ <http://www.boost.org>`_ (バージョン >= 1.66)"
+msgid "`Boost C++ library <http://www.boost.org>`_ (version >= 1.67)"
+msgstr "`Boost C++ライブラリ <http://www.boost.org>`_ (バージョン >= 1.67)"
 
 #: ../../source/install.rst:14
 msgid "`Eigen3 library <http://eigen.tuxfamily.org/>`_"

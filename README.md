@@ -56,7 +56,7 @@ linewidth, and other anharmonic phonon properties from first principles.
 * C++ compiler supporting C++17 and OpenMP
 * LAPACK and BLAS libraries
 * MPI library
-* Boost C++ library (version >= 1.66)
+* Boost C++ library (version >= 1.67)
 * Eigen3 library
 * spglib
 * HDF5 library

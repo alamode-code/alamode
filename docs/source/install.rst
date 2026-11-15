@@ -10,7 +10,7 @@ Mandatory requirements
 * C++ compiler (supporting the C++17 standard)
 * LAPACK and BLAS libraries
 * MPI library (OpenMPI, MPICH2, IntelMPI, etc.)
-* `Boost C++ library <http://www.boost.org>`_ (version >= 1.66)
+* `Boost C++ library <http://www.boost.org>`_ (version >= 1.67)
 * `Eigen3 library <http://eigen.tuxfamily.org/>`_
 * `spglib <https://spglib.readthedocs.io/>`_
 * `HDF5 library <https://www.hdfgroup.org/solutions/hdf5/>`_
