@@ -20,8 +20,13 @@ except ImportError as exc:
         "lib",
         "libmpi.40.dylib" if sys.platform == "darwin" else "libmpi.so.40",
     )
-    if _libmpi.name not in str(exc) or not _libmpi.exists():
+    if _libmpi.name not in str(exc):
         raise
+    if not _libmpi.exists():
+        raise ImportError(
+            f'{exc}\nanphon needs Open MPI: install it with pip install "alamode[openmpi]", '
+            "or openmpi from conda-forge in a conda environment."
+        ) from exc
     ctypes.CDLL(str(_libmpi), mode=ctypes.RTLD_GLOBAL)
 
 from ._api import Phonon, Result, format_input, read_h5, run
