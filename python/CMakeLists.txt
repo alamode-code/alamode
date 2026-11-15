@@ -67,8 +67,13 @@ if(NOT BOOST_INCLUDE)
     endif()
 endif()
 
-set(ALM_BUILD_STATIC_LIB ON)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../alm alm EXCLUDE_FROM_ALL)
+# Either module can be left out, e.g. by packages that ship alm and anphon separately. The Python
+# sources that go with a module are selected by wheel.packages (pip: -C wheel.packages=alm).
+option(ALAMODE_PYTHON_ALM "Build the alm module _alm" ON)
+if(ALAMODE_PYTHON_ALM)
+    set(ALM_BUILD_STATIC_LIB ON)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../alm alm EXCLUDE_FROM_ALL)
+endif()
 
 # anphon needs MPI on top of what ALM needs (HDF5, LAPACK). ON by default so that a missing MPI fails the
 # configure step instead of silently producing a package without a working `anphon`.
@@ -83,10 +88,16 @@ if(ALAMODE_PYTHON_ANPHON)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../anphon anphon EXCLUDE_FROM_ALL)
 endif()
 
+if(NOT ALAMODE_PYTHON_ALM AND NOT ALAMODE_PYTHON_ANPHON)
+    message(FATAL_ERROR "ALAMODE_PYTHON_ALM and ALAMODE_PYTHON_ANPHON are both OFF: nothing to build.")
+endif()
+
 # NB_STATIC: link the nanobind runtime statically into each module.
-nanobind_add_module(_alm NB_STATIC STABLE_ABI src/_alm.cpp)
-target_link_libraries(_alm PRIVATE almcxx_static)
-install(TARGETS _alm LIBRARY DESTINATION alm)
+if(ALAMODE_PYTHON_ALM)
+    nanobind_add_module(_alm NB_STATIC STABLE_ABI src/_alm.cpp)
+    target_link_libraries(_alm PRIVATE almcxx_static)
+    install(TARGETS _alm LIBRARY DESTINATION alm)
+endif()
 
 if(ALAMODE_PYTHON_ANPHON)
     nanobind_add_module(_anphon NB_STATIC STABLE_ABI src/_anphon.cpp)

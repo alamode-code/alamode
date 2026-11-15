@@ -40,7 +40,9 @@ cmake.build-type = "Release"
 # (HDF5 and MPI are auto-detected via find_package; pass -C cmake.define.HDF5_ROOT=... if needed.)
 # The options are those of the CLI build (../alm, ../anphon CMakeLists.txt), e.g. BOOST_ROOT, EIGEN3_ROOT,
 # USE_EIGEN_BLAS, BLA_VENDOR. The anphon module needs MPI; build ALM only with
-#     -C cmake.define.ALAMODE_PYTHON_ANPHON=OFF
+#     -C cmake.define.ALAMODE_PYTHON_ANPHON=OFF -C wheel.packages=alm
+# and anphon only with
+#     -C cmake.define.ALAMODE_PYTHON_ALM=OFF -C wheel.packages=anphon
 
 # Wheels for PyPI (.github/workflows/wheels.yml). anphon is built against the Open MPI of the
 # "openmpi" wheel, and libmpi is left out of the wheel so that the Open MPI found at run time is used.
