@@ -1,11 +1,24 @@
 name: Wheels
 
+# Three platforms and four Python versions with the full tool tests: run only when the Python
+# package or the C++ sources change, for a release, or by hand.
 on:
-  push:
   pull_request:
+    paths:
+      - 'python/**'
+      - 'alm/**'
+      - 'anphon/**'
+      - 'include/**'
+      - 'external/**'
+      - '.github/workflows/wheels.yml'
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      testpypi:
+        description: 'Upload the wheels to test.pypi.org'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -48,3 +61,23 @@ jobs:
           path: dist
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-testpypi:
+    name: Upload to TestPyPI
+    if: >-
+      github.repository == 'alamode-code/alamode' && github.event_name == 'workflow_dispatch'
+      && inputs.testpypi
+    needs: wheels
+    runs-on: ubuntu-24.04
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
