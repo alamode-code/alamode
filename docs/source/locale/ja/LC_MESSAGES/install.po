@@ -155,12 +155,12 @@ msgstr "GitHubリポジトリからソースファイルをダウンロードし
 #: ../../source/install.rst:85
 msgid ""
 "This builds the latest release on the branch ``master``; run ``git "
-"checkout v2.0.0`` after ``cd alamode`` to build exactly the 2.0.0 "
+"checkout v2.0.1`` after ``cd alamode`` to build exactly the 2.0.1 "
 "release. The directory structure assumed in this document is shown "
 "below::"
 msgstr ""
-"これはブランチ ``master`` 上の最新リリースをビルドします。2.0.0 リリースそのものをビルドするには、``cd alamode`` "
-"の後に ``git checkout v2.0.0`` を実行してください。本ドキュメントで想定するディレクトリ構成を以下に示します ::"
+"これはブランチ ``master`` 上の最新リリースをビルドします。2.0.1 リリースそのものをビルドするには、``cd alamode`` "
+"の後に ``git checkout v2.0.1`` を実行してください。本ドキュメントで想定するディレクトリ構成を以下に示します ::"
 
 #: ../../source/install.rst:108
 msgid "The meaning of each subdirectory is as follows:"
@@ -839,10 +839,10 @@ msgstr "GitHubリポジトリから ::"
 #: ../../source/install.rst:570
 msgid ""
 "The branch ``master`` holds the latest release; run ``git checkout "
-"v2.0.0`` to build exactly the 2.0.0 release."
+"v2.0.1`` to build exactly the 2.0.1 release."
 msgstr ""
-"ブランチ ``master`` には最新リリースが置かれています。2.0.0 リリースそのものをビルドするには ``git checkout "
-"v2.0.0`` を実行してください。"
+"ブランチ ``master`` には最新リリースが置かれています。2.0.1 リリースそのものをビルドするには ``git checkout "
+"v2.0.1`` を実行してください。"
 
 #: ../../source/install.rst:573
 msgid "The directory structure assumed in this section is shown below::"

@@ -12,7 +12,7 @@
 
 #include <string>
 
-static const std::string ALAMODE_VERSION = "2.0.0";
+static const std::string ALAMODE_VERSION = "2.0.1";
 
 // Git commit of the source tree ("<sha1>", "<sha1>-dirty", or "unknown"), defined in git_commit.cpp.
 extern const char *const ALAMODE_GIT_COMMIT;

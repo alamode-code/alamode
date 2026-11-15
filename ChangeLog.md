@@ -1,3 +1,10 @@
+# Ver. 2.0.1 (2026-11-15)
+
+## Bug fixes
+
+- **anphon** Reading `MagneticMoments` from an XML force-constant file with a supercell larger than the primitive cell read past the end of the array (segmentation fault, or undefined moments in the symmetry search). Each supercell atom now takes the moment of its primitive atom. HDF5 force-constant files and version 1.5.0 were not affected (GitHub #340, thanks to masato1122).
+- **alm** Inter-order rotational constraints (`ICONST = 2-4, 12-14`, `NORDER >= 2`) had the wrong sign of the higher-order IFC terms relative to the lower-order ones, so the fitted IFCs violated the rotational invariance (Si NORDER = 3: fitting error 7.3 % -> 4.0 %). IFCs fitted with these settings should be refitted.
+
 # Ver. 2.0.0 (2026-10-30)
 
 ALAMODE follows Semantic Versioning from this release on: incompatible changes to input tags, file formats, or the Python API increase the major version.

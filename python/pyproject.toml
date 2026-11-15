@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "alamode"
-version = "2.0.0"
+version = "2.0.1"
 description = "Python interfaces (nanobind) to ALAMODE 2.0: alm and anphon (experimental)"
 license = {text = "MIT"}
 authors = [{name = "Terumasa Tadano", email = "terumasa.tadano@gmail.com"}]

@@ -77,6 +77,10 @@ jobs:
         working-directory: ./test
         run: python test_symmetry_deviation.py
 
+      - name: Run test magnetic moments in XML (GitHub #340)
+        working-directory: ./test
+        run: python test_magmom_xml.py
+
       - name: Run test units (LENGTH_UNIT / FORCE_UNIT / FCS_UNIT_OUTPUT)
         working-directory: ./test
         run: python test_units.py

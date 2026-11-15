@@ -3,7 +3,7 @@
 [![License][license-image]][license-url]
 [![Doc status][docs-image]][docs-url]
 
-### Version 2.0.0
+### Version 2.0.1
 ![alt ALAMODE](./docs/img/alamode.png)
 
 

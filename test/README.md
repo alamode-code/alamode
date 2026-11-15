@@ -17,6 +17,8 @@ Silicon ANPHON --> pass
 - `test_qha.py` covers MODE = QHA structural optimization (fresh run, h5
   restart, legacy-text restart, band-parallel V4 with IALGO = 1 on 2 MPI
   ranks, and perturbative QHA with RELAX_STR = 3).
+- `test_magmom_xml.py` covers magnetic moments in an XML force-constant file with a
+  supercell (GitHub #340): Si with `MAGMOM = 64*1` must give the same bands as without.
 - `test_fc3file.py` covers the `FC3FILE` tag: harmonic FC2 from XML with
   cubic FC3 from HDF5 (Si, same supercell, checked against the FCSFILE
   reference), a 4x4x2 harmonic / 3x3x2 cubic combination (ZnO, checked

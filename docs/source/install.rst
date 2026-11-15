@@ -82,8 +82,8 @@ Download the source files from the GitHub repository::
   % conda env update -n alamode -f etc/alamode-environment.yml
   % conda activate alamode
 
-This builds the latest release on the branch ``master``; run ``git checkout v2.0.0``
-after ``cd alamode`` to build exactly the 2.0.0 release.
+This builds the latest release on the branch ``master``; run ``git checkout v2.0.1``
+after ``cd alamode`` to build exactly the 2.0.1 release.
 The directory structure assumed in this document is shown below::
 
    $HOME
@@ -567,8 +567,8 @@ From the GitHub repository::
   % git clone -b master https://github.com/alamode-code/alamode.git
   % cd alamode
 
-The branch ``master`` holds the latest release; run ``git checkout v2.0.0`` to build
-exactly the 2.0.0 release.
+The branch ``master`` holds the latest release; run ``git checkout v2.0.1`` to build
+exactly the 2.0.1 release.
 
 The directory structure assumed in this section is shown below::
 
