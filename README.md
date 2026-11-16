@@ -2,6 +2,8 @@
  
 [![License][license-image]][license-url]
 [![Doc status][docs-image]][docs-url]
+[![PyPI version][pypi-image]][pypi-url]
+[![PyPI downloads][pypi-dm-image]][pypi-url]
 
 ### Version 2.0.2
 ![alt ALAMODE](./docs/img/alamode.png)
@@ -124,4 +126,8 @@ Terumasa Tadano (National Institute for Materials Science, Japan)
 
 [docs-image]:  https://img.shields.io/badge/docs-online-blue.svg
 [docs-url]: https://alamode-code.github.io/alamode/
+
+[pypi-image]: https://img.shields.io/pypi/v/alamode-python.svg
+[pypi-dm-image]: https://img.shields.io/pypi/dm/alamode-python.svg
+[pypi-url]: https://pypi.org/project/alamode-python/
 
