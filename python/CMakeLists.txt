@@ -29,7 +29,7 @@ endif()
 # STABLE_ABI (below) builds against the limited API on Python >= 3.12, which needs Development.SABIModule.
 # With wheel.py-api = "cp312" in pyproject.toml this gives one abi3 wheel for 3.12 and later. Older
 # Pythons get a regular build.
-find_package(Python 3.9 COMPONENTS Interpreter Development.Module OPTIONAL_COMPONENTS Development.SABIModule REQUIRED)
+find_package(Python 3.11 COMPONENTS Interpreter Development.Module OPTIONAL_COMPONENTS Development.SABIModule REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
 
 # ---- C++ libraries ----

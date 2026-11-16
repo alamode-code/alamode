@@ -60,7 +60,7 @@ Step 1. Prepare build tools with conda
 First, prepare a conda environment named ``alamode``.
 ::
 
-   % conda create --name alamode -c conda-forge python=3.10
+   % conda create --name alamode -c conda-forge python=3.12
    % conda activate alamode
 
 If ``git`` is not available on your system, install it before downloading the

@@ -7,6 +7,7 @@ Packaging release; the calculations are unchanged.
 - Binary wheels of the Python modules `alm` and `anphon` on PyPI for Linux (x86_64, aarch64) and macOS (arm64): `pip install "alamode-python[openmpi]"` (contributed by Hrushikesh Sahasrabuddhe, GitHub #338). The wheels contain neither the command-line programs and tool scripts nor the optional SuiteSparse solvers of alm.
 - The Python distribution is named `alamode-python` (was `alamode`, a name that cannot be registered on PyPI). The modules are still imported as `alm` and `anphon`. If the Python package of 2.0.0 or 2.0.1 was installed from source, run `pip uninstall alamode` before installing this version.
 - Boost >= 1.67 is required (`boost::sort::block_indirect_sort`); the build checks and the documentation said 1.66.
+- The Python package requires Python >= 3.11 (was 3.9); it is built and tested with 3.11 and newer only.
 - The Python build can leave out either module (`ALAMODE_PYTHON_ALM=OFF`, `ALAMODE_PYTHON_ANPHON=OFF`).
 - License texts of the vendored code (`external/LICENSE_1_0.txt`, `external/niggli_LICENSE.txt`) and of the libraries bundled in the wheels (`python/LICENSES_bundled.txt`).
 - Importing `anphon` without Open MPI says how to install it.

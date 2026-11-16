@@ -60,7 +60,7 @@ Building
        (see :ref:`install_backends`)
    * - Python interface
      - separate project
-     - ``pip install .`` in ``python/`` (Python >= 3.9, nanobind, scikit-build-core, and MPI unless the anphon module is
+     - ``pip install .`` in ``python/`` (Python >= 3.11, nanobind, scikit-build-core, and MPI unless the anphon module is
        switched off), see :ref:`label_migration_python`
 
 ``cmake --install`` (or ``make install``) now installs the binaries and the common scripts; see :doc:`install`.
@@ -529,7 +529,7 @@ Python
 ------
 
 * The Python interface is part of the source tree. The distribution ``alamode-python`` contains two packages, ``alm`` and ``anphon``.
-  Build it with ``pip install .`` in the ``python`` directory (:ref:`label_python_api`). It needs Python >= 3.9 and,
+  Build it with ``pip install .`` in the ``python`` directory (:ref:`label_python_api`). It needs Python >= 3.11 and,
   for the ``anphon`` package, an MPI library; to build ``alm`` only, use
   ``pip install . -C cmake.define.ALAMODE_PYTHON_ANPHON=OFF``.
 * ``alm`` replaces the standalone ALM Python module of 1.x and keeps its high-level API (``define``, ``set_training_data``,

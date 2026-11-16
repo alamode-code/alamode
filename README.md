@@ -61,7 +61,7 @@ linewidth, and other anharmonic phonon properties from first principles.
 * spglib
 * HDF5 library
 * CMake (version >= 3.17)
-* Python (>= 3.9) with NumPy, h5py, PyYAML, and Matplotlib for the scripts and the Python package (optional)
+* Python (>= 3.9; >= 3.11 for the Python package) with NumPy, h5py, PyYAML, and Matplotlib for the scripts and the Python package (optional)
 
 ## Download
 

@@ -9,7 +9,7 @@ description = "Python interfaces (nanobind) to ALAMODE 2.0: alm and anphon (expe
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "Terumasa Tadano", email = "terumasa.tadano@gmail.com"}]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
