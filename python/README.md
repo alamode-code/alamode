@@ -16,6 +16,17 @@ The `openmpi` extra installs Open MPI from PyPI, which `anphon` needs. In a cond
 `openmpi` from conda-forge and run `pip install alamode-python` without the extra. The wheels are built without
 the optional SuiteSparse solvers of `alm`; build from source if you need them.
 
+Wheels are provided for CPython 3.11 and newer on
+
+- Linux x86_64 and aarch64 with glibc 2.27 or newer;
+- macOS 15 or newer on Apple silicon.
+
+There is no source distribution on PyPI, so on other platforms and Python versions `pip` finds no matching
+distribution; build the package from the ALAMODE sources instead (CMake 3.26 or newer; see the documentation).
+
+ALAMODE 2.0.0 and 2.0.1 built from source installed the same modules under the distribution name `alamode`.
+Remove it before installing this one: `pip uninstall alamode`.
+
 Documentation: https://alamode-code.github.io/alamode/
 
 The command-line programs `alm` and `anphon` and the tool scripts are not part of the wheels; see the

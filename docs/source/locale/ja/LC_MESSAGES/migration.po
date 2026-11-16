@@ -161,8 +161,8 @@ msgid "any version"
 msgstr "任意のバージョン"
 
 #: ../../source/migration.rst:50
-msgid ">= 1.66 (headers only)"
-msgstr ">= 1.66 (ヘッダのみ)"
+msgid ">= 1.67 (headers only)"
+msgstr ">= 1.67 (ヘッダのみ)"
 
 #: ../../source/migration.rst:51
 msgid "OpenMP"

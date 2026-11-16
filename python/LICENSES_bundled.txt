@@ -4,6 +4,12 @@ first group are copied into the wheels when they are built; the software of the 
 is compiled into the extension modules. Builds from source and the conda-forge packages link
 against separately installed libraries and do not contain the first group.
 
+The copied libraries are not modified, apart from the file names and library paths that
+auditwheel and delocate rewrite. On Linux they come from the AlmaLinux 8 and EPEL 8 packages
+of the manylinux_2_28 build image, on macOS from Homebrew. The source packages are at
+https://git.almalinux.org/rpms, https://dl.fedoraproject.org/pub/epel/8/Everything/source
+and https://github.com/Homebrew/homebrew-core.
+
 ============================================================================
 1. Libraries copied into the wheels
 ============================================================================
@@ -107,7 +113,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Name: GCC runtime libraries
 Files: libgfortran, libgomp (Linux wheels)
 License: GPL-3.0-or-later WITH GCC-exception-3.1
-Availability: https://gcc.gnu.org
+Availability: https://gcc.gnu.org; AlmaLinux 8 packages libgfortran and libgomp (GCC 8.5.0),
+  source package https://git.almalinux.org/rpms/gcc
 ----------------------------------------------------------------------------
 
 GCC RUNTIME LIBRARY EXCEPTION
@@ -865,7 +872,10 @@ Public License instead of this License.  But first, please read
 Name: libquadmath (GCC)
 Files: libquadmath (Linux x86_64 wheels)
 License: LGPL-2.1-or-later
-Availability: https://gcc.gnu.org
+Availability: https://gcc.gnu.org; AlmaLinux 8 package libquadmath (GCC 8.5.0),
+  source package https://git.almalinux.org/rpms/gcc
+The library is a separate shared file in the wheel (alamode_python.libs) and can be replaced
+by another build of libquadmath.
 ----------------------------------------------------------------------------
 
 

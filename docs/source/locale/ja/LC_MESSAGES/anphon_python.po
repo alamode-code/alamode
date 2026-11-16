@@ -632,7 +632,7 @@ msgid ""
 msgstr "永続的な ``Phonon`` オブジェクト: ``frequencies`` を呼び出すたびに anphon を新たに実行します。"
 
 #: ../../source/anphon_python.rst:416
-msgid "sub-communicators: runs always use ``MPI_COMM_WORLD``;"
+msgid "sub-communicators: runs always use ``MPI_COMM_WORLD``."
 msgstr "サブコミュニケータ: 実行には常に ``MPI_COMM_WORLD`` を使います。"
 
 #: ../../source/anphon_python.rst:417

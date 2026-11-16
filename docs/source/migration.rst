@@ -47,7 +47,7 @@ Building
      - not used
    * - Boost
      - any version
-     - >= 1.66 (headers only)
+     - >= 1.67 (headers only)
    * - OpenMP
      - optional
      - required by *alm*
