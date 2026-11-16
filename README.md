@@ -3,7 +3,7 @@
 [![License][license-image]][license-url]
 [![Doc status][docs-image]][docs-url]
 
-### Version 2.0.1
+### Version 2.0.2
 ![alt ALAMODE](./docs/img/alamode.png)
 
 
@@ -56,12 +56,12 @@ linewidth, and other anharmonic phonon properties from first principles.
 * C++ compiler supporting C++17 and OpenMP
 * LAPACK and BLAS libraries
 * MPI library
-* Boost C++ library (version >= 1.66)
+* Boost C++ library (version >= 1.67)
 * Eigen3 library
 * spglib
 * HDF5 library
 * CMake (version >= 3.17)
-* Python (>= 3.9) with NumPy, h5py, PyYAML, and Matplotlib for the scripts and the Python package (optional)
+* Python (>= 3.9; >= 3.11 for the Python package) with NumPy, h5py, PyYAML, and Matplotlib for the scripts and the Python package (optional)
 
 ## Download
 

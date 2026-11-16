@@ -24,8 +24,8 @@ msgid "Python API"
 msgstr "Python API"
 
 #: ../../source/python_api.rst:6
-msgid "One Python distribution, ``alamode``, provides two packages:"
-msgstr "1 つの Python ディストリビューション ``alamode`` が 2 つのパッケージを提供します。"
+msgid "One Python distribution, ``alamode-python``, provides two packages:"
+msgstr "1 つの Python ディストリビューション ``alamode-python`` が 2 つのパッケージを提供します。"
 
 #: ../../source/python_api.rst:8
 msgid ""
@@ -53,6 +53,32 @@ msgstr ""
 "を実行するだけでビルドされます。:ref:`alm_python_install` と :ref:`anphon_python_install` "
 "を参照してください。チュートリアル :ref:`label_tutorial_si_python` "
 "では、シリコンを対象に両パッケージを使用します。"
+
+#: ../../source/python_api.rst:19
+msgid ""
+"Wheels for Python 3.11 and later, on Linux (x86_64 and aarch64) and macOS "
+"(arm64, macOS 15 or later), are also published on PyPI, so the packages "
+"can be installed without a compiler::"
+msgstr ""
+"Python 3.11 以降用の wheel を、Linux (x86_64 と aarch64) および macOS (arm64、macOS 15 "
+"以降) 向けに PyPI でも公開しているため、コンパイラなしでパッケージをインストールできます::"
+
+#: ../../source/python_api.rst:25
+msgid ""
+"The ``openmpi`` extra installs Open MPI from PyPI, which ``anphon`` needs."
+" In a conda environment, install ``openmpi`` from conda-forge instead and "
+"run ``pip install alamode-python`` without the extra, since the Open MPI "
+"from PyPI would replace conda's ``mpirun`` and ``libmpi``. On Cray "
+"systems, remove Cray's libfabric from ``LD_LIBRARY_PATH`` in the shell "
+"that runs ``anphon``, because the loader finds it before the libfabric "
+"that comes with the Open MPI from PyPI::"
+msgstr ""
+"``openmpi`` extra は、 ``anphon`` が必要とする Open MPI を PyPI からインストールします。conda "
+"環境では、代わりに conda-forge から ``openmpi`` をインストールし、extra を付けずに ``pip install "
+"alamode-python`` を実行してください。PyPI の Open MPI は conda の ``mpirun`` と ``libmpi`` "
+"を置き換えてしまうためです。Cray システムでは、 ``anphon`` を実行するシェルで ``LD_LIBRARY_PATH`` から Cray "
+"の libfabric を取り除いてください。PyPI の Open MPI に付属する libfabric よりも先に、ローダーが Cray "
+"のものを見つけてしまうためです::"
 
 #: ../../source/python_api.rst:22
 msgid ""

@@ -161,8 +161,8 @@ msgid "any version"
 msgstr "任意のバージョン"
 
 #: ../../source/migration.rst:50
-msgid ">= 1.66 (headers only)"
-msgstr ">= 1.66 (ヘッダのみ)"
+msgid ">= 1.67 (headers only)"
+msgstr ">= 1.67 (ヘッダのみ)"
 
 #: ../../source/migration.rst:51
 msgid "OpenMP"
@@ -216,11 +216,11 @@ msgstr "別プロジェクト"
 
 #: ../../source/migration.rst:63
 msgid ""
-"``pip install .`` in ``python/`` (Python >= 3.9, nanobind, scikit-build-"
+"``pip install .`` in ``python/`` (Python >= 3.11, nanobind, scikit-build-"
 "core, and MPI unless the anphon module is switched off), see "
 ":ref:`label_migration_python`"
 msgstr ""
-"``python/`` で ``pip install .`` (Python >= 3.9、nanobind、scikit-build-"
+"``python/`` で ``pip install .`` (Python >= 3.11、nanobind、scikit-build-"
 "core、および anphon モジュールを無効にしない場合は MPI が必要)。 :ref:`label_migration_python` "
 "を参照"
 
@@ -1417,15 +1417,15 @@ msgstr "Python"
 #: ../../source/migration.rst:531
 msgid ""
 "The Python interface is part of the source tree. The distribution "
-"``alamode`` contains two packages, ``alm`` and ``anphon``. Build it with "
+"``alamode-python`` contains two packages, ``alm`` and ``anphon``. Build it with "
 "``pip install .`` in the ``python`` directory (:ref:`label_python_api`). "
-"It needs Python >= 3.9 and, for the ``anphon`` package, an MPI library; to"
+"It needs Python >= 3.11 and, for the ``anphon`` package, an MPI library; to"
 " build ``alm`` only, use ``pip install . -C "
 "cmake.define.ALAMODE_PYTHON_ANPHON=OFF``."
 msgstr ""
-"Python インターフェースはソースツリーに含まれるようになりました。配布パッケージ ``alamode`` には ``alm`` と "
+"Python インターフェースはソースツリーに含まれるようになりました。配布パッケージ ``alamode-python`` には ``alm`` と "
 "``anphon`` の 2 つのパッケージが含まれます。 ``python`` ディレクトリで ``pip install .`` "
-"を実行してビルドします ( :ref:`label_python_api` )。Python >= 3.9 が必要で、 ``anphon`` "
+"を実行してビルドします ( :ref:`label_python_api` )。Python >= 3.11 が必要で、 ``anphon`` "
 "パッケージには MPI ライブラリも必要です。 ``alm`` のみをビルドするには ``pip install . -C "
 "cmake.define.ALAMODE_PYTHON_ANPHON=OFF`` を使ってください。"
 

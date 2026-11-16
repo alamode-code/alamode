@@ -28,7 +28,7 @@ results are the usual output files. The package adds three conveniences on top:
 Everything is file based: the inputs are files (force constants, ``BORNINFO``,
 ...), and the results are read back from the files anphon writes.
 
-One Python distribution, ``alamode``, provides both packages,
+One Python distribution, ``alamode-python``, provides both packages,
 :ref:`alm <alm_python>` and ``anphon`` (see :ref:`label_python_api`).
 
 
@@ -62,7 +62,7 @@ Verify the installation with:
 .. code-block:: python
 
    import alm, anphon
-   print(anphon.__version__)   # same as alm.__version__ and `pip show alamode`
+   print(anphon.__version__)   # same as alm.__version__ and `pip show alamode-python`
 
 After an ALM-only build (``ALAMODE_PYTHON_ANPHON=OFF``), only ``import alm``
 works.
@@ -413,8 +413,7 @@ The following are not available in this version:
   ``alm`` go through a file (``ALM.save_fc``), which is then passed as
   ``FCSFILE``;
 * a persistent ``Phonon`` object: each ``frequencies`` call runs anphon anew;
-* sub-communicators: runs always use ``MPI_COMM_WORLD``;
-* pip wheels with MPI: the package is built from source.
+* sub-communicators: runs always use ``MPI_COMM_WORLD``.
 
 
 .. _anphon_python_stability:
@@ -463,7 +462,7 @@ API reference
    ``frequencies(qpoints_frac, eigenvectors=False)``. Serial only.
 
 ``anphon.__version__``
-   Version of the ``alamode`` distribution.
+   Version of the ``alamode-python`` distribution.
 
 The low-level binding underneath ``run`` is private.
 

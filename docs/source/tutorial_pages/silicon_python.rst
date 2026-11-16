@@ -19,7 +19,7 @@ Silicon with Python
       - how to read the output files through the returned ``Result``
       - how to get frequencies and eigenvectors at arbitrary :math:`q` points with ``anphon.Phonon``
       - how to read ``PREFIX.kappa.h5`` into a dictionary with ``Result.h5``
-   :Prerequisites: :ref:`The Si tutorial <label_tutorial_01>` and the ``alamode`` Python package
+   :Prerequisites: :ref:`The Si tutorial <label_tutorial_01>` and the ``alamode-python`` Python package
                    (see :ref:`anphon_python_install`), plus Matplotlib.
    :Example files: ``example/Si/python``
    :Run time: The whole script takes a few seconds.

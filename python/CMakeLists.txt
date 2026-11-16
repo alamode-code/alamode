@@ -26,11 +26,10 @@ if(DEFINED ENV{CONDA_PREFIX})
 endif()
 
 # ---- nanobind (provided by the build requirement; scikit-build-core exposes its CMake dir) ----
-# For an abi3/limited-API (STABLE_ABI) build on Python >= 3.12, also:
-#   (1) add OPTIONAL_COMPONENTS Development.SABIModule to find_package(Python ...)
-#   (2) pass STABLE_ABI to nanobind_add_module(...) below
-#   (3) set  [tool.scikit-build.wheel] py-api = "cp312"  in pyproject.toml
-find_package(Python 3.9 COMPONENTS Interpreter Development.Module REQUIRED)
+# STABLE_ABI (below) builds against the limited API on Python >= 3.12, which needs Development.SABIModule.
+# With wheel.py-api = "cp312" in pyproject.toml this gives one abi3 wheel for 3.12 and later. Older
+# Pythons get a regular build.
+find_package(Python 3.11 COMPONENTS Interpreter Development.Module OPTIONAL_COMPONENTS Development.SABIModule REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
 
 # ---- C++ libraries ----
@@ -44,11 +43,11 @@ if(EIGEN3_INCLUDE_DIR AND NOT EIGEN3_INCLUDE) # spelling accepted by earlier ver
     set(EIGEN3_INCLUDE ${EIGEN3_INCLUDE_DIR})
 endif()
 
-# Boost: alm/ and anphon/ need only the headers (>= 1.66) and fall back to BOOST_INCLUDE when their
+# Boost: alm/ and anphon/ need only the headers (>= 1.67) and fall back to BOOST_INCLUDE when their
 # find_package(Boost) fails. Header-only installs (e.g. conda-forge "boost" without BoostConfig.cmake) are
 # located here by boost/version.hpp and handed down as BOOST_INCLUDE.
 if(NOT BOOST_INCLUDE)
-    find_package(Boost 1.66.0 QUIET CONFIG)
+    find_package(Boost 1.67.0 QUIET CONFIG)
     if(NOT Boost_FOUND)
         find_path(BOOST_VERSION_HPP_DIR boost/version.hpp HINTS ${BOOST_ROOT} ENV BOOST_ROOT PATH_SUFFIXES include)
         if(BOOST_VERSION_HPP_DIR)
@@ -57,9 +56,9 @@ if(NOT BOOST_INCLUDE)
             if(_boost_version_line MATCHES "BOOST_VERSION ([0-9]+)")
                 math(EXPR _boost_major "${CMAKE_MATCH_1} / 100000")
                 math(EXPR _boost_minor "${CMAKE_MATCH_1} / 100 % 1000")
-                if("${_boost_major}.${_boost_minor}" VERSION_LESS 1.66)
+                if("${_boost_major}.${_boost_minor}" VERSION_LESS 1.67)
                     message(FATAL_ERROR "Boost ${_boost_major}.${_boost_minor} found in ${BOOST_VERSION_HPP_DIR}; "
-                                        "ALAMODE requires Boost >= 1.66")
+                                        "ALAMODE requires Boost >= 1.67")
                 endif()
                 message(STATUS "Boost headers ${_boost_major}.${_boost_minor} in ${BOOST_VERSION_HPP_DIR}")
             endif()
@@ -68,8 +67,13 @@ if(NOT BOOST_INCLUDE)
     endif()
 endif()
 
-set(ALM_BUILD_STATIC_LIB ON)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../alm alm EXCLUDE_FROM_ALL)
+# Either module can be left out, e.g. by packages that ship alm and anphon separately. The Python
+# sources that go with a module are selected by wheel.packages (pip: -C wheel.packages=alm).
+option(ALAMODE_PYTHON_ALM "Build the alm module _alm" ON)
+if(ALAMODE_PYTHON_ALM)
+    set(ALM_BUILD_STATIC_LIB ON)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../alm alm EXCLUDE_FROM_ALL)
+endif()
 
 # anphon needs MPI on top of what ALM needs (HDF5, LAPACK). ON by default so that a missing MPI fails the
 # configure step instead of silently producing a package without a working `anphon`.
@@ -84,14 +88,19 @@ if(ALAMODE_PYTHON_ANPHON)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../anphon anphon EXCLUDE_FROM_ALL)
 endif()
 
+if(NOT ALAMODE_PYTHON_ALM AND NOT ALAMODE_PYTHON_ANPHON)
+    message(FATAL_ERROR "ALAMODE_PYTHON_ALM and ALAMODE_PYTHON_ANPHON are both OFF: nothing to build.")
+endif()
+
 # NB_STATIC: link the nanobind runtime statically into each module.
-# (Add STABLE_ABI to also produce an abi3/limited-API wheel on Python >= 3.12.)
-nanobind_add_module(_alm NB_STATIC src/_alm.cpp)
-target_link_libraries(_alm PRIVATE almcxx_static)
-install(TARGETS _alm LIBRARY DESTINATION alm)
+if(ALAMODE_PYTHON_ALM)
+    nanobind_add_module(_alm NB_STATIC STABLE_ABI src/_alm.cpp)
+    target_link_libraries(_alm PRIVATE almcxx_static)
+    install(TARGETS _alm LIBRARY DESTINATION alm)
+endif()
 
 if(ALAMODE_PYTHON_ANPHON)
-    nanobind_add_module(_anphon NB_STATIC src/_anphon.cpp)
+    nanobind_add_module(_anphon NB_STATIC STABLE_ABI src/_anphon.cpp)
     target_link_libraries(_anphon PRIVATE anphoncxx_static)
     install(TARGETS _anphon LIBRARY DESTINATION anphon)
 endif()

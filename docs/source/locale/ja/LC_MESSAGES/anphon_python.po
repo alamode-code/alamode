@@ -82,10 +82,10 @@ msgstr ""
 
 #: ../../source/anphon_python.rst:31
 msgid ""
-"One Python distribution, ``alamode``, provides both packages, :ref:`alm "
+"One Python distribution, ``alamode-python``, provides both packages, :ref:`alm "
 "<alm_python>` and ``anphon`` (see :ref:`label_python_api`)."
 msgstr ""
-"一つの Python ディストリビューション ``alamode`` が、:ref:`alm <alm_python>` と ``anphon``"
+"一つの Python ディストリビューション ``alamode-python`` が、:ref:`alm <alm_python>` と ``anphon``"
 " の両パッケージを提供します (:ref:`label_python_api` を参照)。"
 
 #: ../../source/anphon_python.rst:38
@@ -632,7 +632,7 @@ msgid ""
 msgstr "永続的な ``Phonon`` オブジェクト: ``frequencies`` を呼び出すたびに anphon を新たに実行します。"
 
 #: ../../source/anphon_python.rst:416
-msgid "sub-communicators: runs always use ``MPI_COMM_WORLD``;"
+msgid "sub-communicators: runs always use ``MPI_COMM_WORLD``."
 msgstr "サブコミュニケータ: 実行には常に ``MPI_COMM_WORLD`` を使います。"
 
 #: ../../source/anphon_python.rst:417
@@ -749,8 +749,8 @@ msgid "``anphon.__version__``"
 msgstr "``anphon.__version__``"
 
 #: ../../source/anphon_python.rst:466
-msgid "Version of the ``alamode`` distribution."
-msgstr "``alamode`` ディストリビューションのバージョン。"
+msgid "Version of the ``alamode-python`` distribution."
+msgstr "``alamode-python`` ディストリビューションのバージョン。"
 
 #: ../../source/anphon_python.rst:468
 msgid "The low-level binding underneath ``run`` is private."

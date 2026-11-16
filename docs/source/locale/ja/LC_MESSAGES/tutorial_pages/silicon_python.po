@@ -67,10 +67,10 @@ msgstr "前提"
 
 #: ../../source/tutorial_pages/silicon_python.rst:22
 msgid ""
-":ref:`The Si tutorial <label_tutorial_01>` and the ``alamode`` Python "
+":ref:`The Si tutorial <label_tutorial_01>` and the ``alamode-python`` Python "
 "package (see :ref:`anphon_python_install`), plus Matplotlib."
 msgstr ""
-":ref:`Si のチュートリアル <label_tutorial_01>` と ``alamode`` Python パッケージ "
+":ref:`Si のチュートリアル <label_tutorial_01>` と ``alamode-python`` Python パッケージ "
 "(:ref:`anphon_python_install` を参照)、および Matplotlib。"
 
 #: ../../source/tutorial_pages/silicon_python.rst
