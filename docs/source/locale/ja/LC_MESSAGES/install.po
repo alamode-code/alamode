@@ -23,6 +23,109 @@ msgstr ""
 msgid "Installation"
 msgstr "インストール"
 
+#: ../../source/install.rst:7
+msgid "Which installation method?"
+msgstr "どのインストール方法を選ぶか"
+
+#: ../../source/install.rst:9
+msgid ""
+"ALAMODE can be installed in several ways, which differ in what they install "
+"and in how much has to be compiled. If you are unsure, build with conda: it "
+"provides everything that the tutorials use."
+msgstr ""
+"ALAMODE にはいくつかのインストール方法があり、インストールされる内容とコンパイルの手間が異なります。迷った場合は conda "
+"を使ってビルドしてください。チュートリアルで使うものがすべて揃います。"
+
+#: ../../source/install.rst:16
+msgid "Purpose"
+msgstr "目的"
+
+#: ../../source/install.rst:17
+msgid "Method"
+msgstr "方法"
+
+#: ../../source/install.rst:18
+msgid "What is installed"
+msgstr "インストールされるもの"
+
+#: ../../source/install.rst:19
+msgid ""
+"Use ``alm`` and ``anphon`` from Python scripts or notebooks, without "
+"compiling anything"
+msgstr "何もコンパイルせずに、Python スクリプトやノートブックから ``alm`` と ``anphon`` を使う"
+
+#: ../../source/install.rst:20
+msgid "Wheels from PyPI (:ref:`label_python_api`)"
+msgstr "PyPI の wheel (:ref:`label_python_api`)"
+
+#: ../../source/install.rst:21
+msgid "The Python modules only"
+msgstr "Python モジュールのみ"
+
+#: ../../source/install.rst:22
+msgid ""
+"Follow the tutorials and run the command-line programs on a PC or a "
+"workstation"
+msgstr "PC やワークステーションでチュートリアルを進め、コマンドラインプログラムを実行する"
+
+#: ../../source/install.rst:23
+msgid ":ref:`Build with conda <install_conda>`"
+msgstr ":ref:`conda を使ってビルド <install_conda>`"
+
+#: ../../source/install.rst:24
+msgid ""
+"The programs *alm* and *anphon*, the tool scripts and, optionally, the "
+"Python modules"
+msgstr "プログラム *alm* と *anphon*、ツールスクリプト、および (任意で) Python モジュール"
+
+#: ../../source/install.rst:25
+msgid "The same, with the environment kept inside the project directory"
+msgstr "同上。ただし環境をプロジェクトディレクトリ内に置く"
+
+#: ../../source/install.rst:26
+msgid ":ref:`Build with pixi <install_pixi>`"
+msgstr ":ref:`pixi を使ってビルド <install_pixi>`"
+
+#: ../../source/install.rst:27
+msgid "As above"
+msgstr "同上"
+
+#: ../../source/install.rst:28
+msgid "Large production runs on a cluster or a supercomputer"
+msgstr "クラスタやスーパーコンピュータでの大規模な本番実行"
+
+#: ../../source/install.rst:29
+msgid ":ref:`Build with native compilers <install_native>`"
+msgstr ":ref:`ネイティブコンパイラでビルド <install_native>`"
+
+#: ../../source/install.rst:30
+msgid ""
+"As above, with the MPI library of the system and optimized linear-algebra "
+"backends"
+msgstr "同上。システムの MPI ライブラリと最適化された線形代数バックエンドを使用"
+
+#: ../../source/install.rst:32
+msgid ""
+"The wheels are installed with ``pip install \"alamode-python[openmpi]\"`` "
+"(Python 3.11 or later, Linux and macOS on Apple silicon). They do not "
+"contain the command-line programs or the tool scripts, which most of the "
+"tutorials use. They run with the Open MPI from PyPI and not with the MPI "
+"library of a cluster, so build natively there."
+msgstr ""
+"wheel は ``pip install \"alamode-python[openmpi]\"`` でインストールします (Python 3.11 "
+"以降、Linux および Apple シリコンの "
+"macOS)。ほとんどのチュートリアルで使うコマンドラインプログラムとツールスクリプトは含まれません。また、クラスタの MPI ライブラリではなく "
+"PyPI の Open MPI で動作するため、クラスタではネイティブビルドを使ってください。"
+
+#: ../../source/install.rst:38
+msgid ""
+"The conda-forge packages ``alamode`` and ``alm`` are older versions and do "
+"not match this documentation. Packages of the current version are in "
+"preparation; until they are published, use one of the methods above."
+msgstr ""
+"conda-forge のパッケージ ``alamode`` と ``alm`` "
+"は古いバージョンであり、このドキュメントの内容とは対応していません。現行バージョンのパッケージは準備中です。公開されるまでは、上記のいずれかの方法を使ってください。"
+
 #: ../../source/install.rst:5
 msgid "Requirement"
 msgstr "必要要件"

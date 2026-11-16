@@ -1,6 +1,44 @@
 Installation
 ============
 
+.. _install_choose:
+
+Which installation method?
+--------------------------
+
+ALAMODE can be installed in several ways, which differ in what they install and in how much has to be
+compiled. If you are unsure, build with conda: it provides everything that the tutorials use.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 36 30 34
+
+   * - Purpose
+     - Method
+     - What is installed
+   * - Use ``alm`` and ``anphon`` from Python scripts or notebooks, without compiling anything
+     - Wheels from PyPI (:ref:`label_python_api`)
+     - The Python modules only
+   * - Follow the tutorials and run the command-line programs on a PC or a workstation
+     - :ref:`Build with conda <install_conda>`
+     - The programs *alm* and *anphon*, the tool scripts and, optionally, the Python modules
+   * - The same, with the environment kept inside the project directory
+     - :ref:`Build with pixi <install_pixi>`
+     - As above
+   * - Large production runs on a cluster or a supercomputer
+     - :ref:`Build with native compilers <install_native>`
+     - As above, with the MPI library of the system and optimized linear-algebra backends
+
+The wheels are installed with ``pip install "alamode-python[openmpi]"`` (Python 3.11 or later, Linux and
+macOS on Apple silicon). They do not contain the command-line programs or the tool scripts, which most of the
+tutorials use. They run with the Open MPI from PyPI and not with the MPI library of a cluster, so build
+natively there.
+
+.. note::
+
+   The conda-forge packages ``alamode`` and ``alm`` are older versions and do not match this documentation.
+   Packages of the current version are in preparation; until they are published, use one of the methods above.
+
 Requirement
 -----------
 
@@ -43,6 +81,8 @@ VMD may be more convenient for making animations, but any other visualization so
 .. _XcrySDen: http://www.xcrysden.org
 .. _VMD: http://www.ks.uiuc.edu/Research/vmd/
 
+
+.. _install_conda:
 
 Install using conda (recommended for non-experts)
 -------------------------------------------------
